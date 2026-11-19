@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="io.github.itech_mm.apiro.ui.layout.MainLayoutController" styleClass="app-shell">
+    <top>
+        <HBox fx:id="topBar" styleClass="top-bar" spacing="10" alignment="CENTER_LEFT">
+            <Label fx:id="logoLabel" text="A" styleClass="app-logo" />
+            <ComboBox fx:id="projectCombo" styleClass="project-combo" />
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox styleClass="env-box" spacing="6" alignment="CENTER_LEFT">
+                <Region styleClass="env-dot" />
+                <ComboBox fx:id="envCombo" styleClass="env-combo" />
+            </HBox>
+            <Button fx:id="runButton" styleClass="run-button" contentDisplay="GRAPHIC_ONLY" onAction="#onRun">
+                <graphic>
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <Region styleClass="icon, icon-play" />
+                        <Label text="Run" styleClass="run-label" />
+                        <Label text="Ctrl+Enter" styleClass="run-hint" />
+                    </HBox>
+                </graphic>
+            </Button>
+            <Button fx:id="stopButton" styleClass="icon-button" onAction="#onStop">
+                <graphic>
+                    <Region styleClass="icon, icon-stop, icon-sm" />
+                </graphic>
+            </Button>
+            <Separator orientation="VERTICAL" />
+            <Button fx:id="searchButton" styleClass="icon-button" onAction="#onSearch">
+                <graphic>
+                    <Region styleClass="icon, icon-search" />
+                </graphic>
+            </Button>
+            <Button fx:id="settingsButton" styleClass="icon-button" onAction="#onSettings">
+                <graphic>
+                    <Region styleClass="icon, icon-settings" />
+                </graphic>
+            </Button>
+        </HBox>
+    </top>
+    <left>
+        <VBox fx:id="rail" styleClass="rail" spacing="4" alignment="TOP_CENTER">
+            <Button fx:id="requestsRailButton" styleClass="rail-button, rail-active" onAction="#onRailRequests">
+                <graphic>
+                    <Region styleClass="icon, icon-folder" />
+                </graphic>
+            </Button>
+            <Button fx:id="historyRailButton" styleClass="rail-button" onAction="#onRailHistory">
+                <graphic>
+                    <Region styleClass="icon, icon-history, sm-ic-heigh" />
+                </graphic>
+            </Button>
+            <Button fx:id="environmentsRailButton" styleClass="rail-button" onAction="#onRailEnvironments">
+                <graphic>
+                    <Region styleClass="icon, icon-globe, sm-ic-heigh" />
+                </graphic>
+            </Button>
+        </VBox>
+    </left>
+    <center>
+        <SplitPane fx:id="mainSplit" styleClass="main-split" dividerPositions="0.17">
+            <VBox fx:id="requestsPanel" styleClass="requests-panel" minWidth="180" maxWidth="480" prefWidth="240"
+                  SplitPane.resizableWithParent="false">
+                <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="2">
+                    <Label fx:id="panelTitleLabel" text="Requests" styleClass="panel-title" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="addRequestButton" styleClass="icon-button, icon-button-sm" onAction="#onAddRequest">
+                        <graphic>
+                            <Region styleClass="icon, icon-plus, icon-sm" />
+                        </graphic>
+                    </Button>
+                    <Button fx:id="collapseAllButton" styleClass="icon-button, icon-button-sm" onAction="#onCollapseAll">
+                        <graphic>
+                            <Region styleClass="icon, icon-minus, icon-sm" />
+                        </graphic>
+                    </Button>
+                </HBox>
+                <TreeView fx:id="requestTree" styleClass="request-tree" VBox.vgrow="ALWAYS" />
+            </VBox>
+            <StackPane fx:id="contentContainer" styleClass="content" minWidth="420" />
+        </SplitPane>
+    </center>
+    <bottom>
+        <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="16">
+            <Label fx:id="statusLabel" text="Ready" styleClass="muted" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="cursorLabel" text="1:1" styleClass="muted" />
+            <Label fx:id="syntaxLabel" text="JSON" styleClass="muted" />
+            <Label fx:id="encodingLabel" text="UTF-8" styleClass="muted" />
+            <Label fx:id="lineEndingLabel" text="LF" styleClass="muted" />
+            <Label fx:id="envStatusLabel" text="Env: Dev" styleClass="muted" />
+            <Label fx:id="tlsLabel" text="TLS verify: on" styleClass="muted" />
+            <Label fx:id="cookiesLabel" text="Cookies: on" styleClass="muted" />
+        </HBox>
+    </bottom>
+</BorderPane>
