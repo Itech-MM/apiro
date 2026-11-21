@@ -50,12 +50,12 @@
             </Button>
             <Button fx:id="historyRailButton" styleClass="rail-button" onAction="#onRailHistory">
                 <graphic>
-                    <Region styleClass="icon, icon-history, sm-ic-heigh" />
+                    <Region styleClass="icon, icon-history" />
                 </graphic>
             </Button>
             <Button fx:id="environmentsRailButton" styleClass="rail-button" onAction="#onRailEnvironments">
                 <graphic>
-                    <Region styleClass="icon, icon-globe, sm-ic-heigh" />
+                    <Region styleClass="icon, icon-globe" />
                 </graphic>
             </Button>
         </VBox>

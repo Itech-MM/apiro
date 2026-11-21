@@ -1,184 +1,93 @@
 .root {
     -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", "Roboto", "Ubuntu", "DejaVu Sans", sans-serif;
-    -fx-font-size: 12px;
+    -fx-font-size: 13px;
 
-    -fx-base: #F7F8FA;
-    -fx-background: #F7F8FA;
-    -fx-control-inner-background: -fx-input-bg;
+    -fx-base: #FFFFFF;
+    -fx-background: #FFFFFF;
+    -fx-surface: #FFFFFF;
+    -fx-input-bg: #FFFFFF;
+    -fx-control-bg: #FFFFFF;
+    -fx-control-inner-background: #FFFFFF;
+    -fx-control-hover: #F5F5F7;
+    -fx-control-pressed: #EEEEF1;
+    -fx-control-disabled: #F7F7F9;
+    -fx-row-hover: #F5F5F7;
+    -fx-selection-bg: #EFF1F6;
+    -fx-selection-text: #18181B;
+    -fx-text-color: #18181B;
+    -fx-border-base: #E4E4EA;
+    -fx-grid-line: #EFEFF3;
+    -fx-disabled: #B4B4BE;
+
+    -fx-primary: #2563EB;
+    -fx-primary-dark: #1D4ED8;
+    -fx-on-primary: #FFFFFF;
+    -fx-secondary: #16A34A;
+    -fx-secondary-dark: #15803D;
+    -fx-success: #16A34A;
+    -fx-danger: #DC2626;
+    -fx-danger-dark: #B91C1C;
+    -fx-warning: #D97706;
+    -fx-info: #2563EB;
     -fx-accent: -fx-primary;
     -fx-focus-color: -fx-primary;
     -fx-faint-focus-color: transparent;
 
-    -fx-primary: #3574F0;
-    -fx-primary-dark: #2A5FCC;
-    -fx-on-primary: #FFFFFF;
-    -fx-secondary: #208A3C;
-    -fx-secondary-dark: #176B30;
-    -fx-success: #208A3C;
-    -fx-warning: #B5740A;
-    -fx-danger: #D43B4A;
-    -fx-danger-dark: #B52F3D;
-    -fx-info: #3574F0;
+    -app-layer: #FAFAFB;
+    -app-muted: #787885;
+    -app-icon: #3F3F46;
+    -app-success-tint: #E8F7EE;
+    -app-success-tint-hover: #D5F0DF;
 
-    -fx-surface: #FFFFFF;
-    -fx-input-bg: #FFFFFF;
-    -fx-control-bg: #FFFFFF;
-    -fx-control-hover: #F2F3F5;
-    -fx-control-pressed: #EBECF0;
-    -fx-control-disabled: #F7F8FA;
-    -fx-row-hover: #EDEEF2;
-    -fx-selection-bg: #D4E2FF;
-    -fx-selection-text: #27282E;
-    -fx-text-color: #27282E;
-    -fx-border-base: #DFE1E5;
-    -fx-grid-line: #EBECF0;
-    -fx-disabled: #A8ADBD;
-
-    -app-primary-hover: #2F66D6;
-    -app-primary-pressed: #2958BC;
-    -app-link: #3574F0;
-    -app-layer: #F7F8FA;
-    -app-pressed: #DFE1E5;
-
-    -app-control-border: #DFE1E5;
-    -app-control-hover-border: #C9CCD6;
-    -app-control-pressed-border: #DFE1E5;
-    -app-input-border: #DFE1E5;
-    -app-input-bottom: #DFE1E5;
-    -app-input-border-hover: #C9CCD6;
-
-    -app-text-muted: #6C707E;
-    -app-shadow: rgba(0, 0, 0, 0.14);
-
-    -app-scroll-thumb: #C4C7D0;
-    -app-scroll-thumb-hover: #A8ADBD;
-    -app-scroll-thumb-pressed: #8E93A3;
-
-    -app-indigo-border: #C9D9FA;
-    -app-indigo-tint: #F0F4FE;
-    -app-indigo-text: #2A5FCC;
-    -app-rose-border: #F2C4CA;
-    -app-rose-tint: #FDF3F4;
-    -app-rose-text: #A8303D;
-    -app-amber-border: #F0DAA8;
-    -app-amber-tint: #FFF8E6;
-    -app-amber-text: #7A4E06;
-    -app-emerald-border: #CDEBD5;
-    -app-emerald-tint: #E4F5E9;
-    -app-emerald-text: #176B30;
-
-    -app-danger-soft-bg: #FBE6E8;
-    -app-danger-soft-border: #F2C4CA;
-    -app-danger-soft-text: #A8303D;
-
-    -method-get: #208A3C;
-    -method-get-bg: #E4F5E9;
-    -method-post: #B5740A;
-    -method-post-bg: #FBF0DB;
-    -method-put: #3574F0;
-    -method-put-bg: #E3EBFD;
-    -method-patch: #8A5AD6;
-    -method-patch-bg: #EFE8FA;
-    -method-delete: #D43B4A;
-    -method-delete-bg: #FBE6E8;
-    -method-other: #6C707E;
-    -method-other-bg: #EDEEF2;
-
-    -syn-key: #871094;
-    -syn-string: #067D17;
-    -syn-number: #1750EB;
-    -syn-keyword: #0033B3;
-    -syn-variable: #871094;
-    -syn-punct: #27282E;
-    -syn-gutter: #A8ADBD;
+    -method-get: #16A34A;
+    -method-post: #D97706;
+    -method-put: #2563EB;
+    -method-patch: #7C3AED;
+    -method-delete: #DC2626;
+    -method-other: #787885;
 }
 
 .root.dark-mode {
-    -fx-base: #121826;
-    -fx-background: #121826;
+    -fx-base: #0F1115;
+    -fx-background: #0F1115;
+    -fx-surface: #14171D;
+    -fx-input-bg: #14171D;
+    -fx-control-bg: #1A1D25;
+    -fx-control-inner-background: #14171D;
+    -fx-control-hover: #1E222B;
+    -fx-control-pressed: #242833;
+    -fx-control-disabled: #171A20;
+    -fx-row-hover: #1E222B;
+    -fx-selection-bg: #232A3A;
+    -fx-selection-text: #F4F4F6;
+    -fx-text-color: #ECECF1;
+    -fx-border-base: #2A2E3A;
+    -fx-grid-line: #1E222B;
+    -fx-disabled: #5B6070;
 
-    -fx-primary: #6EA8FF;
-    -fx-primary-dark: #3A6FD8;
-    -fx-on-primary: #0A1020;
-    -fx-secondary: #4ADE9A;
-    -fx-secondary-dark: #35C285;
-    -fx-success: #4ADE9A;
-    -fx-warning: #FFC94D;
-    -fx-danger: #FF7A93;
-    -fx-danger-dark: #E5607A;
-    -fx-info: #6EA8FF;
+    -fx-primary: #6EA2FF;
+    -fx-primary-dark: #4F86F0;
+    -fx-on-primary: #0B1020;
+    -fx-secondary: #4ADE80;
+    -fx-secondary-dark: #34C46B;
+    -fx-success: #4ADE80;
+    -fx-danger: #F87171;
+    -fx-danger-dark: #E25555;
+    -fx-warning: #FBBF24;
+    -fx-info: #6EA2FF;
 
-    -fx-surface: #1E2940;
-    -fx-input-bg: #1E2940;
-    -fx-control-bg: #243050;
-    -fx-control-hover: #2D3C60;
-    -fx-control-pressed: #1B2540;
-    -fx-control-disabled: #1A2338;
-    -fx-row-hover: #2A3858;
-    -fx-selection-bg: #27487E;
-    -fx-selection-text: #FFFFFF;
-    -fx-text-color: #F1F5FF;
-    -fx-border-base: #3B4C75;
-    -fx-grid-line: #2A3757;
-    -fx-disabled: #63718F;
+    -app-layer: #12141A;
+    -app-muted: #8B90A0;
+    -app-icon: #C7C9D3;
+    -app-success-tint: #12301F;
+    -app-success-tint-hover: #1A4029;
 
-    -app-primary-hover: #8DB9FF;
-    -app-primary-pressed: #5290F0;
-    -app-link: #8CC4FF;
-    -app-layer: #171F33;
-    -app-pressed: #334468;
-
-    -app-control-border: #34456B;
-    -app-control-hover-border: #405485;
-    -app-control-pressed-border: #34456B;
-    -app-input-border: #34456B;
-    -app-input-bottom: #8FA3CC;
-    -app-input-border-hover: #405485;
-
-    -app-text-muted: #A8B6D4;
-    -app-shadow: rgba(3, 6, 16, 0.55);
-
-    -app-scroll-thumb: #4C5E88;
-    -app-scroll-thumb-hover: #657BAE;
-    -app-scroll-thumb-pressed: #849ACB;
-
-    -app-indigo-border: #3A5FA8;
-    -app-indigo-tint: #1B2A4A;
-    -app-indigo-text: #B5D2FF;
-    -app-rose-border: #94415C;
-    -app-rose-tint: #2E1A2B;
-    -app-rose-text: #FFB8CA;
-    -app-amber-border: #98702A;
-    -app-amber-tint: #2E2616;
-    -app-amber-text: #FFD98A;
-    -app-emerald-border: #2F8A6A;
-    -app-emerald-tint: #15302B;
-    -app-emerald-text: #8FF0C4;
-
-    -app-danger-soft-bg: #3D1C2C;
-    -app-danger-soft-border: #8A3A57;
-    -app-danger-soft-text: #FF9FB6;
-
-    -method-get: #4ADE9A;
-    -method-get-bg: #15302B;
-    -method-post: #FFC94D;
-    -method-post-bg: #2E2616;
-    -method-put: #6EA8FF;
-    -method-put-bg: #23406E;
-    -method-patch: #B69CFF;
-    -method-patch-bg: #2D2250;
-    -method-delete: #FF7A93;
-    -method-delete-bg: #3D1C2C;
-    -method-other: #A8B6D4;
-    -method-other-bg: #2A3757;
-
-    -syn-key: #C792EA;
-    -syn-string: #8FF0C4;
-    -syn-number: #82AAFF;
-    -syn-keyword: #82AAFF;
-    -syn-variable: #FFCB6B;
-    -syn-punct: #F1F5FF;
-    -syn-gutter: #63718F;
+    -method-get: #4ADE80;
+    -method-post: #FBBF24;
+    -method-put: #6EA2FF;
+    -method-patch: #A78BFA;
+    -method-delete: #F87171;
+    -method-other: #8B90A0;
 }
 
 .label {
@@ -186,1428 +95,249 @@
 }
 
 .muted {
-    -fx-text-fill: -app-text-muted;
+    -fx-text-fill: -app-muted;
     -fx-font-size: 12px;
 }
 
-.mono {
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 13px;
+/**ICONS**/
+.icon {
+    -fx-background-color: -app-icon;
+    -fx-scale-shape: true;
+    -fx-position-shape: true;
+    -fx-shape-snap: false;
 }
 
-.error-text {
-    -fx-text-fill: -fx-danger;
+.icon-muted {
+    -fx-background-color: -app-muted;
 }
 
+.icon-play {
+    -fx-shape: "M8 5v14l11-7z";
+    -fx-min-width: 9.2;
+    -fx-pref-width: 9.2;
+    -fx-max-width: 9.2;
+    -fx-min-height: 11.7;
+    -fx-pref-height: 11.7;
+    -fx-max-height: 11.7;
+}
+
+.icon-stop {
+    -fx-shape: "M6 6h12v12H6z";
+    -fx-min-width: 10;
+    -fx-pref-width: 10;
+    -fx-max-width: 10;
+    -fx-min-height: 10;
+    -fx-pref-height: 10;
+    -fx-max-height: 10;
+}
+
+.icon-sm.icon-stop {
+    -fx-min-width: 8;
+    -fx-pref-width: 8;
+    -fx-max-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+.icon-plus {
+    -fx-shape: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z";
+    -fx-min-width: 11.7;
+    -fx-pref-width: 11.7;
+    -fx-max-width: 11.7;
+    -fx-min-height: 11.7;
+    -fx-pref-height: 11.7;
+    -fx-max-height: 11.7;
+}
+
+.icon-sm.icon-plus {
+    -fx-min-width: 9.3;
+    -fx-pref-width: 9.3;
+    -fx-max-width: 9.3;
+    -fx-min-height: 9.3;
+    -fx-pref-height: 9.3;
+    -fx-max-height: 9.3;
+}
+
+.icon-minus {
+    -fx-shape: "M19 13H5v-2h14v2z";
+    -fx-min-width: 11.7;
+    -fx-pref-width: 11.7;
+    -fx-max-width: 11.7;
+    -fx-min-height: 1.7;
+    -fx-pref-height: 1.7;
+    -fx-max-height: 1.7;
+}
+
+.icon-sm.icon-minus {
+    -fx-min-width: 9.3;
+    -fx-pref-width: 9.3;
+    -fx-max-width: 9.3;
+    -fx-min-height: 1.3;
+    -fx-pref-height: 1.3;
+    -fx-max-height: 1.3;
+}
+
+.icon-search {
+    -fx-shape: "M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z";
+    -fx-min-width: 14.6;
+    -fx-pref-width: 14.6;
+    -fx-max-width: 14.6;
+    -fx-min-height: 14.6;
+    -fx-pref-height: 14.6;
+    -fx-max-height: 14.6;
+}
+
+.icon-folder {
+    -fx-shape: "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z";
+    -fx-min-width: 16.7;
+    -fx-pref-width: 16.7;
+    -fx-max-width: 16.7;
+    -fx-min-height: 13.3;
+    -fx-pref-height: 13.3;
+    -fx-max-height: 13.3;
+}
+
+.icon-sm.icon-folder {
+    -fx-min-width: 13.3;
+    -fx-pref-width: 13.3;
+    -fx-max-width: 13.3;
+    -fx-min-height: 10.7;
+    -fx-pref-height: 10.7;
+    -fx-max-height: 10.7;
+}
+
+.icon-history {
+    -fx-shape: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z";
+    -fx-min-width: 17.5;
+    -fx-pref-width: 17.5;
+    -fx-max-width: 17.5;
+    -fx-min-height: 15;
+    -fx-pref-height: 15;
+    -fx-max-height: 15;
+}
+
+.icon-globe {
+    -fx-shape: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z";
+    -fx-min-width: 16.7;
+    -fx-pref-width: 16.7;
+    -fx-max-width: 16.7;
+    -fx-min-height: 16.7;
+    -fx-pref-height: 16.7;
+    -fx-max-height: 16.7;
+}
+
+.icon-settings {
+    -fx-shape: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z";
+    -fx-min-width: 15.6;
+    -fx-pref-width: 15.6;
+    -fx-max-width: 15.6;
+    -fx-min-height: 16;
+    -fx-pref-height: 16;
+    -fx-max-height: 16;
+}
+.icon-chevron-right {
+    -fx-shape: "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z";
+    -fx-min-width: 6.2;
+    -fx-pref-width: 6.2;
+    -fx-max-width: 6.2;
+    -fx-min-height: 10;
+    -fx-pref-height: 10;
+    -fx-max-height: 10;
+}
+
+.icon-chevron-down {
+    -fx-shape: "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z";
+    -fx-min-width: 10;
+    -fx-pref-width: 10;
+    -fx-max-width: 10;
+    -fx-min-height: 6.2;
+    -fx-pref-height: 6.2;
+    -fx-max-height: 6.2;
+}
+
+.icon-close {
+    -fx-shape: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z";
+    -fx-min-width: 11.7;
+    -fx-pref-width: 11.7;
+    -fx-max-width: 11.7;
+    -fx-min-height: 11.7;
+    -fx-pref-height: 11.7;
+    -fx-max-height: 11.7;
+}
+
+.icon-sm.icon-close {
+    -fx-min-width: 9.3;
+    -fx-pref-width: 9.3;
+    -fx-max-width: 9.3;
+    -fx-min-height: 9.3;
+    -fx-pref-height: 9.3;
+    -fx-max-height: 9.3;
+}
+/**ICONS**/
+/**shell**/
 .app-shell {
     -fx-background-color: -fx-background;
 }
 
-.content,
-.page {
+.content {
     -fx-background-color: -fx-surface;
-}
-
-.page-scroll,
-.page-scroll > .viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
 }
 
 .top-bar {
     -fx-background-color: -fx-background;
     -fx-border-color: transparent transparent -fx-grid-line transparent;
     -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 16 0 16;
+    -fx-min-height: 48;
+    -fx-pref-height: 48;
+    -fx-max-height: 48;
 }
 
 .app-logo {
     -fx-background-color: -fx-primary;
     -fx-background-radius: 6;
-    -fx-min-width: 28;
-    -fx-min-height: 28;
+    -fx-text-fill: -fx-on-primary;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
     -fx-alignment: CENTER;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-on-primary;
-}
-
-.project-combo {
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-}
-
-.env-dot {
-    -fx-background-color: -fx-success;
-    -fx-background-radius: 5;
-    -fx-min-width: 10;
-    -fx-min-height: 10;
-    -fx-pref-width: 10;
-    -fx-pref-height: 10;
-    -fx-max-width: 10;
-    -fx-max-height: 10;
-}
-
-.env-dot-prod {
-    -fx-background-color: -fx-danger;
-}
-
-.env-dot-staging {
-    -fx-background-color: -fx-warning;
-}
-
-.sidebar {
-    -fx-background-color: -fx-background;
-    -fx-border-color: transparent;
-    -fx-border-width: 0;
-}
-
-.rail {
-    -fx-background-color: -fx-background;
-    -fx-border-color: transparent -fx-grid-line transparent transparent;
-    -fx-border-width: 0 1 0 0;
-    -fx-min-width: 56;
-    -fx-pref-width: 56;
-    -fx-max-width: 56;
-}
-
-.rail-button,
-.button.rail-button,
-.button.rail-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 8;
-    -fx-min-width: 40;
-    -fx-min-height: 36;
-    -fx-padding: 0;
-    -fx-effect: null;
-}
-
-.button.rail-button:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.button.rail-button.rail-active,
-.button.rail-button.rail-active:hover {
-    -fx-background-color: -fx-selection-bg;
-}
-
-.rail-button .icon {
-    -fx-min-width: 14;
-    -fx-min-height: 12;
-    -fx-pref-width: 14;
-    -fx-pref-height: 12;
-    -fx-max-width: 14;
-    -fx-max-height: 12;
-    -fx-background-color: -app-text-muted;
-}
-
-.rail-button.rail-active .icon {
-    -fx-background-color: -fx-text-color;
-}
-
-.requests-panel {
-    -fx-background-color: -app-layer;
-    -fx-border-color: transparent -fx-grid-line transparent transparent;
-    -fx-border-width: 0 1 0 0;
-    -fx-min-width: 240;
-    -fx-pref-width: 280;
-}
-
-.panel-title {
-    -fx-font-size: 15px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-}
-
-.request-tree {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
-
-.request-tree .tree-cell {
-    -fx-background-color: transparent;
-    -fx-background-insets: 1 0 1 0;
-    -fx-background-radius: 4;
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 6 6 6 4;
-}
-
-.request-tree .tree-cell:filled:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.request-tree .tree-cell:filled:selected,
-.request-tree .tree-cell:filled:selected:hover {
-    -fx-background-color: -fx-selection-bg;
-    -fx-text-fill: -fx-selection-text;
-}
-
-.request-tree .tree-disclosure-node .arrow {
-    -fx-background-color: -app-text-muted;
-}
-
-.status-bar {
-    -fx-background-color: -fx-background;
-    -fx-padding: 4 12 4 12;
-    -fx-border-color: -fx-grid-line transparent transparent transparent;
-    -fx-border-width: 1 0 0 0;
-}
-
-.button,
-.button:default,
-.button:focused {
-    -fx-background-color: -app-control-border, -fx-control-bg;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 4, 3;
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 6 16 6 16;
-    -fx-font-size: 14px;
-    -fx-effect: null;
-    -fx-cursor: hand;
-}
-
-.button:hover,
-.button:default:hover {
-    -fx-background-color: -app-control-hover-border, -fx-control-hover;
-}
-
-.button:pressed,
-.button:default:pressed {
-    -fx-background-color: -app-control-pressed-border, -fx-control-pressed;
-    -fx-text-fill: -app-text-muted;
-}
-
-.button:disabled {
-    -fx-opacity: 1;
-    -fx-text-fill: -fx-disabled;
-    -fx-background-color: -app-control-border, -fx-control-disabled;
-    -fx-background-insets: 0, 1;
-}
-
-.ghost-button,
-.button.ghost-button,
-.button.ghost-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-border-color: -fx-border-base;
-    -fx-border-width: 1;
-    -fx-border-radius: 4;
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 5 12 5 12;
-    -fx-font-size: 13px;
-    -fx-effect: null;
-    -fx-cursor: hand;
-}
-
-.ghost-button:hover,
-.button.ghost-button:hover {
-    -fx-background-color: -fx-control-hover;
-    -fx-border-color: -app-control-hover-border;
-}
-
-.ghost-button.danger-soft:hover,
-.button.ghost-button.danger-soft:hover {
-    -fx-background-color: -app-danger-soft-bg;
-    -fx-border-color: -app-danger-soft-border;
-    -fx-text-fill: -app-danger-soft-text;
-}
-
-.button.flat-button,
-.button.flat-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-padding: 4 8 4 8;
-}
-
-.button.flat-button:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.icon-button {
-    -fx-padding: 5 9 5 9;
-}
-
-.accent-button,
-.button.accent-button,
-.button.accent-button:default,
-.button.accent-button:focused,
-.button.dialog-action-button,
-.button.dialog-action-button:focused,
-.button.primary,
-.button.primary:focused,
-.button.alert-default-button,
-.button.alert-default-button:focused {
-    -fx-background-color: -fx-primary;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-text-fill: -fx-on-primary;
-    -fx-padding: 6 18 6 18;
-    -fx-effect: null;
-    -fx-cursor: hand;
-}
-
-.accent-button:hover,
-.button.accent-button:hover,
-.button.accent-button:default:hover,
-.button.dialog-action-button:hover {
-    -fx-background-color: -app-primary-hover;
-}
-
-.accent-button:pressed,
-.button.accent-button:pressed,
-.button.dialog-action-button:pressed {
-    -fx-background-color: -app-primary-pressed;
-}
-
-.button.primary:hover,
-.button.alert-default-button:hover {
-    -fx-background-color: -fx-primary-dark;
-}
-
-.button.primary:pressed,
-.button.alert-default-button:pressed {
-    -fx-background-color: derive(-fx-primary-dark, -10%);
-}
-
-.button.secondary,
-.button.secondary:focused {
-    -fx-background-color: -fx-secondary;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-text-fill: -fx-on-primary;
-}
-
-.button.secondary:hover {
-    -fx-background-color: -fx-secondary-dark;
-}
-
-.button.danger,
-.button.danger:focused {
-    -fx-background-color: -fx-danger;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-text-fill: -fx-on-primary;
-}
-
-.button.danger:hover {
-    -fx-background-color: -fx-danger-dark;
-}
-
-.accent-button:disabled,
-.button.accent-button:disabled,
-.button.dialog-action-button:disabled,
-.button.primary:disabled,
-.button.secondary:disabled,
-.button.danger:disabled,
-.button.alert-default-button:disabled {
-    -fx-opacity: 1;
-    -fx-background-color: -fx-control-disabled;
-    -fx-text-fill: -fx-disabled;
-}
-
-.run-button,
-.button.run-button,
-.button.run-button:focused {
-    -fx-background-color: -app-emerald-tint;
-    -fx-background-insets: 0;
-    -fx-background-radius: 6;
-    -fx-text-fill: -app-emerald-text;
-    -fx-font-weight: bold;
-    -fx-padding: 8 18 8 18;
-}
-
-.button.run-button:hover {
-    -fx-background-color: -app-emerald-border;
-}
-
-.button.run-button:disabled {
-    -fx-opacity: 0.6;
-}
-
-.button.dialog-close-button,
-.button.dialog-close-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: -fx-border-base;
-    -fx-border-radius: 4;
-    -fx-text-fill: -fx-text-color;
-}
-
-.button.dialog-close-button:hover {
-    -fx-background-color: -fx-control-hover;
-}
-
-.button.toast-action-button,
-.button.toast-action-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: -fx-primary;
-    -fx-border-radius: 4;
-    -fx-text-fill: -fx-primary;
-}
-
-.button.toast-action-button:hover {
-    -fx-background-color: -fx-control-hover;
-}
-
-.button.toast-close-button,
-.button.toast-close-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
-
-.button.toast-close-button:hover {
-    -fx-background-color: -fx-control-hover;
-}
-
-.icon {
-    -fx-background-color: -fx-text-color;
-    -fx-min-width: 16;
-    -fx-min-height: 16;
-    -fx-pref-width: 16;
-    -fx-pref-height: 16;
-    -fx-max-width: 16;
-    -fx-max-height: 16;
-    -fx-scale-shape: true;
-    -fx-shape-snap: false;
-}
-
-.button:disabled .icon {
-    -fx-background-color: -fx-disabled;
-}
-
-.run-button .icon {
-    -fx-background-color: -app-emerald-text;
-}
-
-.icon-muted {
-    -fx-background-color: -app-text-muted;
-}
-
-.icon-sm {
-    -fx-min-width: 14;
-    -fx-min-height: 14;
-    -fx-pref-width: 14;
-    -fx-pref-height: 14;
-    -fx-max-width: 14;
-    -fx-max-height: 14;
-}
-
-.icon-play { -fx-shape: "M8 5v14l11-7z"; }
-.icon-stop { -fx-shape: "M6 6h12v12H6z"; }
-.icon-plus { -fx-shape: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"; }
-.icon-minus { -fx-shape: "M19 13H5v-2h14v2z"; }
-.icon-close { -fx-shape: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"; }
-.icon-check { -fx-shape: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"; }
-.icon-chevron-right { -fx-shape: "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"; }
-.icon-chevron-down { -fx-shape: "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"; }
-.icon-copy { -fx-shape: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"; }
-.icon-download { -fx-shape: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"; }
-.icon-refresh { -fx-shape: "M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"; }
-.icon-wrap { -fx-shape: "M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3 3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"; }
-.icon-search { -fx-shape: "M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"; }
-.icon-folder { -fx-shape: "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"; }
-.icon-history { -fx-shape: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"; }
-.icon-globe { -fx-shape: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"; }
-.icon-settings { -fx-shape: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"; }
-.sm-ic-heigh{
-    -fx-min-height: 14;
-    -fx-pref-height: 14;
-    -fx-max-height: 14;
-}
-.method-badge {
-    -fx-font-size: 10px;
-    -fx-font-weight: bold;
-    -fx-padding: 2 6 2 6;
-    -fx-background-radius: 4;
-    -fx-alignment: CENTER;
-    -fx-min-width: 38;
-    -fx-text-fill: -method-other;
-    -fx-background-color: -method-other-bg;
-}
-
-.method-get { -fx-text-fill: -method-get; -fx-background-color: -method-get-bg; }
-.method-post { -fx-text-fill: -method-post; -fx-background-color: -method-post-bg; }
-.method-put { -fx-text-fill: -method-put; -fx-background-color: -method-put-bg; }
-.method-patch { -fx-text-fill: -method-patch; -fx-background-color: -method-patch-bg; }
-.method-delete { -fx-text-fill: -method-delete; -fx-background-color: -method-delete-bg; }
-
-.method-text {
-    -fx-font-weight: bold;
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-}
-
-.method-text.method-get { -fx-text-fill: -method-get; -fx-background-color: transparent; }
-.method-text.method-post { -fx-text-fill: -method-post; -fx-background-color: transparent; }
-.method-text.method-put { -fx-text-fill: -method-put; -fx-background-color: transparent; }
-.method-text.method-patch { -fx-text-fill: -method-patch; -fx-background-color: transparent; }
-.method-text.method-delete { -fx-text-fill: -method-delete; -fx-background-color: transparent; }
-
-.tab-pane > .tab-header-area {
-    -fx-padding: 0 8 0 8;
-}
-
-.tab-pane > .tab-header-area > .tab-header-background {
-    -fx-background-color: -fx-background;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.tab-pane > .tab-header-area > .headers-region > .tab {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-border-width: 0 0 2 0;
-    -fx-padding: 8 14 8 14;
-    -fx-cursor: hand;
-}
-
-.tab-pane > .tab-header-area > .headers-region > .tab:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.tab-pane > .tab-header-area > .headers-region > .tab:selected {
-    -fx-border-color: transparent transparent -fx-primary transparent;
-}
-
-.tab .tab-label {
-    -fx-text-fill: -app-text-muted;
-    -fx-font-size: 14px;
-}
-
-.tab:selected .tab-label {
-    -fx-text-fill: -fx-text-color;
-}
-
-.tab .tab-close-button {
-    -fx-background-color: -app-text-muted;
-    -fx-shape: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z";
-    -fx-scale-shape: true;
-    -fx-padding: 5;
-}
-
-.tab .tab-close-button:hover {
-    -fx-background-color: -fx-text-color;
-}
-
-.tab-pane > .tab-content-area {
-    -fx-background-color: transparent;
-}
-
-.tab-dirty {
-    -fx-background-color: -fx-primary;
-    -fx-background-radius: 4;
-    -fx-min-width: 8;
-    -fx-min-height: 8;
-    -fx-pref-width: 8;
-    -fx-pref-height: 8;
-    -fx-max-width: 8;
-    -fx-max-height: 8;
-}
-
-.breadcrumb-bar {
-    -fx-padding: 6 14 6 14;
-    -fx-background-color: -fx-surface;
-}
-
-.crumb {
-    -fx-background-color: transparent;
-    -fx-background-radius: 4;
-    -fx-cursor: hand;
-    -fx-padding: 2 6 2 6;
-    -fx-text-fill: -app-text-muted;
-    -fx-font-size: 13px;
-}
-
-.crumb:hover {
-    -fx-background-color: -fx-row-hover;
-    -fx-text-fill: -fx-text-color;
-}
-
-.crumb-current {
-    -fx-padding: 2 6 2 6;
-    -fx-text-fill: -fx-text-color;
-    -fx-font-size: 13px;
-}
-
-.crumb-sep {
-    -fx-opacity: 0.6;
-    -fx-text-fill: -app-text-muted;
-}
-
-.url-bar {
-    -fx-background-color: -fx-surface;
-    -fx-border-color: -fx-grid-line transparent -fx-grid-line transparent;
-    -fx-border-width: 1 0 1 0;
-    -fx-padding: 4 14 4 8;
-}
-
-.url-field,
-.text-field.url-field {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 16px;
-    -fx-padding: 8 10 8 10;
-}
-
-.text-field.url-field:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-}
-
-.method-combo,
-.combo-box.method-combo {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-}
-
-.combo-box.method-combo:hover,
-.combo-box.method-combo:focused {
-    -fx-background-color: -fx-row-hover;
-    -fx-background-insets: 0;
-}
-
-.protocol-label {
-    -fx-text-fill: -app-text-muted;
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 12px;
-}
-
-.section-row {
-    -fx-background-color: -fx-surface;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 8 14 8 14;
-    -fx-cursor: hand;
-}
-
-.section-row:hover {
-    -fx-background-color: -fx-control-hover;
-}
-
-.section-title {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-}
-
-.section-count {
-    -fx-background-color: -fx-row-hover;
-    -fx-background-radius: 10;
-    -fx-padding: 0 7 0 7;
-    -fx-font-size: 11px;
-    -fx-text-fill: -app-text-muted;
-}
-
-.section-preview {
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 12px;
-    -fx-text-fill: -app-text-muted;
-}
-
-.section-preview-off {
-    -fx-opacity: 0.55;
-}
-
-.section-body {
-    -fx-background-color: -app-layer;
-    -fx-padding: 8 14 8 14;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.kv-row {
-    -fx-padding: 3 0 3 0;
-}
-
-.kv-row .text-field {
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 13px;
-}
-
-.kv-disabled .text-field {
-    -fx-opacity: 0.55;
-}
-
-.seg,
-.toggle-button.seg {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-padding: 4 12 4 12;
-    -fx-font-size: 14px;
-    -fx-text-fill: -app-text-muted;
-    -fx-cursor: hand;
-}
-
-.seg:hover {
-    -fx-background-color: -fx-row-hover;
-    -fx-text-fill: -fx-text-color;
-}
-
-.seg:focused {
-    -fx-background-color: transparent;
-}
-
-.seg:selected,
-.seg:selected:hover,
-.seg:selected:focused {
-    -fx-background-color: -fx-selection-bg;
-    -fx-text-fill: -fx-primary;
-}
-
-.body-type-bar {
-    -fx-background-color: -fx-surface;
-    -fx-padding: 4 14 4 14;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.link-button,
-.button.link-button,
-.button.link-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-padding: 2 6 2 6;
-    -fx-text-fill: -app-link;
-    -fx-font-size: 13px;
-}
-
-.button.link-button:hover {
-    -fx-background-color: transparent;
-    -fx-underline: true;
-}
-
-.code-area,
-.code-area .content,
-.text-area.code-area .content {
-    -fx-background-color: -fx-surface;
-    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 14px;
-}
-
-.code-area {
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-}
-
-.code-area:focused {
-    -fx-background-color: -fx-surface;
-    -fx-background-insets: 0;
-}
-
-.code-area .text {
-    -fx-fill: -syn-punct;
-}
-
-.code-area .lineno {
-    -fx-background-color: -app-layer;
-    -fx-text-fill: -syn-gutter;
-    -fx-font-size: 12px;
-    -fx-padding: 0 12 0 14;
-    -fx-alignment: CENTER_RIGHT;
-}
-
-.code-area .paragraph-box:has-caret {
-    -fx-background-color: -fx-control-hover;
-}
-
-.token-key { -fx-fill: -syn-key; }
-.token-string { -fx-fill: -syn-string; }
-.token-number { -fx-fill: -syn-number; }
-.token-keyword { -fx-fill: -syn-keyword; }
-.token-variable { -fx-fill: -syn-variable; -fx-font-weight: bold; }
-.token-punct { -fx-fill: -syn-punct; }
-
-.response-bar {
-    -fx-background-color: -fx-surface;
-    -fx-border-color: -fx-border-base transparent -fx-grid-line transparent;
-    -fx-border-width: 2 0 1 0;
-    -fx-padding: 4 14 0 14;
-}
-
-.response-title {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 0 8 0 0;
-}
-
-.response-tab,
-.toggle-button.response-tab {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-border-width: 0 0 2 0;
-    -fx-padding: 8 10 8 10;
-    -fx-text-fill: -app-text-muted;
-    -fx-cursor: hand;
-}
-
-.response-tab:hover {
-    -fx-text-fill: -fx-text-color;
-}
-
-.response-tab:selected,
-.response-tab:selected:focused {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent -fx-primary transparent;
-    -fx-text-fill: -fx-text-color;
-}
-
-.response-tools {
-    -fx-background-color: -fx-surface;
-    -fx-border-color: transparent -fx-grid-line transparent transparent;
-    -fx-border-width: 0 1 0 0;
-    -fx-padding: 8 6 8 6;
-}
-
-.status-chip {
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-success;
-}
-
-.status-2xx { -fx-text-fill: -fx-success; }
-.status-3xx { -fx-text-fill: -fx-info; }
-.status-4xx { -fx-text-fill: -fx-warning; }
-.status-5xx { -fx-text-fill: -fx-danger; }
-
-.status-dot {
-    -fx-background-color: -fx-success;
-    -fx-background-radius: 5;
-    -fx-min-width: 10;
-    -fx-min-height: 10;
-    -fx-pref-width: 10;
-    -fx-pref-height: 10;
-    -fx-max-width: 10;
-    -fx-max-height: 10;
-}
-
-.status-dot.status-3xx { -fx-background-color: -fx-info; }
-.status-dot.status-4xx { -fx-background-color: -fx-warning; }
-.status-dot.status-5xx { -fx-background-color: -fx-danger; }
-
-.timing-bar {
-    -fx-pref-height: 6;
-    -fx-min-height: 6;
-    -fx-pref-width: 150;
-    -fx-accent: -fx-primary;
-}
-
-.timing-bar > .track {
-    -fx-background-color: -app-indigo-border;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-}
-
-.timing-bar > .bar {
-    -fx-background-color: -fx-primary;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-    -fx-padding: 3;
-}
-
-.progress-bar > .track {
-    -fx-background-color: -fx-grid-line;
-    -fx-background-insets: 0;
-    -fx-background-radius: 2;
-}
-
-.progress-bar > .bar {
-    -fx-background-color: -fx-primary;
-    -fx-background-insets: 0;
-    -fx-background-radius: 2;
-    -fx-padding: 2;
-}
-
-.empty-state {
-    -fx-alignment: CENTER;
-    -fx-spacing: 8;
-}
-
-.empty-note {
-    -fx-text-fill: -app-text-muted;
-    -fx-padding: 4 0 4 0;
-}
-
-.warning-box {
-    -fx-background-color: -app-amber-border, -app-amber-tint;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-    -fx-padding: 10 14 10 14;
-}
-
-.warning-text {
-    -fx-text-fill: -app-amber-text;
-}
-
-.banner-red {
-    -fx-background-color: -app-rose-border, -app-rose-tint;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-    -fx-padding: 10 14 10 14;
-}
-
-.split-pane {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.split-pane > .split-pane-divider {
-    -fx-background-color: -fx-grid-line;
-    -fx-padding: 0 1 0 1;
-}
-
-.split-pane:vertical > .split-pane-divider {
-    -fx-padding: 1 0 1 0;
-}
-
-.split-pane > .split-pane-divider:hover {
-    -fx-background-color: -fx-primary;
-}
-
-.text-field,
-.password-field,
-.text-area,
-.combo-box,
-.date-picker {
-    -fx-background-color: -app-input-bottom, -app-input-border, -fx-surface;
-    -fx-background-insets: 0, 0 0 1 0, 1 1 1 1;
-    -fx-background-radius: 4, 4, 3;
-    -fx-border-color: transparent;
-    -fx-text-fill: -fx-text-color;
-    -fx-prompt-text-fill: -app-text-muted;
-    -fx-highlight-fill: -fx-selection-bg;
-    -fx-highlight-text-fill: -fx-selection-text;
-    -fx-effect: null;
-}
-
-.text-field,
-.password-field {
-    -fx-padding: 6 10 6 10;
-}
-
-.text-area .content {
-    -fx-background-color: -fx-surface;
-    -fx-background-radius: 3;
-}
-
-.text-field:hover,
-.password-field:hover,
-.text-area:hover,
-.combo-box:hover,
-.date-picker:hover {
-    -fx-background-color: -app-input-bottom, -app-input-border-hover, -fx-control-hover;
-}
-
-.text-field:focused,
-.password-field:focused,
-.text-area:focused,
-.combo-box:focused,
-.date-picker:focused {
-    -fx-background-color: -fx-primary, -fx-primary, -fx-surface;
-    -fx-background-insets: 0, 0, 1 1 2 1;
-    -fx-background-radius: 4, 4, 3;
-    -fx-effect: null;
-}
-
-.text-field:disabled,
-.password-field:disabled,
-.text-area:disabled {
-    -fx-opacity: 1;
-    -fx-background-color: -app-input-border, -fx-control-disabled;
-    -fx-background-insets: 0, 1;
-    -fx-text-fill: -fx-disabled;
-}
-
-.combo-box .text-field,
-.combo-box .text-field:hover,
-.combo-box .text-field:focused {
-    -fx-border-color: transparent;
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-effect: null;
-}
-
-.combo-box .arrow-button {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0 8 0 8;
-}
-
-.combo-box .arrow {
-    -fx-background-color: -app-text-muted;
-}
-
-.combo-box .list-cell {
-    -fx-text-fill: -fx-text-color;
-    -fx-background-color: transparent;
-}
-
-.env-combo,
-.combo-box.env-combo {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-}
-
-.env-box {
-    -fx-background-color: -fx-control-bg;
-    -fx-background-radius: 6;
-    -fx-border-color: -app-control-border;
-    -fx-border-radius: 6;
-    -fx-padding: 0 4 0 10;
-}
-
-.check-box {
-    -fx-text-fill: -fx-text-color;
-}
-
-.check-box .box {
-    -fx-background-color: -app-text-muted, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 4, 3;
-    -fx-border-color: transparent;
-    -fx-padding: 0.25em 0.25em 0.3em 0.3em;
-    -fx-effect: null;
-}
-
-.check-box:hover .box {
-    -fx-background-color: -fx-text-color, -fx-control-hover;
-}
-
-.check-box:selected .box,
-.check-box:selected:focused .box {
-    -fx-background-color: -fx-primary;
-    -fx-background-insets: 0;
-    -fx-background-radius: 4;
-    -fx-border-color: transparent;
-}
-
-.check-box .mark {
-    -fx-background-color: transparent;
-    -fx-padding: 0.35em 0.4em 0.4em 0.45em;
-}
-
-.check-box:selected .mark {
-    -fx-background-color: -fx-on-primary;
-}
-
-.check-box:disabled {
-    -fx-opacity: 0.5;
-}
-
-.table-view {
-    -fx-background-color: -fx-surface;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-    -fx-table-cell-border-color: -fx-grid-line;
-}
-
-.table-view .column-header-background {
-    -fx-background-color: -app-layer;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-}
-
-.table-view .column-header,
-.table-view .filler {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent -fx-grid-line transparent transparent;
-    -fx-size: 32;
-}
-
-.table-view .column-header .label {
-    -fx-text-fill: -app-text-muted;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-}
-
-.table-row-cell {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-}
-
-.table-row-cell:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.table-row-cell:selected,
-.table-row-cell:selected:hover {
-    -fx-background-color: -fx-selection-bg;
-}
-
-.table-cell {
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 6 10 6 10;
-}
-
-.table-row-cell:selected .table-cell {
-    -fx-text-fill: -fx-selection-text;
-}
-
-.list-view {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-}
-
-.list-cell {
-    -fx-background-color: transparent;
-    -fx-background-insets: 1 4 1 4;
-    -fx-background-radius: 4;
-    -fx-text-fill: -fx-text-color;
-    -fx-padding: 6 10 6 10;
-}
-
-.list-cell:filled:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.list-cell:filled:selected,
-.list-cell:filled:selected:hover {
-    -fx-background-color: -fx-selection-bg;
-    -fx-text-fill: -fx-selection-text;
-}
-
-.combo-box-popup > .list-view {
-    -fx-background-color: -fx-border-base, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-    -fx-padding: 4;
-    -fx-effect: dropshadow(gaussian, -app-shadow, 16, 0, 0, 4);
-}
-
-.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
-    -fx-text-fill: -fx-text-color;
-}
-
-.scroll-bar {
-    -fx-background-color: transparent;
-}
-
-.scroll-bar:vertical {
-    -fx-pref-width: 12;
-}
-
-.scroll-bar:horizontal {
-    -fx-pref-height: 12;
-}
-
-.scroll-bar .track,
-.scroll-bar .track-background {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-.scroll-bar .thumb {
-    -fx-background-color: -app-scroll-thumb;
-    -fx-background-radius: 6;
-}
-
-.scroll-bar:vertical .thumb {
-    -fx-background-insets: 0 4 0 4;
-}
-
-.scroll-bar:horizontal .thumb {
-    -fx-background-insets: 4 0 4 0;
-}
-
-.scroll-bar:vertical:hover .thumb {
-    -fx-background-insets: 0 3 0 3;
-}
-
-.scroll-bar:horizontal:hover .thumb {
-    -fx-background-insets: 3 0 3 0;
-}
-
-.scroll-bar .thumb:hover {
-    -fx-background-color: -app-scroll-thumb-hover;
-}
-
-.scroll-bar .thumb:pressed {
-    -fx-background-color: -app-scroll-thumb-pressed;
-}
-
-.scroll-bar:vertical > .increment-button,
-.scroll-bar:vertical > .decrement-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-    -fx-pref-height: 0;
-    -fx-min-height: 0;
-}
-
-.scroll-bar:horizontal > .increment-button,
-.scroll-bar:horizontal > .decrement-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-    -fx-pref-width: 0;
-    -fx-min-width: 0;
-}
-
-.scroll-bar > .increment-button > .increment-arrow,
-.scroll-bar > .decrement-button > .decrement-arrow {
-    -fx-shape: " ";
-    -fx-padding: 0;
-}
-
-.scroll-pane {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
-
-.scroll-pane > .viewport {
-    -fx-background-color: transparent;
-}
-
-.separator .line {
-    -fx-border-color: -fx-grid-line;
-}
-
-.hyperlink {
-    -fx-text-fill: -app-link;
-}
-
-.context-menu {
-    -fx-background-color: -fx-border-base, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-    -fx-padding: 4;
-    -fx-effect: dropshadow(gaussian, -app-shadow, 16, 0, 0, 4);
-}
-
-.context-menu .menu-item {
-    -fx-background-color: transparent;
-    -fx-background-insets: 1 2 1 2;
-    -fx-background-radius: 4;
-    -fx-padding: 7 24 7 12;
-    -fx-cursor: hand;
-}
-
-.context-menu .menu-item .label {
-    -fx-text-fill: -fx-text-color;
-    -fx-font-size: 14px;
-}
-
-.context-menu .menu-item:focused,
-.context-menu .menu-item:hover {
-    -fx-background-color: -fx-row-hover;
-}
-
-.context-menu .menu-item:disabled .label {
-    -fx-text-fill: -fx-disabled;
-}
-
-.context-menu .menu-item:disabled:hover,
-.context-menu .menu-item:disabled:focused {
-    -fx-background-color: transparent;
-}
-
-.context-menu .separator .line {
-    -fx-border-color: -fx-grid-line transparent transparent transparent;
-    -fx-border-width: 1 0 0 0;
-}
-
-.context-menu,
-.context-menu .menu-item,
-.context-menu .menu-item:focused,
-.context-menu .menu-item:hover {
-    -fx-mark-color: -fx-text-color;
-    -fx-mark-highlight-color: transparent;
-}
-
-.context-menu .menu-item .accelerator-text {
-    -fx-text-fill: -app-text-muted;
-}
-
-.tooltip {
-    -fx-background-color: -fx-border-base, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 5, 4;
-    -fx-text-fill: -fx-text-color;
-    -fx-font-size: 12px;
-    -fx-padding: 6 10 6 10;
-    -fx-effect: dropshadow(gaussian, -app-shadow, 10, 0, 0, 2);
-}
-
-.dialog-pane {
-    -fx-background-color: -fx-surface;
-}
-
-.dialog-pane .label {
-    -fx-text-fill: -fx-text-color;
-}
-
-.alert-container {
-    -fx-background-color: -fx-border-base, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-}
-
-.alert-title {
-    -fx-font-family: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", "Inter", sans-serif;
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-}
-
-.alert-container .muted {
-    -fx-text-fill: -app-text-muted;
-}
-
-.alert-container .button.disabled,
-.alert-container .button.disabled:focused {
-    -fx-background-color: -app-control-border, -fx-control-bg;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 4, 3;
-    -fx-text-fill: -fx-text-color;
-    -fx-opacity: 1;
-}
-
-.toast-container.app-toast,
-.toast-container.transfer-toast {
-    -fx-background-color: -fx-border-base, -fx-surface !important;
-    -fx-background-insets: 0, 1 !important;
-    -fx-background-radius: 10, 9 !important;
-    -fx-opacity: 1;
-    -fx-effect: dropshadow(gaussian, -app-shadow, 18, 0, 0, 4);
-}
-
-.toast-container.app-toast .toast-title,
-.toast-container.transfer-toast .toast-title {
-    -fx-text-fill: -fx-text-color;
-}
-
-.toast-container.app-toast .toast-message,
-.toast-container.transfer-toast .toast-message {
-    -fx-text-fill: -app-text-muted;
-}
-
-.login-root {
-    -fx-background-color: -fx-background;
-}
-
-.page-title {
-    -fx-font-family: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", "Inter", sans-serif;
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-}
-
-.settings-card {
-    -fx-background-color: -fx-grid-line, -fx-surface;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 8, 7;
-    -fx-padding: 4 16 4 16;
-}
-
-.settings-divider {
-    -fx-background-color: -fx-grid-line;
-    -fx-min-height: 1;
-    -fx-pref-height: 1;
-    -fx-max-height: 1;
-}
-
-.setting-row {
-    -fx-padding: 12 0 12 0;
-}
-
-.setting-name {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-text-color;
-}
-
-.button,
-.button:default,
-.button:focused {
-    -fx-font-size: 12px;
-}
-
-.muted {
-    -fx-font-size: 11px;
-}
-
-.mono {
-    -fx-font-size: 12px;
-}
-
-.tab .tab-label,
-.seg,
-.toggle-button.seg,
-.section-title,
-.response-title,
-.context-menu .menu-item .label {
-    -fx-font-size: 12px;
-}
-
-.code-area,
-.code-area .content,
-.text-area.code-area .content {
-    -fx-font-size: 13px;
-}
-
-.text-field.url-field {
-    -fx-font-size: 13px;
-}
-
-.top-bar {
-    -fx-background-color: -fx-background;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 12 0 12;
-    -fx-min-height: 40;
-    -fx-pref-height: 40;
-    -fx-max-height: 40;
-}
-
-.app-logo {
-    -fx-min-width: 20;
-    -fx-min-height: 20;
-    -fx-pref-width: 20;
-    -fx-pref-height: 20;
-    -fx-max-width: 20;
-    -fx-max-height: 20;
-    -fx-background-radius: 5;
-    -fx-font-size: 12px;
+    -fx-min-width: 24;
+    -fx-pref-width: 24;
+    -fx-max-width: 24;
+    -fx-min-height: 24;
+    -fx-pref-height: 24;
+    -fx-max-height: 24;
 }
 
 .combo-box.project-combo,
 .combo-box.project-combo:focused {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-background-radius: 6;
-    -fx-border-color: transparent;
-    -fx-font-size: 13px;
+    -fx-background-radius: 8;
+    -fx-min-height: 32;
+    -fx-pref-height: 32;
+    -fx-max-height: 32;
 }
 
 .combo-box.project-combo:hover {
     -fx-background-color: -fx-row-hover;
-    -fx-background-insets: 0;
 }
 
-.project-combo .list-cell {
-    -fx-font-size: 13px;
+.combo-box.project-combo .list-cell {
     -fx-font-weight: bold;
-    -fx-padding: 0 0 0 4;
-    -fx-background-color: transparent;
+    -fx-padding: 0 4 0 10;
+}
+
+.combo-box.project-combo .arrow-button {
+    -fx-padding: 0 10 0 2;
 }
 
 .env-box {
-    -fx-background-color: transparent;
     -fx-background-radius: 6;
-    -fx-border-color: transparent;
-    -fx-padding: 0 2 0 8;
-    -fx-min-height: 28;
-    -fx-pref-height: 28;
-    -fx-max-height: 28;
+    -fx-padding: 0 4 0 10;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
 }
 
 .env-box:hover {
@@ -1615,49 +345,48 @@
 }
 
 .env-dot {
-    -fx-min-width: 8;
-    -fx-min-height: 8;
-    -fx-pref-width: 8;
-    -fx-pref-height: 8;
-    -fx-max-width: 8;
-    -fx-max-height: 8;
+    -fx-background-color: -fx-success;
     -fx-background-radius: 4;
+    -fx-min-width: 8;
+    -fx-pref-width: 8;
+    -fx-max-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
 }
 
+.combo-box.env-combo,
 .combo-box.env-combo:hover,
 .combo-box.env-combo:focused {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
 }
 
-.env-combo .list-cell {
-    -fx-padding: 0 0 0 2;
-    -fx-background-color: transparent;
+.combo-box.env-combo .list-cell {
     -fx-font-weight: bold;
+    -fx-padding: 0 0 0 2;
 }
 
 .button.run-button,
 .button.run-button:focused {
-    -fx-background-color: -app-emerald-tint;
+    -fx-background-color: -app-success-tint;
     -fx-background-insets: 0;
-    -fx-background-radius: 6;
-    -fx-padding: 0 12 0 10;
-    -fx-min-height: 28;
-    -fx-pref-height: 28;
-    -fx-max-height: 28;
+    -fx-background-radius: 8;
+    -fx-padding: 0 14 0 12;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
 }
 
 .button.run-button:hover {
-    -fx-background-color: -app-emerald-border;
+    -fx-background-color: -app-success-tint-hover;
+}
+
+.button.run-button:disabled {
+    -fx-opacity: 0.5;
 }
 
 .run-button .icon {
-    -fx-min-width: 12;
-    -fx-min-height: 12;
-    -fx-pref-width: 12;
-    -fx-pref-height: 12;
-    -fx-max-width: 12;
-    -fx-max-height: 12;
     -fx-background-color: -fx-success;
 }
 
@@ -1669,35 +398,37 @@
 
 .run-hint {
     -fx-font-size: 10px;
-    -fx-text-fill: -app-emerald-text;
-    -fx-opacity: 0.7;
+    -fx-text-fill: -app-muted;
 }
 
 .button.icon-button,
-.button.icon-button:focused,
-.button.ghost-button.icon-button,
-.button.ghost-button.icon-button:focused {
+.button.icon-button:focused {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-background-radius: 6;
-    -fx-border-color: transparent;
     -fx-padding: 0;
-    -fx-min-width: 28;
-    -fx-min-height: 28;
-    -fx-pref-width: 28;
-    -fx-pref-height: 28;
-    -fx-max-width: 28;
-    -fx-max-height: 28;
+    -fx-min-width: 30;
+    -fx-pref-width: 30;
+    -fx-max-width: 30;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
 }
 
-.button.icon-button:hover,
-.button.ghost-button.icon-button:hover {
+.button.icon-button:hover {
     -fx-background-color: -fx-row-hover;
-    -fx-border-color: transparent;
+}
+
+.button.icon-button:pressed {
+    -fx-background-color: -fx-control-pressed;
 }
 
 .button.icon-button .icon {
-    -fx-background-color: -app-text-muted;
+    -fx-background-color: -app-muted;
+}
+
+.button.icon-button:hover .icon {
+    -fx-background-color: -app-icon;
 }
 
 .button.icon-button:disabled .icon {
@@ -1706,90 +437,159 @@
 
 .button.icon-button-sm,
 .button.icon-button-sm:focused {
-    -fx-min-width: 24;
-    -fx-min-height: 24;
-    -fx-pref-width: 24;
-    -fx-pref-height: 24;
-    -fx-max-width: 24;
-    -fx-max-height: 24;
+    -fx-min-width: 26;
+    -fx-pref-width: 26;
+    -fx-max-width: 26;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+}
+
+.separator:vertical .line {
+    -fx-border-color: -fx-border-base;
+    -fx-border-width: 0 0 0 1;
+    -fx-border-insets: 0;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
 }
 
 .rail {
     -fx-background-color: -fx-background;
     -fx-border-color: transparent -fx-grid-line transparent transparent;
     -fx-border-width: 0 1 0 0;
-    -fx-padding: 8 0 8 0;
-    -fx-min-width: 40;
-    -fx-pref-width: 40;
-    -fx-max-width: 40;
+    -fx-padding: 10 0 10 0;
+    -fx-min-width: 52;
+    -fx-pref-width: 52;
+    -fx-max-width: 52;
 }
 
 .button.rail-button,
 .button.rail-button:focused {
-    -fx-min-width: 28;
-    -fx-min-height: 28;
-    -fx-pref-width: 28;
-    -fx-pref-height: 28;
-    -fx-max-width: 28;
-    -fx-max-height: 28;
-    -fx-background-radius: 6;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
     -fx-padding: 0;
+    -fx-min-width: 36;
+    -fx-pref-width: 36;
+    -fx-max-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+}
+
+.button.rail-button:hover {
+    -fx-background-color: -fx-row-hover;
 }
 
 .button.rail-button.rail-active,
 .button.rail-button.rail-active:hover {
-    -fx-background-color: -fx-border-base;
+    -fx-background-color: -fx-selection-bg;
 }
 
-.rail-button.rail-active .icon {
-    -fx-background-color: -fx-text-color;
+.button.rail-button .icon {
+    -fx-background-color: -app-muted;
+}
+
+.button.rail-button.rail-active .icon {
+    -fx-background-color: -app-icon;
 }
 
 .requests-panel {
     -fx-background-color: -app-layer;
-    -fx-border-color: transparent;
-    -fx-border-width: 0;
-    -fx-padding: 0;
-    -fx-min-width: 180;
+    -fx-min-width: 200;
 }
 
 .panel-header {
-    -fx-padding: 0 8 0 12;
-    -fx-min-height: 34;
-    -fx-pref-height: 34;
-    -fx-max-height: 34;
+    -fx-padding: 0 8 0 16;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-max-height: 44;
 }
 
 .panel-title {
     -fx-font-size: 12px;
     -fx-font-weight: bold;
+    -fx-text-fill: -app-muted;
 }
 
-.request-tree {
-    -fx-padding: 0 6 0 6;
-    -fx-fixed-cell-size: 24;
+.request-tree,
+.request-tree:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0 8 8 8;
+    -fx-fixed-cell-size: 30;
 }
 
 .request-tree .tree-cell {
-    -fx-padding: 0 6 0 2;
-    -fx-font-size: 12px;
+    -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-background-radius: 4;
+    -fx-background-radius: 6;
+    -fx-padding: 0 8 0 0;
+    -fx-text-fill: -fx-text-color;
+    -fx-graphic-text-gap: 8;
 }
 
+.request-tree .tree-cell:filled:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.request-tree .tree-cell:filled:selected,
 .request-tree .tree-cell:filled:selected:focused {
     -fx-background-color: -fx-selection-bg;
+    -fx-text-fill: -fx-selection-text;
+}
+
+.request-tree .tree-disclosure-node {
+    -fx-padding: 0 4 0 6;
+    -fx-alignment: CENTER;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.request-tree .tree-disclosure-node .arrow {
+    -fx-background-color: -app-muted;
+    -fx-background-insets: 0;
+    -fx-shape: "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z";
+    -fx-scale-shape: true;
+    -fx-padding: 0;
+    -fx-min-width: 5;
+    -fx-pref-width: 5;
+    -fx-max-width: 5;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
 }
 
 .method-badge {
-    -fx-font-size: 9px;
-    -fx-padding: 0 4 0 4;
-    -fx-min-width: 34;
-    -fx-pref-width: 34;
-    -fx-min-height: 14;
-    -fx-pref-height: 14;
-    -fx-background-radius: 3;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -method-other;
+    -fx-alignment: CENTER_LEFT;
+    -fx-min-width: 32;
+    -fx-pref-width: 32;
 }
+
+.method-text {
+    -fx-font-weight: bold;
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+}
+
+.method-get,
+.method-text.method-get { -fx-text-fill: -method-get; }
+
+.method-post,
+.method-text.method-post { -fx-text-fill: -method-post; }
+
+.method-put,
+.method-text.method-put { -fx-text-fill: -method-put; }
+
+.method-patch,
+.method-text.method-patch { -fx-text-fill: -method-patch; }
+
+.method-delete,
+.method-text.method-delete { -fx-text-fill: -method-delete; }
 
 .main-split {
     -fx-background-color: transparent;
@@ -1808,13 +608,363 @@
 }
 
 .status-bar {
-    -fx-padding: 0 12 0 12;
-    -fx-min-height: 24;
-    -fx-pref-height: 24;
-    -fx-max-height: 24;
+    -fx-border-color: -fx-grid-line transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 0 16 0 16;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
 }
 
 .status-bar .label {
     -fx-font-size: 11px;
-    -fx-text-fill: -app-text-muted;
+    -fx-text-fill: -app-muted;
+}
+
+/**workspace**/
+.page {
+    -fx-background-color: -fx-surface;
+}
+
+.request-tabs {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.request-tabs > .tab-header-area {
+    -fx-padding: 8 12 0 12;
+}
+
+.request-tabs > .tab-header-area > .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+.request-tabs > .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.request-tabs > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-width: 0;
+    -fx-padding: 6 10 6 12;
+    -fx-cursor: hand;
+}
+
+.request-tabs > .tab-header-area > .headers-region > .tab:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.request-tabs > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: -fx-selection-bg;
+}
+
+.request-tabs .tab .tab-label {
+    -fx-padding: 0 8 0 0;
+}
+
+.request-tabs .tab .tab-close-button {
+    -fx-background-color: -app-muted;
+    -fx-background-radius: 0;
+    -fx-shape: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z";
+    -fx-scale-shape: true;
+    -fx-padding: 0;
+    -fx-min-width: 8;
+    -fx-pref-width: 8;
+    -fx-max-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+.request-tabs .tab .tab-close-button:hover {
+    -fx-background-color: -fx-text-color;
+}
+
+.breadcrumb-bar {
+    -fx-padding: 10 16 4 16;
+}
+
+.crumb {
+    -fx-text-fill: -app-muted;
+    -fx-background-radius: 4;
+    -fx-padding: 2 6 2 6;
+    -fx-cursor: hand;
+}
+
+.crumb:hover {
+    -fx-background-color: -fx-row-hover;
+    -fx-text-fill: -fx-text-color;
+}
+
+.crumb-current {
+    -fx-text-fill: -fx-text-color;
+    -fx-font-weight: bold;
+    -fx-padding: 2 6 2 6;
+}
+
+.crumb-sep {
+    -fx-text-fill: -fx-disabled;
+}
+
+.url-bar {
+    -fx-padding: 4 16 12 16;
+}
+
+.combo-box.method-combo,
+.combo-box.method-combo:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-pref-width: 88;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+}
+
+.combo-box.method-combo:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.combo-box.method-combo .list-cell {
+    -fx-padding: 0 0 0 6;
+}
+
+.text-field.url-field,
+.text-field.url-field:focused {
+    -fx-background-color: -app-layer;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0 12 0 12;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 13px;
+}
+
+.text-field.url-field:focused {
+    -fx-background-color: -fx-surface;
+    -fx-border-color: -fx-primary;
+}
+
+.protocol-label {
+    -fx-text-fill: -app-muted;
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 11px;
+}
+
+.editor-split {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-box-border: transparent;
+}
+
+.editor-split > .split-pane-divider {
+    -fx-background-color: -fx-grid-line;
+    -fx-padding: 1 0 1 0;
+}
+
+.editor-split > .split-pane-divider:hover {
+    -fx-background-color: -fx-primary;
+}
+
+.tab-dirty {
+    -fx-background-color: -fx-primary;
+    -fx-background-radius: 4;
+    -fx-min-width: 8;
+    -fx-pref-width: 8;
+    -fx-max-width: 8;
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+/**controls**/
+.combo-box-popup .list-view {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 4;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 12, 0, 0, 4);
+}
+
+.combo-box-popup .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 0 12 0 12;
+    -fx-cell-size: 30;
+    -fx-font-weight: normal;
+}
+
+.combo-box-popup .list-cell:filled:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.combo-box-popup .list-cell:filled:selected,
+.combo-box-popup .list-cell:filled:selected:hover {
+    -fx-background-color: -fx-selection-bg;
+}
+
+.combo-box.env-combo {
+    -fx-pref-width: 112;
+}
+
+.combo-box {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0;
+}
+
+.combo-box:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.combo-box:focused {
+    -fx-background-color: -fx-surface;
+    -fx-border-color: -fx-primary;
+}
+
+.combo-box:disabled {
+    -fx-opacity: 0.5;
+}
+
+.combo-box .list-cell {
+    -fx-padding: 7 0 7 12;
+}
+
+.combo-box .arrow-button {
+    -fx-padding: 0 10 0 4;
+}
+
+.combo-box .arrow {
+    -fx-background-color: -app-muted;
+    -fx-background-insets: 0;
+}
+
+.combo-box.project-combo,
+.combo-box.project-combo:focused,
+.combo-box.env-combo,
+.combo-box.env-combo:hover,
+.combo-box.env-combo:focused,
+.combo-box.method-combo,
+.combo-box.method-combo:focused {
+    -fx-border-color: transparent;
+}
+
+/**editor**/
+.editor-scroll,
+.editor-scroll:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.editor-scroll > .viewport {
+    -fx-background-color: -fx-surface;
+}
+
+.editor-sections {
+    -fx-background-color: -fx-surface;
+    -fx-padding: 0 0 8 0;
+}
+
+.section-row {
+    -fx-padding: 0 16 0 16;
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-max-height: 40;
+    -fx-cursor: hand;
+    -fx-border-color: transparent transparent -fx-grid-line transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.section-row:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.section-chevron {
+    -fx-min-width: 14;
+    -fx-pref-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
+}
+
+.section-title {
+    -fx-font-weight: bold;
+}
+
+.section-count {
+    -fx-background-color: -fx-selection-bg;
+    -fx-background-radius: 10;
+    -fx-padding: 1 8 1 8;
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-muted;
+}
+
+.section-preview {
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-muted;
+}
+
+.section-body {
+    -fx-padding: 12 16 12 16;
+    -fx-border-color: transparent transparent -fx-grid-line transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.text-field.kv-field,
+.text-field.kv-field:focused {
+    -fx-background-color: -app-layer;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 0 10 0 10;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 12px;
+}
+
+.text-field.kv-field:focused {
+    -fx-background-color: -fx-surface;
+    -fx-border-color: -fx-primary;
+}
+
+.kv-disabled .text-field.kv-field {
+    -fx-opacity: 0.5;
+}
+
+.button.link-button,
+.button.link-button:focused,
+.button.link-button:hover,
+.button.link-button:pressed {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 4 6 4 6;
+    -fx-text-fill: -fx-primary;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+
+.button.link-button:hover {
+    -fx-underline: true;
 }

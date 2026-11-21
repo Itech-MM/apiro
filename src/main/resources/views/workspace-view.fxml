@@ -1,9 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="io.github.itech_mm.apiro.ui.WorkspaceController">
-    <Label text="Apiro workspace"/>
-</StackPane>
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="io.github.itech_mm.apiro.ui.WorkspaceController" styleClass="page">
+    <TabPane fx:id="requestTabs" styleClass="request-tabs" tabClosingPolicy="ALL_TABS" />
+    <HBox styleClass="breadcrumb-bar" alignment="CENTER_LEFT" spacing="2">
+        <Label fx:id="projectCrumb" text="petstore-api" styleClass="crumb" />
+        <Label text="›" styleClass="crumb-sep" />
+        <Label fx:id="folderCrumb" text="users" styleClass="crumb" />
+        <Label text="›" styleClass="crumb-sep" />
+        <Label fx:id="requestCrumb" text="create-user.req" styleClass="crumb-current" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="lastRunLabel" text="Last run 09:12:44" styleClass="muted" />
+    </HBox>
+    <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="6">
+        <Button fx:id="sendButton" styleClass="icon-button" onAction="#onSend">
+            <graphic>
+                <Region styleClass="icon, icon-play" />
+            </graphic>
+        </Button>
+        <ComboBox fx:id="methodCombo" styleClass="method-combo" />
+        <TextField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
+        <Label text="HTTP/1.1" styleClass="protocol-label" />
+    </HBox>
+    <SplitPane fx:id="editorSplit" styleClass="editor-split" orientation="VERTICAL" dividerPositions="0.55" VBox.vgrow="ALWAYS">
+        <StackPane fx:id="editorPane" styleClass="page">
+            <Label text="Query / Headers / Auth / Body (step 6)" styleClass="muted" />
+        </StackPane>
+        <StackPane fx:id="responsePane" styleClass="page">
+            <Label text="Response (step 7)" styleClass="muted" />
+        </StackPane>
+    </SplitPane>
+</VBox>
