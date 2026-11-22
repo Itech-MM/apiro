@@ -1392,3 +1392,72 @@
 .sending-spinner {
     -fx-progress-color: -fx-info;
 }
+
+.app-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+    -fx-padding: 0 8 0 0;
+}
+
+.app-menu-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.app-menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 5 10 5 10;
+}
+
+.app-menu-bar > .container > .menu-button:hover,
+.app-menu-bar > .container > .menu-button:showing {
+    -fx-background-color: -fx-row-hover;
+}
+
+.app-menu-bar > .container > .menu-button > .label {
+    -fx-text-fill: -fx-text-color;
+    -fx-font-size: 13px;
+}
+
+.breadcrumb {
+    -fx-text-fill: -app-muted;
+    -fx-font-size: 13px;
+    -fx-text-overrun: ellipsis;
+}
+
+.context-menu {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-grid-line;
+    -fx-border-radius: 8;
+    -fx-padding: 6 0 6 0;
+}
+
+.menu-item {
+    -fx-padding: 6 16 6 14;
+}
+
+.menu-item .label {
+    -fx-text-fill: -fx-text-color;
+    -fx-font-size: 13px;
+}
+
+.menu-item:focused {
+    -fx-background-color: -app-tree-selected;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: -fx-text-color;
+}
+
+.menu-item .accelerator-text,
+.menu-item:focused .accelerator-text {
+    -fx-text-fill: -app-muted;
+}
+
+.separator-menu-item > .line {
+    -fx-border-color: -fx-grid-line transparent transparent transparent;
+}

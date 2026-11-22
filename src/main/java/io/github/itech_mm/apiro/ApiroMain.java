@@ -33,6 +33,7 @@ public class ApiroMain extends ITechJavaFxApplication {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        MonoFont.load();
         primaryStage.setTitle(appName);
         primaryStage.setMinWidth(900);
         primaryStage.setMinHeight(600);

@@ -25,8 +25,8 @@ import io.github.itech_mm.apiro.http.SendOutcome;
 import io.github.itech_mm.apiro.model.AuthConfig;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.HttpMethod;
-import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.model.Project;
+import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
@@ -39,6 +39,7 @@ import io.github.itech_mm.apiro.ui.component.ResponsePanelView;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -121,8 +122,6 @@ public class WorkspaceController implements Routable {
     private boolean loading;
     private boolean checkQueued;
     private String saveOnly = "";
-    private String runningId = "";
-    private long runStartedNanos;
 
     @OnInit
     private void init() {
@@ -138,9 +137,12 @@ public class WorkspaceController implements Routable {
         session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> open(newId));
         session.structureProperty().addListener((obs, oldValue, newValue) -> syncTabs());
         session.savesProperty().addListener((obs, oldValue, newValue) -> markSaved());
-        runService.runningProperty().addListener((obs, was, running) -> {
-            updateSend();
-            refreshRunning();
+        runService.runningIds().addListener((SetChangeListener<String>) change -> {
+            String changed = change.wasAdded() ? change.getElementAdded() : change.getElementRemoved();
+            if (active != null && active.id.equals(changed)) {
+                updateSend();
+                refreshRunning();
+            }
         });
         runCommand.register(this::send);
         session.registerFlush(this::commit);
@@ -241,6 +243,7 @@ public class WorkspaceController implements Routable {
                 for (Tab tab : change.getRemoved()) {
                     OpenRequest state = stateOf(tab);
                     if (state != null) {
+                        runService.cancel(state.id);
                         open.remove(state.id);
                     }
                 }
@@ -471,10 +474,8 @@ public class WorkspaceController implements Routable {
     }
 
     private void updateSend() {
-        sendButton.setDisable(active == null || runService.runningProperty().get());
+        sendButton.setDisable(active == null || runService.isRunning(active.id));
     }
-
-    // ---------------------------------------------------------------- send
 
     @FXML
     private void onSend() {
@@ -482,7 +483,7 @@ public class WorkspaceController implements Routable {
     }
 
     private void send() {
-        if (active == null || runService.runningProperty().get()) {
+        if (active == null || runService.isRunning(active.id)) {
             return;
         }
         OpenRequest state = active;
@@ -505,31 +506,25 @@ public class WorkspaceController implements Routable {
     }
 
     private void dispatch(OpenRequest state, PreparedRequest prepared) {
-        if (runService.runningProperty().get()) {
+        if (runService.isRunning(state.id)) {
             return;
         }
         List<String> unresolved = prepared.unresolved();
         state.replay = null;
-        runningId = state.id;
-        runStartedNanos = System.nanoTime();
-        boolean started = runService.run(prepared, outcome -> {
-            runningId = "";
+        state.startedNanos = System.nanoTime();
+        runService.run(state.id, prepared, outcome -> {
             state.replay = () -> show(outcome, unresolved);
             if (state == active) {
                 state.replay.run();
             }
         });
-        if (!started) {
-            runningId = "";
-        }
     }
 
     private void refreshRunning() {
-        boolean here = runService.runningProperty().get() && !runningId.isEmpty()
-                && active != null && runningId.equals(active.id);
+        boolean here = active != null && runService.isRunning(active.id);
         sendProgress.setVisible(here);
         if (here) {
-            response.showSending(runStartedNanos);
+            response.showSending(active.startedNanos);
         }
     }
 
@@ -578,6 +573,7 @@ public class WorkspaceController implements Routable {
         RequestItem draft;
         boolean dirty;
         Runnable replay;
+        long startedNanos;
 
         OpenRequest(RequestItem item) {
             this.id = item.id();

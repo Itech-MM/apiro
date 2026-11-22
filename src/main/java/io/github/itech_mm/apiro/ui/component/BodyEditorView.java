@@ -12,6 +12,7 @@ import io.github.itech_framework.java_fx.annotations.components.Root;
 import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.RequestBody;
+import io.github.itech_mm.apiro.ui.MonoFont;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -59,6 +60,7 @@ public class BodyEditorView {
         formTable = formTables.get();
         contentPane.getChildren().add(formTable.getRoot());
         editor.setTheme("light-plus");
+        editor.setFontSize(MonoFont.EDITOR_SIZE);
 
         for (BodyType type : BodyType.values()) {
             ToggleButton chip = new ToggleButton(label(type));

@@ -23,12 +23,13 @@ import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
 import javafx.application.Platform;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.SetChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -56,6 +57,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import javafx.util.StringConverter;
 
 @FxController
@@ -150,6 +153,33 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @FXML
     private TreeView<ProjectItem> requestTree;
+    
+    @FXML
+    private Label breadcrumbLabel;
+
+    @FXML
+    private MenuItem newProjectItem;
+
+    @FXML
+    private MenuItem openProjectItem;
+
+    @FXML
+    private MenuItem newRequestItem;
+
+    @FXML
+    private MenuItem newFolderItem;
+
+    @FXML
+    private MenuItem saveItem;
+
+    @FXML
+    private MenuItem exitItem;
+
+    @FXML
+    private MenuItem runItem;
+
+    @FXML
+    private MenuItem stopItem;
 
     @Use
     private ProjectSession session;
@@ -187,8 +217,11 @@ public class MainLayoutController extends LayoutController implements Routable {
         collapseAllButton.setTooltip(new Tooltip("Collapse all"));
         session.structureProperty().addListener((obs, oldValue, newValue) -> rebuild());
         session.projectProperty().addListener((obs, oldValue, newValue) -> refreshValues(newValue));
-        runService.runningProperty().addListener((obs, was, running) -> onRunningChanged(running));
-        installShortcuts();
+        runService.runningIds().addListener((SetChangeListener<String>) change -> refreshRunState());
+        session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> refreshRunState());
+        setupMenu();
+        refreshRunState();
+        
         Platform.runLater(() -> {
             setActiveRail(requestsRailButton);
             applyInitialDivider();
@@ -200,21 +233,37 @@ public class MainLayoutController extends LayoutController implements Routable {
         requestTree.setRoot(null);
     }
 
-    private void installShortcuts() {
-        Runnable install = () -> {
-            Scene scene = rootPane.getScene();
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN), this::onSave);
-            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHORTCUT_DOWN), this::onRun);
-        };
-        if (rootPane.getScene() != null) {
-            install.run();
-        } else {
-            rootPane.sceneProperty().addListener((obs, oldValue, scene) -> {
-                if (scene != null) {
-                    install.run();
-                }
-            });
+    private void setupMenu() {
+        newProjectItem.setAccelerator(KeyCombination.keyCombination("Shortcut+Shift+N"));
+        openProjectItem.setAccelerator(KeyCombination.keyCombination("Shortcut+O"));
+        newRequestItem.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));
+        saveItem.setAccelerator(KeyCombination.keyCombination("Shortcut+S"));
+        runItem.setAccelerator(KeyCombination.keyCombination("Shortcut+Enter"));
+        exitItem.setAccelerator(KeyCombination.keyCombination("Shortcut+Q"));
+        BooleanBinding noProject = session.projectProperty().isNull();
+        saveItem.disableProperty().bind(noProject);
+        newRequestItem.disableProperty().bind(noProject);
+        newFolderItem.disableProperty().bind(noProject);
+        session.projectProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
+        session.selectedRequestIdProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
+        session.structureProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
+        refreshBreadcrumb();
+    }
+
+    private void refreshBreadcrumb() {
+        Project project = session.project();
+        if (project == null) {
+            breadcrumbLabel.setText("No project open");
+            return;
         }
+        String request = session.selectedRequest().map(RequestItem::name).orElse("");
+        breadcrumbLabel.setText(request.isBlank() ? project.name() : project.name() + "  /  " + request);
+    }
+
+    @FXML
+    private void onExit() {
+        Window window = rootPane.getScene().getWindow();
+        window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
     }
 
     private void setupEnvironments() {
@@ -540,10 +589,15 @@ public class MainLayoutController extends LayoutController implements Routable {
         item.getChildren().forEach(this::collapse);
     }
 
-    private void onRunningChanged(boolean running) {
+    private void refreshRunState() {
+        String id = session.selectedRequestIdProperty().get();
+        boolean running = runService.isRunning(id);
+        runItem.setDisable(running);
+        stopItem.setDisable(!running);
         runButton.setDisable(running);
         stopButton.setDisable(!running);
-        statusLabel.setText(running ? "Running..." : "Ready");
+        int total = runService.runningIds().size();
+        statusLabel.setText(total == 0 ? "Ready" : total == 1 ? "Running..." : "Running " + total + " requests...");
     }
 
     private static FileChooser chooser(String title) {
@@ -557,6 +611,7 @@ public class MainLayoutController extends LayoutController implements Routable {
         return file == null ? null : file.toPath();
     }
 
+    @FXML
     private void onSave() {
         if (!session.isOpen()) {
             statusLabel.setText("No project to save");
@@ -608,7 +663,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @FXML
     private void onStop() {
-        runService.cancel();
+        runService.cancel(session.selectedRequestIdProperty().get());
     }
 
     @FXML

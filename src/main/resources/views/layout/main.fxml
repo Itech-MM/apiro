@@ -5,42 +5,76 @@
 
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="io.github.itech_mm.apiro.ui.layout.MainLayoutController" styleClass="app-shell">
-    <top>
-        <HBox fx:id="topBar" styleClass="top-bar" spacing="10" alignment="CENTER_LEFT">
-            <Label fx:id="logoLabel" text="A" styleClass="app-logo" />
-            <Button text="New" styleClass="icon-button" onAction="#onNewProject" />
-			<Button text="Open" styleClass="icon-button" onAction="#onOpenProject" />
-            <Region HBox.hgrow="ALWAYS" />
-            <HBox styleClass="env-box" spacing="6" alignment="CENTER_LEFT">
-                <Region styleClass="env-dot" />
-                <ComboBox fx:id="envCombo" styleClass="env-combo" />
-            </HBox>
-            <Button fx:id="runButton" styleClass="run-button" contentDisplay="GRAPHIC_ONLY" onAction="#onRun">
-                <graphic>
-                    <HBox spacing="6" alignment="CENTER_LEFT">
-                        <Region styleClass="icon, icon-play" />
-                        <Label text="Run" styleClass="run-label" />
-                        <Label text="Ctrl+Enter" styleClass="run-hint" />
+  <top>
+        <BorderPane fx:id="topBar" styleClass="top-bar">
+            <left>
+                <HBox spacing="8" alignment="CENTER_LEFT" BorderPane.alignment="CENTER_LEFT">
+                    <Label fx:id="logoLabel" text="A" styleClass="app-logo" />
+                    <Label text="Apiro" styleClass="app-title" />
+                    <MenuBar styleClass="app-menu-bar">
+                        <Menu text="File">
+                            <MenuItem fx:id="newProjectItem" text="New Project..." onAction="#onNewProject" />
+                            <MenuItem fx:id="openProjectItem" text="Open Project..." onAction="#onOpenProject" />
+                            <SeparatorMenuItem />
+                            <MenuItem fx:id="newRequestItem" text="New Request" onAction="#onAddRequest" />
+                            <MenuItem fx:id="newFolderItem" text="New Folder" onAction="#onAddFolder" />
+                            <SeparatorMenuItem />
+                            <MenuItem fx:id="saveItem" text="Save" onAction="#onSave" />
+                            <SeparatorMenuItem />
+                            <MenuItem fx:id="exitItem" text="Exit" onAction="#onExit" />
+                        </Menu>
+                        <Menu text="View">
+                            <MenuItem text="Requests" onAction="#onRailRequests" />
+                            <MenuItem text="History" onAction="#onRailHistory" />
+                            <MenuItem text="Environments" onAction="#onRailEnvironments" />
+                            <SeparatorMenuItem />
+                            <MenuItem text="Collapse All" onAction="#onCollapseAll" />
+                            <MenuItem text="Find..." onAction="#onSearch" />
+                        </Menu>
+                        <Menu text="Run">
+                            <MenuItem fx:id="runItem" text="Run Request" onAction="#onRun" />
+                            <MenuItem fx:id="stopItem" text="Stop" onAction="#onStop" />
+                        </Menu>
+                    </MenuBar>
+                </HBox>
+            </left>
+            <center>
+                <Label fx:id="breadcrumbLabel" styleClass="breadcrumb" BorderPane.alignment="CENTER" />
+            </center>
+            <right>
+                <HBox spacing="10" alignment="CENTER_RIGHT" BorderPane.alignment="CENTER_RIGHT">
+                    <HBox styleClass="env-box" spacing="6" alignment="CENTER_LEFT">
+                        <Region styleClass="env-dot" />
+                        <ComboBox fx:id="envCombo" styleClass="env-combo" />
                     </HBox>
-                </graphic>
-            </Button>
-            <Button fx:id="stopButton" styleClass="icon-button" onAction="#onStop">
-                <graphic>
-                    <Region styleClass="icon, icon-stop, icon-sm" />
-                </graphic>
-            </Button>
-            <Separator orientation="VERTICAL" />
-            <Button fx:id="searchButton" styleClass="icon-button" onAction="#onSearch">
-                <graphic>
-                    <Region styleClass="icon, icon-search" />
-                </graphic>
-            </Button>
-            <Button fx:id="settingsButton" styleClass="icon-button" onAction="#onSettings">
-                <graphic>
-                    <Region styleClass="icon, icon-settings" />
-                </graphic>
-            </Button>
-        </HBox>
+                    <Button fx:id="runButton" styleClass="run-button" contentDisplay="GRAPHIC_ONLY" onAction="#onRun">
+                        <graphic>
+                            <HBox spacing="6" alignment="CENTER_LEFT">
+                                <Region styleClass="icon, icon-play" />
+                                <Label text="Run" styleClass="run-label" />
+                                <Label text="Ctrl+Enter" styleClass="run-hint" />
+                            </HBox>
+                        </graphic>
+                    </Button>
+                    <Button fx:id="stopButton" styleClass="icon-button" onAction="#onStop">
+                        <graphic>
+                            <Region styleClass="icon, icon-stop, icon-sm" />
+                        </graphic>
+                    </Button>
+                    <Separator orientation="VERTICAL" />
+                    <Button fx:id="searchButton" styleClass="icon-button" onAction="#onSearch">
+                        <graphic>
+                            <Region styleClass="icon, icon-search" />
+                        </graphic>
+                    </Button>
+                    <Button fx:id="settingsButton" styleClass="icon-button" onAction="#onSettings">
+                        <graphic>
+                            <Region styleClass="icon, icon-settings" />
+                        </graphic>
+                    </Button>
+                </HBox>
+            </right>
+        </BorderPane>
     </top>
     <left>
         <VBox fx:id="rail" styleClass="rail" spacing="4" alignment="TOP_CENTER">

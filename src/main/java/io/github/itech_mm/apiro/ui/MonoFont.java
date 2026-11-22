@@ -1,5 +1,7 @@
 package io.github.itech_mm.apiro.ui;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -12,6 +14,23 @@ public final class MonoFont {
             "Consolas", "SF Mono", "Menlo", "DejaVu Sans Mono", "Liberation Mono");
 
     private MonoFont() {
+    }
+    
+    public static final double EDITOR_SIZE = 13;
+
+    private static final List<String> FILES = List.of("JetBrainsMono-Regular.ttf", "JetBrainsMono-Bold.ttf",
+            "JetBrainsMono-Italic.ttf", "JetBrainsMono-BoldItalic.ttf");
+
+    public static void load() {
+        for (String file : FILES) {
+            try (InputStream stream = MonoFont.class.getResourceAsStream("/static/fonts/" + file)) {
+                if (stream != null) {
+                    Font.loadFont(stream, EDITOR_SIZE);
+                }
+            } catch (IOException error) {
+                continue;
+            }
+        }
     }
 
     public static String family() {

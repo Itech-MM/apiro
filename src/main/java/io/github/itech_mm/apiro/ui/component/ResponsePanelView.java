@@ -17,10 +17,12 @@ import io.github.itech_mm.apiro.http.ExchangeResult;
 import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.ResponseData;
+import io.github.itech_mm.apiro.ui.MonoFont;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Toggle;
@@ -74,6 +76,13 @@ public class ResponsePanelView {
     
     @FXML
     private ProgressIndicator sendingSpinner;
+    
+    private static final int PREVIEW_LIMIT = 1_000_000;
+
+    @FXML
+    private Hyperlink fullBodyButton;
+
+    private boolean fullBody;
 
     private Timeline ticker;
 
@@ -88,6 +97,7 @@ public class ResponsePanelView {
     private void init() {
         viewer.setEditable(false);
         viewer.setTheme("light-plus");
+        viewer.setFontSize(MonoFont.EDITOR_SIZE);
 
         for (ResponseTab tab : ResponseTab.values()) {
             ToggleButton button = new ToggleButton();
@@ -107,6 +117,7 @@ public class ResponsePanelView {
     }
 
     public void showResult(ExchangeResult result, List<String> undefined) {
+    	fullBody = false;
         setSending(false);
         exchange = result;
         data = result.response();
@@ -226,17 +237,34 @@ public class ResponsePanelView {
     }
 
     private void renderContent() {
+        boolean truncated = false;
         if (data == null) {
             display("plaintext", selectedTab() == ResponseTab.BODY ? notice : "");
-            return;
+        } else {
+            switch (selectedTab()) {
+                case BODY -> truncated = displayBody(data.body());
+                case HEADERS -> display("plaintext", lines(data.headers(), ": "));
+                case SENT -> display("plaintext", sentText());
+                case COOKIES -> display("plaintext", lines(data.cookies(), "="));
+                case TIMELINE -> display("plaintext", timelineText());
+            }
         }
-        switch (selectedTab()) {
-            case BODY -> display(looksLikeJson(data.body()) ? "json" : "plaintext", data.body());
-            case HEADERS -> display("plaintext", lines(data.headers(), ": "));
-            case SENT -> display("plaintext", sentText());
-            case COOKIES -> display("plaintext", lines(data.cookies(), "="));
-            case TIMELINE -> display("plaintext", timelineText());
+        show(fullBodyButton, truncated);
+    }
+
+    private boolean displayBody(String body) {
+        if (fullBody || body.length() <= PREVIEW_LIMIT) {
+            display(looksLikeJson(body) ? "json" : "plaintext", body);
+            return false;
         }
+        int end = PREVIEW_LIMIT;
+        if (Character.isHighSurrogate(body.charAt(end - 1))) {
+            end--;
+        }
+        display("plaintext", body.substring(0, end) + String.format(Locale.ROOT,
+                "%n%n... Preview limited to the first %,d of %,d characters. Choose \"Show full body\" to load all of it.",
+                end, body.length()));
+        return true;
     }
 
     private String sentText() {
@@ -343,5 +371,11 @@ public class ResponsePanelView {
     private void show(Node node, boolean visible) {
         node.setVisible(visible);
         node.setManaged(visible);
+    }
+    
+    @FXML
+    private void onShowFullBody() {
+        fullBody = true;
+        renderContent();
     }
 }
