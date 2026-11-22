@@ -31,6 +31,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -56,6 +57,9 @@ public class WorkspaceController implements Routable {
 
 	@FXML
 	private StackPane editorPane;
+	
+	@FXML
+	private SplitPane editorSplit;
 
 	@FxUse(scope = FxScope.PROTOTYPE)
 	private FxProvider<KeyValueTableView> tables;
@@ -83,6 +87,37 @@ public class WorkspaceController implements Routable {
         setupResponse();
 		urlField.setText("{{baseUrl}}/api/v1/users");
 		Platform.runLater(this::hideTabContent);
+		bindDividerHover();
+	}
+	
+	private void bindDividerHover() {
+	    Runnable bind = () -> Platform.runLater(() -> {
+	        for (Node divider : editorSplit.lookupAll(".split-pane-divider")) {
+	            Runnable sync = () -> {
+	                boolean hot = divider.isHover() || divider.isPressed();
+	                if (hot) {
+	                    if (!divider.getStyleClass().contains("divider-hot")) {
+	                        divider.getStyleClass().add("divider-hot");
+	                    }
+	                } else {
+	                    divider.getStyleClass().remove("divider-hot");
+	                }
+	            };
+	            divider.hoverProperty().addListener((o, was, is) -> sync.run());
+	            divider.pressedProperty().addListener((o, was, is) -> sync.run());
+	            System.out.println("divider bounds = " + divider.getBoundsInParent());
+	            divider.setOnMouseEntered(e -> System.out.println("divider enter"));
+	        }
+	    });
+	    if (editorSplit.getSkin() != null) {
+	        bind.run();
+	    } else {
+	        editorSplit.skinProperty().addListener((o, old, skin) -> {
+	            if (skin != null) {
+	                bind.run();
+	            }
+	        });
+	    }
 	}
 	
     private void setupResponse() {

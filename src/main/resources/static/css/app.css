@@ -16,7 +16,7 @@
     -fx-selection-text: #18181B;
     -fx-text-color: #18181B;
     -fx-border-base: #E4E4EA;
-    -fx-grid-line: #EFEFF3;
+    -fx-grid-line: #EBECF0;
     -fx-disabled: #B4B4BE;
 
     -fx-primary: #2563EB;
@@ -33,6 +33,8 @@
     -fx-focus-color: -fx-primary;
     -fx-faint-focus-color: transparent;
 
+    -app-chrome: #F7F8FA;
+    -app-rail-active: #DFE1E5;
     -app-layer: #FAFAFB;
     -app-muted: #787885;
     -app-icon: #3F3F46;
@@ -87,6 +89,8 @@
     -fx-warning: #FBBF24;
     -fx-info: #6EA2FF;
 
+    -app-chrome: #0F1115;
+    -app-rail-active: #232A3A;
     -app-layer: #12141A;
     -app-muted: #8B90A0;
     -app-icon: #C7C9D3;
@@ -305,28 +309,28 @@
 }
 
 .top-bar {
-    -fx-background-color: -fx-background;
+    -fx-background-color: -app-chrome;
     -fx-border-color: transparent transparent -fx-grid-line transparent;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 0 16 0 16;
-    -fx-min-height: 48;
-    -fx-pref-height: 48;
-    -fx-max-height: 48;
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-max-height: 40;
 }
 
 .app-logo {
     -fx-background-color: -fx-primary;
-    -fx-background-radius: 6;
+    -fx-background-radius: 5;
     -fx-text-fill: -fx-on-primary;
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-alignment: CENTER;
-    -fx-min-width: 24;
-    -fx-pref-width: 24;
-    -fx-max-width: 24;
-    -fx-min-height: 24;
-    -fx-pref-height: 24;
-    -fx-max-height: 24;
+    -fx-min-width: 20;
+    -fx-pref-width: 20;
+    -fx-max-width: 20;
+    -fx-min-height: 20;
+    -fx-pref-height: 20;
+    -fx-max-height: 20;
 }
 
 .combo-box.project-combo,
@@ -475,13 +479,13 @@
 }
 
 .rail {
-    -fx-background-color: -fx-background;
+    -fx-background-color: -app-chrome;
     -fx-border-color: transparent -fx-grid-line transparent transparent;
     -fx-border-width: 0 1 0 0;
     -fx-padding: 10 0 10 0;
-    -fx-min-width: 52;
-    -fx-pref-width: 52;
-    -fx-max-width: 52;
+    -fx-min-width: 40;
+    -fx-pref-width: 40;
+    -fx-max-width: 40;
 }
 
 .button.rail-button,
@@ -490,12 +494,12 @@
     -fx-background-insets: 0;
     -fx-background-radius: 8;
     -fx-padding: 0;
-    -fx-min-width: 36;
-    -fx-pref-width: 36;
-    -fx-max-width: 36;
-    -fx-min-height: 36;
-    -fx-pref-height: 36;
-    -fx-max-height: 36;
+    -fx-min-width: 28;
+    -fx-pref-width: 28;
+    -fx-max-width: 28;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
 }
 
 .button.rail-button:hover {
@@ -504,7 +508,7 @@
 
 .button.rail-button.rail-active,
 .button.rail-button.rail-active:hover {
-    -fx-background-color: -fx-selection-bg;
+    -fx-background-color: -app-rail-active;
 }
 
 .button.rail-button .icon {
@@ -641,9 +645,10 @@
     -fx-border-color: -fx-grid-line transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 0 16 0 16;
-    -fx-min-height: 28;
-    -fx-pref-height: 28;
-    -fx-max-height: 28;
+    -fx-min-height: 24;
+    -fx-pref-height: 24;
+    -fx-max-height: 24;
+    -fx-background-color: -app-chrome;
 }
 
 .status-bar .label {
@@ -826,9 +831,8 @@
 }
 
 .editor-split > .split-pane-divider {
-    -fx-background-color: -fx-grid-line;
+    -fx-background-color: -fx-border-base;
     -fx-background-insets: 3.5 0 3.5 0;
-    -fx-padding: 4 0 4 0;
 }
 
 .editor-split > .split-pane-divider:hover {
@@ -1056,13 +1060,13 @@
 
 .button.send-button,
 .button.send-button:focused {
-    -fx-background-radius: 12;
-    -fx-min-width: 24;
-    -fx-pref-width: 24;
-    -fx-max-width: 24;
-    -fx-min-height: 24;
-    -fx-pref-height: 24;
-    -fx-max-height: 24;
+    -fx-background-radius: 10;
+    -fx-min-width: 20;
+    -fx-pref-width: 20;
+    -fx-max-width: 20;
+    -fx-min-height: 20;
+    -fx-pref-height: 20;
+    -fx-max-height: 20;
 }
 
 .combo-box.method-combo,
@@ -1253,9 +1257,9 @@
 }
 
 .url-bar {
-    -fx-min-height: 44;
-    -fx-pref-height: 44;
-    -fx-max-height: 44;
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-max-height: 40;
 }
 
 .text-field.url-field,
@@ -1271,9 +1275,9 @@
 .section-row {
     -fx-background-color: -app-layer;
     -fx-padding: 0 16 0 14;
-    -fx-min-height: 32;
-    -fx-pref-height: 32;
-    -fx-max-height: 32;
+    -fx-min-height: 28;
+    -fx-pref-height: 28;
+    -fx-max-height: 28;
 }
 
 .section-chevron {
@@ -1296,19 +1300,14 @@
 
 .response-header {
     -fx-background-color: -app-layer;
-    -fx-min-height: 36;
-    -fx-pref-height: 36;
-    -fx-max-height: 36;
+    -fx-min-height: 32;
+    -fx-pref-height: 32;
+    -fx-max-height: 32;
 }
 
 .toggle-button.resp-tab,
 .toggle-button.resp-tab:focused {
     -fx-padding: 9 10 7 10;
-}
-
-.editor-split > .split-pane-divider {
-    -fx-background-color: -fx-border-base;
-    -fx-background-insets: 3 0 3 0;
 }
 
 .scroll-bar:vertical,
@@ -1353,4 +1352,17 @@
 .scroll-bar > .increment-button > .increment-arrow,
 .scroll-bar > .decrement-button > .decrement-arrow {
     -fx-padding: 0;
+}
+
+.editor-split > .split-pane-divider {
+    -fx-background-color: -fx-border-base;
+    -fx-background-insets: 3 0 3 0;
+}
+
+.editor-split > .split-pane-divider:hover {
+    -fx-background-color: -fx-primary;
+}
+
+.editor-split > .split-pane-divider.divider-hot {
+    -fx-background-color: -fx-primary;
 }
