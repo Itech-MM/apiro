@@ -79,7 +79,8 @@ public final class VariableTable extends VBox {
             enabled.setSelected(variable.enabled());
             key.setText(variable.key());
             key.setPromptText("name");
-            key.setPrefWidth(180);
+            key.setPrefWidth(140);
+            key.setMinWidth(100);
             key.getStyleClass().add("kv-field");
             plain.setText(variable.value());
             plain.setPromptText("value");
@@ -94,8 +95,12 @@ public final class VariableTable extends VBox {
             hidden.managedProperty().bind(hidden.visibleProperty());
             StackPane value = new StackPane(plain, hidden);
             HBox.setHgrow(value, Priority.ALWAYS);
+            value.setMinWidth(160);
+            enabled.setMinWidth(Region.USE_PREF_SIZE);
+            secret.setMinWidth(Region.USE_PREF_SIZE);
             Button removeButton = new Button();
             removeButton.getStyleClass().addAll("icon-button", "icon-button-sm");
+            removeButton.setMinWidth(Region.USE_PREF_SIZE);
             Region icon = new Region();
             icon.getStyleClass().addAll("icon", "icon-sm", "icon-close");
             removeButton.setGraphic(icon);

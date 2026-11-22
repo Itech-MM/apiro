@@ -62,3 +62,7 @@
     -fx-border-radius: 6;
     -fx-background-radius: 6;
 }
+
+.settings-error {
+    -fx-text-fill: -fx-danger;
+}
