@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" alignment="CENTER_LEFT" spacing="8" styleClass="kv-row">
+    <CheckBox fx:id="enabledCheck" />
+    <TextField fx:id="keyField" promptText="key" prefWidth="200" styleClass="kv-field" />
+    <TextField fx:id="valueField" promptText="value" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+    <Button styleClass="icon-button, icon-button-sm" onAction="#onRemoveClicked">
+        <graphic>
+            <Region styleClass="icon, icon-sm, icon-close" />
+        </graphic>
+    </Button>
+</HBox>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" spacing="10" maxWidth="520">
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Label text="Type" styleClass="muted" prefWidth="90" />
+        <ComboBox fx:id="typeCombo" prefWidth="200" />
+    </HBox>
+    <VBox fx:id="basicBox" spacing="8">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Username" styleClass="muted" prefWidth="90" />
+            <TextField fx:id="usernameField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Password" styleClass="muted" prefWidth="90" />
+            <PasswordField fx:id="passwordField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+        </HBox>
+    </VBox>
+    <VBox fx:id="bearerBox" spacing="8">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Token" styleClass="muted" prefWidth="90" />
+            <PasswordField fx:id="tokenField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+        </HBox>
+    </VBox>
+    <VBox fx:id="apiKeyBox" spacing="8">
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Key name" styleClass="muted" prefWidth="90" />
+            <TextField fx:id="keyNameField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="8">
+            <Label text="Key value" styleClass="muted" prefWidth="90" />
+            <PasswordField fx:id="keyValueField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+        </HBox>
+    </VBox>
+</VBox>

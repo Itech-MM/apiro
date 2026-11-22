@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import io.github.itech_framework.code_editor.CodeEditor?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" minHeight="0" maxHeight="Infinity">
+    <HBox alignment="CENTER_LEFT" spacing="4" styleClass="response-header">
+        <Label text="Response" styleClass="response-title" />
+        <HBox fx:id="tabBox" alignment="CENTER_LEFT" spacing="2" />
+        <Region HBox.hgrow="ALWAYS" />
+        <HBox fx:id="statusBox" alignment="CENTER_LEFT" spacing="8">
+            <Region fx:id="statusDot" styleClass="status-dot" />
+            <Label fx:id="statusLabel" styleClass="status-text" />
+            <Label fx:id="metaLabel" styleClass="muted" />
+            <HBox alignment="CENTER_LEFT" styleClass="timing-bar" minWidth="120" prefWidth="120" maxWidth="120">
+                <Region fx:id="timingHeaders" styleClass="timing-headers" />
+                <Region fx:id="timingBody" styleClass="timing-body" />
+            </HBox>
+            <Label fx:id="headersTimeLabel" styleClass="muted" />
+        </HBox>
+    </HBox>
+    <CodeEditor fx:id="viewer" minHeight="0" VBox.vgrow="ALWAYS" />
+</VBox>

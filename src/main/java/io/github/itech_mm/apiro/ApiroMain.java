@@ -1,5 +1,7 @@
 package io.github.itech_mm.apiro;
 
+import java.util.Objects;
+
 import io.github.itech_framework.core.annotations.ComponentScan;
 import io.github.itech_framework.core.annotations.api_client.EnableApiClient;
 import io.github.itech_framework.core.annotations.jfx.EnableJavaFx;
@@ -7,10 +9,9 @@ import io.github.itech_framework.core.annotations.properties.Property;
 import io.github.itech_framework.java_fx.ITechJavaFxApplication;
 import io.github.itech_framework.java_fx.router.config.RouterConfig;
 import io.github.itech_framework.java_fx.ui.layout.LayoutConfig;
+import io.github.itech_mm.apiro.ui.MonoFont;
 import io.github.itech_mm.apiro.ui.WorkspaceController;
 import javafx.stage.Stage;
-
-import java.util.Objects;
 
 @ComponentScan(basePackage = "io.github.itech_mm.apiro")
 @EnableJavaFx
@@ -36,6 +37,7 @@ public class ApiroMain extends ITechJavaFxApplication {
         primaryStage.setMinWidth(900);
         primaryStage.setMinHeight(600);
         router.initialize(ApiroMain.class, primaryStage);
+        router.getConfig().addStyleSheets(MonoFont.stylesheet());
         router.to("workspace");
         primaryStage.setMaximized(true);
         primaryStage.show();

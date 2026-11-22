@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import io.github.itech_framework.code_editor.CodeEditor?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" spacing="8">
+    <HBox alignment="CENTER_LEFT" spacing="4">
+        <HBox fx:id="chipBox" alignment="CENTER_LEFT" spacing="4" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="contentTypeLabel" styleClass="muted" />
+    </HBox>
+    <StackPane fx:id="contentPane" minHeight="200" prefHeight="260" alignment="TOP_LEFT">
+        <CodeEditor fx:id="editor" />
+        <Label fx:id="placeholderLabel" styleClass="muted" />
+    </StackPane>
+</VBox>

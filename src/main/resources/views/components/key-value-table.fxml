@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" spacing="8" styleClass="kv-table">
+    <VBox fx:id="rowBox" spacing="6" />
+    <HBox alignment="CENTER_LEFT">
+        <Button text="+ Add" styleClass="link-button" onAction="#onAdd" />
+    </HBox>
+</VBox>
