@@ -19,7 +19,7 @@ public record Project(String format, int version, String id, String name, String
         name = name == null ? "" : name;
         description = description == null ? "" : description;
         settings = settings == null ? RequestSettings.defaults() : settings;
-        auth = auth == null ? AuthConfig.none() : auth;
+        auth = auth == null || auth.isInherit() ? AuthConfig.none() : auth;
         headers = headers == null ? List.of() : List.copyOf(headers);
         variables = variables == null ? List.of() : List.copyOf(variables);
         environments = environments == null ? List.of() : List.copyOf(environments);

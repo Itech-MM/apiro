@@ -27,4 +27,12 @@ public record AuthConfig(AuthType type, String username, String password, String
     public static AuthConfig apiKey(String keyName, String keyValue) {
         return new AuthConfig(AuthType.API_KEY, null, null, null, keyName, keyValue);
     }
+    
+    public static AuthConfig inherit() {
+        return new AuthConfig(AuthType.INHERIT, null, null, null, null, null);
+    }
+
+    public boolean isInherit() {
+        return type == AuthType.INHERIT;
+    }
 }
