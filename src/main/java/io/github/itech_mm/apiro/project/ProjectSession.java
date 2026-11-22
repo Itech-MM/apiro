@@ -26,6 +26,7 @@ public class ProjectSession {
     private final ReadOnlyObjectWrapper<Project> project = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<Path> file = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyIntegerWrapper structure = new ReadOnlyIntegerWrapper(0);
+    private final ReadOnlyIntegerWrapper saves = new ReadOnlyIntegerWrapper(0);
     private final StringProperty selectedRequestId = new SimpleStringProperty("");
     private final StringProperty environmentId = new SimpleStringProperty("");
     private LocalState state = LocalState.empty();
@@ -44,6 +45,10 @@ public class ProjectSession {
         return structure.getReadOnlyProperty();
     }
 
+    public ReadOnlyIntegerProperty savesProperty() {
+        return saves.getReadOnlyProperty();
+    }
+    
     public StringProperty selectedRequestIdProperty() {
         return selectedRequestId;
     }
@@ -83,6 +88,7 @@ public class ProjectSession {
         }
         flush.run();
         state = ProjectStore.save(project.get(), state, file.get());
+        saves.set(saves.get() + 1);
     }
 
     public void selectEnvironment(String id) {

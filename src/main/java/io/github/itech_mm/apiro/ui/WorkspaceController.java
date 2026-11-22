@@ -1,6 +1,10 @@
 package io.github.itech_mm.apiro.ui;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -22,8 +26,10 @@ import io.github.itech_mm.apiro.model.AuthConfig;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.HttpMethod;
 import io.github.itech_mm.apiro.model.RequestBody;
+import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
+import io.github.itech_mm.apiro.project.ProjectTree;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.BodyEditorView;
 import io.github.itech_mm.apiro.ui.component.CollapsibleSectionView;
@@ -33,6 +39,8 @@ import io.github.itech_mm.apiro.ui.component.ResponsePanelView;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -42,10 +50,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
+import javafx.scene.input.InputMethodEvent;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -71,16 +81,10 @@ public class WorkspaceController implements Routable {
     private StackPane editorPane;
 
     @FXML
-    private SplitPane editorSplit;
-
-    @FXML
     private StackPane responsePane;
-    
+
     @FXML
     private ProgressBar sendProgress;
-
-    private String runningId = "";
-    private long runStartedNanos;
 
     @FxUse(scope = FxScope.PROTOTYPE)
     private FxProvider<KeyValueTableView> tables;
@@ -111,7 +115,14 @@ public class WorkspaceController implements Routable {
     private AuthEditorView authEditor;
     private BodyEditorView bodyEditor;
     private ResponsePanelView response;
-    private String loadedId = "";
+
+    private final Map<String, OpenRequest> open = new LinkedHashMap<>();
+    private OpenRequest active;
+    private boolean loading;
+    private boolean checkQueued;
+    private String saveOnly = "";
+    private String runningId = "";
+    private long runStartedNanos;
 
     @OnInit
     private void init() {
@@ -120,44 +131,19 @@ public class WorkspaceController implements Routable {
         setupResponse();
         setEditable(false);
         Platform.runLater(this::hideTabContent);
-        bindDividerHover();
-        session.selectedRequestIdProperty().addListener((obs, oldValue, newValue) -> onSelectionChanged());
+        watchEdits();
+        requestTabs.getTabs().addListener((ListChangeListener<Tab>) this::onTabsChanged);
+        requestTabs.getSelectionModel().selectedItemProperty()
+                .addListener((obs, oldTab, newTab) -> activate(stateOf(newTab)));
+        session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> open(newId));
+        session.structureProperty().addListener((obs, oldValue, newValue) -> syncTabs());
+        session.savesProperty().addListener((obs, oldValue, newValue) -> markSaved());
         runService.runningProperty().addListener((obs, was, running) -> {
-            sendButton.setDisable(running || loadedId.isEmpty());
+            updateSend();
             refreshRunning();
         });
         runCommand.register(this::send);
         session.registerFlush(this::commit);
-        session.structureProperty().addListener((obs, oldValue, newValue) -> refreshTab());
-        methodCombo.valueProperty().addListener((obs, oldValue, newValue) -> refreshTab());
-    }
-
-    private void bindDividerHover() {
-        Runnable bind = () -> Platform.runLater(() -> {
-            for (Node divider : editorSplit.lookupAll(".split-pane-divider")) {
-                Runnable sync = () -> {
-                    boolean hot = divider.isHover() || divider.isPressed();
-                    if (hot) {
-                        if (!divider.getStyleClass().contains("divider-hot")) {
-                            divider.getStyleClass().add("divider-hot");
-                        }
-                    } else {
-                        divider.getStyleClass().remove("divider-hot");
-                    }
-                };
-                divider.hoverProperty().addListener((o, was, is) -> sync.run());
-                divider.pressedProperty().addListener((o, was, is) -> sync.run());
-            }
-        });
-        if (editorSplit.getSkin() != null) {
-            bind.run();
-        } else {
-            editorSplit.skinProperty().addListener((o, old, skin) -> {
-                if (skin != null) {
-                    bind.run();
-                }
-            });
-        }
     }
 
     private void setupResponse() {
@@ -215,43 +201,233 @@ public class WorkspaceController implements Routable {
         methodCombo.getSelectionModel().select(HttpMethod.GET);
     }
 
-    private void onSelectionChanged() {
-        commit();
-        load(session.selectedRequest());
+    private void hideTabContent() {
+        Node header = requestTabs.lookup(".tab-header-area");
+        if (header instanceof Region region) {
+            requestTabs.minHeightProperty().bind(region.heightProperty());
+            requestTabs.prefHeightProperty().bind(region.heightProperty());
+            requestTabs.maxHeightProperty().bind(region.heightProperty());
+        }
     }
 
-    private void commit() {
-        if (loadedId.isEmpty() || !session.isOpen()) {
+    // ---------------------------------------------------------------- tabs
+
+    private void open(String id) {
+        if (id == null || id.isEmpty() || !session.isOpen()) {
             return;
         }
-        session.project().findItem(loadedId)
-                .filter(RequestItem.class::isInstance)
-                .map(RequestItem.class::cast)
-                .ifPresent(item -> session.updateRequest(collect(item)));
+        if (active != null && active.id.equals(id)) {
+            return;
+        }
+        OpenRequest state = open.get(id);
+        if (state == null) {
+            Optional<RequestItem> item = find(id);
+            if (item.isEmpty()) {
+                return;
+            }
+            state = new OpenRequest(item.get());
+            state.tab.setUserData(state);
+            OpenRequest created = state;
+            state.tab.setOnCloseRequest(event -> onCloseRequest(event, created));
+            open.put(id, state);
+            requestTabs.getTabs().add(state.tab);
+        }
+        requestTabs.getSelectionModel().select(state.tab);
     }
 
-    private void load(Optional<RequestItem> request) {
-        if (request.isEmpty()) {
-            loadedId = "";
-            requestTabs.getTabs().clear();
+    private void onTabsChanged(ListChangeListener.Change<? extends Tab> change) {
+        while (change.next()) {
+            if (change.wasRemoved()) {
+                for (Tab tab : change.getRemoved()) {
+                    OpenRequest state = stateOf(tab);
+                    if (state != null) {
+                        open.remove(state.id);
+                    }
+                }
+            }
+        }
+    }
+
+    private void activate(OpenRequest next) {
+        if (next == active) {
+            return;
+        }
+        refreshEdits();
+        active = next;
+        if (next == null) {
+            clearEditors();
+            session.selectedRequestIdProperty().set("");
+            return;
+        }
+        loading = true;
+        try {
+            fill(next.draft);
+            if (next.baseline == null) {
+                next.baseline = collect(next);
+                next.draft = next.baseline;
+            }
+        } finally {
+            loading = false;
+        }
+        setEditable(true);
+        if (next.replay != null) {
+            next.replay.run();
+        } else {
             response.clear();
-            setEditable(false);
+        }
+        refreshRunning();
+        session.selectedRequestIdProperty().set(next.id);
+    }
+
+    private void syncTabs() {
+        Project project = session.project();
+        for (OpenRequest state : List.copyOf(open.values())) {
+            Optional<RequestItem> item = find(state.id);
+            if (project == null || item.isEmpty()) {
+                requestTabs.getTabs().remove(state.tab);
+            } else {
+                state.title.setText(item.get().name());
+            }
+        }
+    }
+
+    private static OpenRequest stateOf(Tab tab) {
+        return tab == null ? null : (OpenRequest) tab.getUserData();
+    }
+
+    // -------------------------------------------------- dirty and closing
+
+    private void watchEdits() {
+        urlField.textProperty().addListener((obs, oldValue, newValue) -> queueCheck());
+        methodCombo.valueProperty().addListener((obs, oldValue, newValue) -> queueCheck());
+        editorPane.addEventFilter(KeyEvent.KEY_RELEASED, event -> queueCheck());
+        editorPane.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> queueCheck());
+        editorPane.addEventFilter(ActionEvent.ACTION, event -> queueCheck());
+        editorPane.addEventFilter(InputMethodEvent.INPUT_METHOD_TEXT_CHANGED, event -> queueCheck());
+    }
+
+    private void queueCheck() {
+        if (loading || checkQueued) {
             return;
         }
-        RequestItem item = request.get();
-        loadedId = item.id();
+        checkQueued = true;
+        Platform.runLater(() -> {
+            checkQueued = false;
+            refreshEdits();
+        });
+    }
+
+    private void refreshEdits() {
+        if (active == null || loading) {
+            return;
+        }
+        RequestItem edited = collect(active);
+        active.draft = edited;
+        active.showMethod(edited.method());
+        active.showDirty(!sameContent(edited, active.baseline));
+    }
+
+    private void onCloseRequest(Event event, OpenRequest state) {
+        if (state == active) {
+            refreshEdits();
+        }
+        if (!state.dirty) {
+            return;
+        }
+        event.consume();
+        AlertDialog.builder()
+                .level(AlertDialog.Level.WARNING)
+                .title("Unsaved changes")
+                .message("\"" + state.title.getText() + "\" has unsaved changes. Save before closing?")
+                .addOwner(owner())
+                .addButton("Save", () -> {
+                    if (saveRequest(state)) {
+                        closeTab(state);
+                    }
+                })
+                .addButton("Discard", () -> closeTab(state))
+                .addButton("Cancel", null)
+                .build()
+                .showAsync();
+    }
+
+    private void closeTab(OpenRequest state) {
+        Platform.runLater(() -> requestTabs.getTabs().remove(state.tab));
+    }
+
+    private boolean saveRequest(OpenRequest state) {
+        saveOnly = state.id;
+        try {
+            session.save();
+            return true;
+        } catch (IOException e) {
+            AlertDialog.builder()
+                    .level(AlertDialog.Level.ERROR)
+                    .title("Could not save")
+                    .message(e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage())
+                    .addOwner(owner())
+                    .addButton("OK", null)
+                    .build()
+                    .showAsync();
+            return false;
+        } finally {
+            saveOnly = "";
+        }
+    }
+
+    /** Called by the session before it writes the project: moves edited drafts into the project. */
+    private void commit() {
+        if (!session.isOpen()) {
+            return;
+        }
+        refreshEdits();
+        for (OpenRequest state : open.values()) {
+            if (!state.dirty || (!saveOnly.isEmpty() && !saveOnly.equals(state.id))) {
+                continue;
+            }
+            find(state.id).ifPresent(item -> session.updateRequest(withName(state.draft, item.name())));
+        }
+    }
+
+    /** Called after the project file was written: clears the dot of every tab that is now on disk. */
+    private void markSaved() {
+        for (OpenRequest state : open.values()) {
+            if (state.dirty && find(state.id).map(item -> sameContent(item, state.draft)).orElse(false)) {
+                state.baseline = state.draft;
+                state.showDirty(false);
+            }
+        }
+    }
+
+    // ------------------------------------------------------ editors <-> item
+
+    private void fill(RequestItem item) {
         methodCombo.getSelectionModel().select(item.method());
         urlField.setText(item.url());
         queryTable.setItems(item.query());
         headersTable.setItems(item.headers());
         authEditor.setConfig(item.auth() == null ? AuthConfig.inherit() : item.auth());
         bodyEditor.setBody(item.body());
-        requestTabs.getTabs().setAll(tab(item.name(), item.method()));
-        response.clear();
-        setEditable(true);
     }
 
-    private RequestItem collect(RequestItem original) {
+    private void clearEditors() {
+        loading = true;
+        try {
+            urlField.clear();
+            queryTable.setItems(List.of());
+            headersTable.setItems(List.of());
+            authEditor.setConfig(AuthConfig.inherit());
+            bodyEditor.setBody(RequestBody.none());
+        } finally {
+            loading = false;
+        }
+        response.clear();
+        setEditable(false);
+        refreshRunning();
+    }
+
+    private RequestItem collect(OpenRequest state) {
+        RequestItem original = state.draft;
         RequestBody edited = bodyEditor.getBody();
         boolean keepStored = edited.type() == BodyType.MULTIPART || edited.type() == BodyType.BINARY;
         HttpMethod method = methodCombo.getValue() == null ? original.method() : methodCombo.getValue();
@@ -264,38 +440,41 @@ public class WorkspaceController implements Routable {
                 keepStored ? original.body() : edited, original.settings());
     }
 
+    private static boolean sameContent(RequestItem a, RequestItem b) {
+        return a.method() == b.method()
+                && a.url().equals(b.url())
+                && a.query().equals(b.query())
+                && a.headers().equals(b.headers())
+                && Objects.equals(a.auth(), b.auth())
+                && a.body().equals(b.body())
+                && Objects.equals(a.settings(), b.settings());
+    }
+
+    private static RequestItem withName(RequestItem item, String name) {
+        return new RequestItem(item.id(), name, item.method(), item.url(), item.query(), item.headers(),
+                item.auth(), item.body(), item.settings());
+    }
+
+    private Optional<RequestItem> find(String id) {
+        Project project = session.project();
+        if (project == null) {
+            return Optional.empty();
+        }
+        return project.findItem(id).filter(RequestItem.class::isInstance).map(RequestItem.class::cast);
+    }
+
     private void setEditable(boolean on) {
         editorPane.setDisable(!on);
         methodCombo.setDisable(!on);
         urlField.setDisable(!on);
-        sendButton.setDisable(!on || runService.runningProperty().get());
+        updateSend();
     }
 
-    private Tab tab(String name, HttpMethod method) {
-        Label badge = new Label(method.shortLabel());
-        badge.getStyleClass().addAll("method-badge", "method-" + method.name().toLowerCase());
-
-        Label title = new Label(name);
-        Label extension = new Label(".req");
-        extension.getStyleClass().add("muted");
-
-        HBox header = new HBox(6, badge, title, extension);
-        header.setAlignment(Pos.CENTER_LEFT);
-
-        Tab tab = new Tab();
-        tab.setClosable(false);
-        tab.setGraphic(header);
-        return tab;
+    private void updateSend() {
+        sendButton.setDisable(active == null || runService.runningProperty().get());
     }
 
-    private void hideTabContent() {
-        Node header = requestTabs.lookup(".tab-header-area");
-        if (header instanceof Region region) {
-            requestTabs.minHeightProperty().bind(region.heightProperty());
-            requestTabs.prefHeightProperty().bind(region.heightProperty());
-            requestTabs.maxHeightProperty().bind(region.heightProperty());
-        }
-    }
+    // ---------------------------------------------------------------- send
 
     @FXML
     private void onSend() {
@@ -303,37 +482,41 @@ public class WorkspaceController implements Routable {
     }
 
     private void send() {
-        Optional<RequestItem> current = session.selectedRequest();
-        if (current.isEmpty() || runService.runningProperty().get()) {
+        if (active == null || runService.runningProperty().get()) {
             return;
         }
-        RequestItem edited = collect(current.get());
-        session.updateRequest(edited);
+        OpenRequest state = active;
+        refreshEdits();
+        RequestItem edited = withName(state.draft, find(state.id).map(RequestItem::name).orElse(state.draft.name()));
         PreparedRequest prepared;
         try {
-            prepared = RequestPreparer.prepare(session.project(), session.environmentIdProperty().get(), edited.id());
+            Project preview = ProjectTree.withRequest(session.project(), edited);
+            prepared = RequestPreparer.prepare(preview, session.environmentIdProperty().get(), edited.id());
         } catch (RuntimeException e) {
-            response.showFailure(FailureKind.INVALID_REQUEST, message(e));
+            state.replay = () -> response.showFailure(FailureKind.INVALID_REQUEST, message(e));
+            state.replay.run();
             return;
         }
         if (prepared.unresolved().isEmpty()) {
-            dispatch(edited.id(), prepared);
+            dispatch(state, prepared);
             return;
         }
-        confirmUnresolved(prepared.unresolved(), () -> dispatch(edited.id(), prepared));
+        confirmUnresolved(prepared.unresolved(), () -> dispatch(state, prepared));
     }
 
-    private void dispatch(String requestId, PreparedRequest prepared) {
+    private void dispatch(OpenRequest state, PreparedRequest prepared) {
         if (runService.runningProperty().get()) {
             return;
         }
         List<String> unresolved = prepared.unresolved();
-        runningId = requestId;
+        state.replay = null;
+        runningId = state.id;
         runStartedNanos = System.nanoTime();
         boolean started = runService.run(prepared, outcome -> {
             runningId = "";
-            if (requestId.equals(loadedId)) {
-                show(outcome, unresolved);
+            state.replay = () -> show(outcome, unresolved);
+            if (state == active) {
+                state.replay.run();
             }
         });
         if (!started) {
@@ -342,7 +525,8 @@ public class WorkspaceController implements Routable {
     }
 
     private void refreshRunning() {
-        boolean here = runService.runningProperty().get() && !runningId.isEmpty() && runningId.equals(loadedId);
+        boolean here = runService.runningProperty().get() && !runningId.isEmpty()
+                && active != null && runningId.equals(active.id);
         sendProgress.setVisible(here);
         if (here) {
             response.showSending(runStartedNanos);
@@ -381,6 +565,49 @@ public class WorkspaceController implements Routable {
         return error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
     }
 
+    // -------------------------------------------------------------- types
+
+    private static final class OpenRequest {
+
+        final String id;
+        final Tab tab = new Tab();
+        final Label badge = new Label();
+        final Label title = new Label();
+        final Region dot = new Region();
+        RequestItem baseline;
+        RequestItem draft;
+        boolean dirty;
+        Runnable replay;
+
+        OpenRequest(RequestItem item) {
+            this.id = item.id();
+            this.draft = item;
+            Label extension = new Label(".req");
+            extension.getStyleClass().add("muted");
+            dot.getStyleClass().add("tab-dirty");
+            dot.setVisible(false);
+            dot.setManaged(false);
+            title.setText(item.name());
+            showMethod(item.method());
+            HBox header = new HBox(6, badge, title, extension, dot);
+            header.setAlignment(Pos.CENTER_LEFT);
+            tab.setGraphic(header);
+            tab.setClosable(true);
+        }
+
+        void showMethod(HttpMethod method) {
+            badge.setText(method.shortLabel());
+            badge.getStyleClass().removeIf(style -> style.startsWith("method-"));
+            badge.getStyleClass().addAll("method-badge", "method-" + method.name().toLowerCase());
+        }
+
+        void showDirty(boolean on) {
+            dirty = on;
+            dot.setVisible(on);
+            dot.setManaged(on);
+        }
+    }
+
     private static final class MethodCell extends ListCell<HttpMethod> {
 
         @Override
@@ -394,18 +621,5 @@ public class WorkspaceController implements Routable {
             setText(method.shortLabel());
             getStyleClass().addAll("method-text", "method-" + method.name().toLowerCase());
         }
-    }
-    
-    private void refreshTab() {
-        if (loadedId.isEmpty() || !session.isOpen()) {
-            return;
-        }
-        session.project().findItem(loadedId)
-                .filter(RequestItem.class::isInstance)
-                .map(RequestItem.class::cast)
-                .ifPresent(item -> {
-                    HttpMethod method = methodCombo.getValue() == null ? item.method() : methodCombo.getValue();
-                    requestTabs.getTabs().setAll(tab(item.name(), method));
-                });
     }
 }

@@ -163,6 +163,8 @@ public class MainLayoutController extends LayoutController implements Routable {
     private Button activeRail;
     private boolean syncingEnvironment;
     private boolean rebuilding;
+    private boolean syncingSelection;
+    
     private String draggedId;
 
     @Override
@@ -243,7 +245,22 @@ public class MainLayoutController extends LayoutController implements Routable {
                 return;
             }
             boolean request = newValue != null && newValue.getValue() instanceof RequestItem;
-            session.selectedRequestIdProperty().set(request ? newValue.getValue().id() : "");
+            syncingSelection = true;
+            try {
+                session.selectedRequestIdProperty().set(request ? newValue.getValue().id() : "");
+            } finally {
+                syncingSelection = false;
+            }
+        });
+        session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> {
+            if (syncingSelection || rebuilding) {
+                return;
+            }
+            if (newId == null || newId.isEmpty()) {
+                requestTree.getSelectionModel().clearSelection();
+            } else {
+                select(newId);
+            }
         });
         requestTree.setOnKeyPressed(event -> {
             TreeItem<ProjectItem> node = requestTree.getSelectionModel().getSelectedItem();
