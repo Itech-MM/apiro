@@ -168,9 +168,13 @@ public class ProjectSession {
             return;
         }
         Project next = change.apply(current);
-        if (next != null && !next.equals(current)) {
-            changed(next);
+        if (next == null || next.equals(current)) {
+            return;
         }
+        if (next.findEnvironment(environmentId.get()).isEmpty()) {
+            selectEnvironment(next.environments().stream().map(Environment::id).findFirst().orElse(""));
+        }
+        changed(next);
     }
     
     private void changed(Project next) {

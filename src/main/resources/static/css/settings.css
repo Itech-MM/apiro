@@ -44,3 +44,21 @@
     -fx-font-size: 12px;
     -fx-opacity: 0.7;
 }
+
+.settings-scroll,
+.settings-scroll:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.settings-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.settings-env-list {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}

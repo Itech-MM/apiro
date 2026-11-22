@@ -26,6 +26,7 @@ import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
+import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
 import io.github.itech_mm.apiro.ui.settings.ProjectSettingsDialog;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
@@ -191,6 +192,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @FxUse(scope = FxScope.PROTOTYPE)
     private FxProvider<AuthEditorView> authEditors;
+    
+    @FxUse(scope = FxScope.PROTOTYPE)
+    private FxProvider<KeyValueTableView> keyValueTables;
     
     @Use
     private RequestRunService runService;
@@ -491,7 +495,7 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private void openProjectSettings() {
-        ProjectSettingsDialog.open(rootPane.getScene().getWindow(), session, authEditors);
+        ProjectSettingsDialog.open(rootPane.getScene().getWindow(), session, authEditors, keyValueTables);
     }
     
     private void renameItem(TreeItem<ProjectItem> node) {

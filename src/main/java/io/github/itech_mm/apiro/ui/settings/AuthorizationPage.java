@@ -18,7 +18,7 @@ public final class AuthorizationPage {
         editor.setAllowInherit(false);
         editor.setConfig(draft.getAuth());
         Label hint = new Label("Used by every folder and request set to Inherit. Values are saved in the project "
-                + "file as typed, so use a variable such as {{token}} for secrets.");
+                + "file as typed, so use a variable such as ${token} for secrets.");
         hint.setWrapText(true);
         hint.getStyleClass().add("settings-page-hint");
         root = new VBox(14, hint, editor.getRoot());

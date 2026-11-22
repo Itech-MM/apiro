@@ -270,7 +270,7 @@ public class ResponsePanelView {
         StringBuilder text = new StringBuilder();
         if (!unresolved.isEmpty()) {
             text.append("Undefined variables: ")
-                    .append(unresolved.stream().map(name -> "{{" + name + "}}").collect(Collectors.joining(", ")))
+            .append(unresolved.stream().map(name -> "${" + name + "}").collect(Collectors.joining(", ")))
                     .append("\n\n");
         }
         SentRequest sent = exchange == null ? null : exchange.sent();

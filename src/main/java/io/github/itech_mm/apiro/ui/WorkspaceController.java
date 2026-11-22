@@ -534,7 +534,7 @@ public class WorkspaceController implements Routable {
     }
 
     private void confirmUnresolved(List<String> names, Runnable proceed) {
-        String list = names.stream().limit(8).map(name -> "{{" + name + "}}").collect(Collectors.joining(", "));
+        String list = names.stream().limit(8).map(name -> "${" + name + "}").collect(Collectors.joining(", "));
         String more = names.size() > 8 ? " and " + (names.size() - 8) + " more" : "";
         AlertDialog.builder()
                 .level(AlertDialog.Level.WARNING)

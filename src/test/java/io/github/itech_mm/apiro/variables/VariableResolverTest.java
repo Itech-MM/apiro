@@ -35,37 +35,37 @@ class VariableResolverTest {
     @Test
     void folderBeatsEnvironmentBeatsProject() {
         Project project = layeredProject();
-        assertEquals("folder", VariableResolver.forItem(project, "e1", "inFolder").resolve("{{baseUrl}}"));
-        assertEquals("env", VariableResolver.forItem(project, "e1", "atRoot").resolve("{{baseUrl}}"));
-        assertEquals("project", VariableResolver.forItem(project, "", "atRoot").resolve("{{baseUrl}}"));
+        assertEquals("folder", VariableResolver.forItem(project, "e1", "inFolder").resolve("${baseUrl}"));
+        assertEquals("env", VariableResolver.forItem(project, "e1", "atRoot").resolve("${baseUrl}"));
+        assertEquals("project", VariableResolver.forItem(project, "", "atRoot").resolve("${baseUrl}"));
     }
 
     @Test
     void disabledVariableIsIgnored() {
         VariableResolver resolver = single(new Variable("a", "1", false, false));
         assertFalse(resolver.isDefined("a"));
-        assertEquals("{{a}}", resolver.resolve("{{a}}"));
+        assertEquals("${a}", resolver.resolve("${a}"));
     }
 
     @Test
     void unknownReferenceStaysUntouched() {
-        assertEquals("x/{{missing}}", single(Variable.of("a", "x")).resolve("{{a}}/{{missing}}"));
+        assertEquals("x/${missing}", single(Variable.of("a", "x")).resolve("${a}/${missing}"));
     }
 
     @Test
     void allowsSpacesInsideBraces() {
-        assertEquals("1", single(Variable.of("a", "1")).resolve("{{ a }}"));
+        assertEquals("1", single(Variable.of("a", "1")).resolve("${ a }"));
     }
 
     @Test
     void resolvesNestedVariables() {
-        VariableResolver resolver = single(Variable.of("url", "{{host}}/api"), Variable.of("host", "example.com"));
-        assertEquals("example.com/api", resolver.resolve("{{url}}"));
+        VariableResolver resolver = single(Variable.of("url", "${host}/api"), Variable.of("host", "example.com"));
+        assertEquals("example.com/api", resolver.resolve("${url}"));
     }
 
     @Test
     void cyclicVariableDoesNotLoopForever() {
-        assertEquals("{{a}}", single(Variable.of("a", "{{a}}")).resolve("{{a}}"));
+        assertEquals("${a}", single(Variable.of("a", "${a}")).resolve("${a}"));
     }
 
     @Test
@@ -74,11 +74,21 @@ class VariableResolverTest {
     }
 
     @Test
+    void oldDoubleBraceSyntaxIsPlainText() {
+        assertEquals("{{a}}", single(Variable.of("a", "1")).resolve("{{a}}"));
+    }
+
+    @Test
+    void dollarWithoutBracesIsPlainText() {
+        assertEquals("$a and $", single(Variable.of("a", "1")).resolve("$a and $"));
+    }
+
+    @Test
     void scanReportsPositionsAndDefinedFlag() {
-        List<VariableResolver.Reference> references = single(Variable.of("a", "1")).scan("{{a}}/{{ b }}");
+        List<VariableResolver.Reference> references = single(Variable.of("a", "1")).scan("${a}/${ b }");
         assertEquals(2, references.size());
-        assertEquals(new VariableResolver.Reference(0, 5, "a", true), references.get(0));
-        assertEquals(new VariableResolver.Reference(6, 13, "b", false), references.get(1));
+        assertEquals(new VariableResolver.Reference(0, 4, "a", true), references.get(0));
+        assertEquals(new VariableResolver.Reference(5, 11, "b", false), references.get(1));
     }
 
     @Test
