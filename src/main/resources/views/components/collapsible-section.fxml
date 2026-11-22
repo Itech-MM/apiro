@@ -13,6 +13,8 @@
         <Label fx:id="countLabel" styleClass="section-count" />
         <Label fx:id="previewLabel" styleClass="section-preview" textOverrun="ELLIPSIS"
                minWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
+        <HBox fx:id="headerContent" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS"
+              visible="false" managed="false" />
     </HBox>
-    <VBox fx:id="body" styleClass="section-body" />
+    <VBox fx:id="body" styleClass="section-body" VBox.vgrow="ALWAYS" />
 </VBox>

@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import io.github.itech_framework.code_editor.CodeEditor;
+import io.github.itech_framework.code_editor.formatting.CodeFormatter;
+import io.github.itech_framework.code_editor.formatting.FormatOptions;
+import io.github.itech_framework.code_editor.internal.BuiltInFormatters;
 import io.github.itech_framework.core.annotations.methods.OnInit;
 import io.github.itech_framework.java_fx.annotations.FxUse;
 import io.github.itech_framework.java_fx.annotations.components.FxComponent;
@@ -12,11 +15,13 @@ import io.github.itech_framework.java_fx.annotations.components.Root;
 import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.RequestBody;
-import io.github.itech_mm.apiro.ui.MonoFont;
+import io.github.itech_mm.apiro.ui.EditorStyle;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
@@ -34,6 +39,12 @@ public class BodyEditorView {
 
     @FXML
     private HBox chipBox;
+    
+    @FXML
+    private HBox header;
+
+    @FXML
+    private Button beautifyButton;
 
     @FXML
     private Label contentTypeLabel;
@@ -59,8 +70,8 @@ public class BodyEditorView {
     private void init() {
         formTable = formTables.get();
         contentPane.getChildren().add(formTable.getRoot());
-        editor.setTheme("light-plus");
-        editor.setFontSize(MonoFont.EDITOR_SIZE);
+        formTable.getRoot().setPadding(new Insets(12, 16, 12, 16));
+        EditorStyle.apply(editor);
 
         for (BodyType type : BodyType.values()) {
             ToggleButton chip = new ToggleButton(label(type));
@@ -76,6 +87,10 @@ public class BodyEditorView {
 
     public VBox getRoot() {
         return root;
+    }
+    
+    public HBox getHeader() {
+        return header;
     }
 
     public ReadOnlyStringProperty previewProperty() {
@@ -103,6 +118,16 @@ public class BodyEditorView {
         }
         render();
     }
+    
+    @FXML
+    private void onBeautify() {
+        CodeFormatter formatter = BuiltInFormatters.forLanguage(editor.getLanguageDefinition());
+        if (formatter == null) {
+            return;
+        }
+        editor.applyEdits(formatter.format(editor.getText(),
+                new FormatOptions(editor.getTabSize(), editor.isInsertSpaces())));
+    }
 
     private BodyType selectedType() {
         Toggle selected = group.getSelectedToggle();
@@ -117,6 +142,7 @@ public class BodyEditorView {
         show(editor, text);
         show(formTable.getRoot(), form);
         show(placeholderLabel, !text && !form);
+        beautifyButton.setVisible(type == BodyType.JSON);
         placeholderLabel.setText(switch (type) {
             case NONE -> "This request has no body";
             case MULTIPART, BINARY -> "Not available yet";

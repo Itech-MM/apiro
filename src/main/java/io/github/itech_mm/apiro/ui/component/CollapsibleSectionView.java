@@ -7,8 +7,12 @@ import io.github.itech_framework.java_fx.annotations.components.Root;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -30,6 +34,9 @@ public class CollapsibleSectionView {
 
     @FXML
     private Label previewLabel;
+    
+    @FXML
+    private HBox headerContent;
 
     @FXML
     private VBox body;
@@ -51,6 +58,7 @@ public class CollapsibleSectionView {
     private void init() {
         titleLabel.setText(title);
         if (content != null) {
+            VBox.setVgrow(content, Priority.ALWAYS);
             body.getChildren().setAll(content);
         }
         expanded.addListener((observable, oldValue, newValue) -> render());
@@ -85,16 +93,36 @@ public class CollapsibleSectionView {
         previewLabel.setText(text == null ? "" : text);
     }
 
+    public void setHeaderContent(Node node) {
+        HBox.setHgrow(node, Priority.ALWAYS);
+        HBox.setMargin(node, new Insets(0, 0, 0, 16));
+        headerContent.getChildren().setAll(node);
+        render();
+    }
+    
     @FXML
-    private void onToggle() {
+    private void onToggle(MouseEvent event) {
+        if (event.getTarget() instanceof Node target && isWithin(target, headerContent)) {
+            return;
+        }
         setExpanded(!isExpanded());
+    }
+
+    private static boolean isWithin(Node node, Node ancestor) {
+        for (Node current = node; current != null; current = current.getParent()) {
+            if (current == ancestor) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void render() {
         chevron.getStyleClass().removeAll("icon-chevron-right", "icon-chevron-down");
         chevron.getStyleClass().add(isExpanded() ? "icon-chevron-down" : "icon-chevron-right");
-        previewLabel.setVisible(!isExpanded());
-        previewLabel.setManaged(!isExpanded());
+        boolean showContent = isExpanded() && !headerContent.getChildren().isEmpty();
+        headerContent.setVisible(showContent);
+        headerContent.setManaged(showContent);
         if (isExpanded()) {
             if (!root.getChildren().contains(body)) {
                 root.getChildren().add(body);

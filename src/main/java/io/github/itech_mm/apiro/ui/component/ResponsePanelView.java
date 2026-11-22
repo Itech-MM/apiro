@@ -17,7 +17,7 @@ import io.github.itech_mm.apiro.http.ExchangeResult;
 import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.ResponseData;
-import io.github.itech_mm.apiro.ui.MonoFont;
+import io.github.itech_mm.apiro.ui.EditorStyle;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
@@ -96,8 +96,7 @@ public class ResponsePanelView {
     @OnInit
     private void init() {
         viewer.setEditable(false);
-        viewer.setTheme("light-plus");
-        viewer.setFontSize(MonoFont.EDITOR_SIZE);
+        EditorStyle.apply(viewer);
 
         for (ResponseTab tab : ResponseTab.values()) {
             ToggleButton button = new ToggleButton();

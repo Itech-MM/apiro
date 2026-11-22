@@ -40,7 +40,7 @@ public final class MonoFont {
 
     public static String stylesheet() {
         String css = ".url-bar, .url-bar .text-field.url-field, .url-bar .protocol-label,"
-                + " .section-row .section-preview, .kv-table .text-field.kv-field"
+                + " .section-row .section-preview, .section-row .content-type-label, .kv-table .text-field.kv-field"
                 + " { -fx-font-family: \"" + family() + "\"; }";
         return "data:text/css;base64," + Base64.getEncoder().encodeToString(css.getBytes(StandardCharsets.UTF_8));
     }

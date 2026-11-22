@@ -1113,7 +1113,6 @@
 .toggle-button.chip:selected:hover {
     -fx-background-color: -app-tree-selected;
     -fx-text-fill: -fx-primary;
-    -fx-font-weight: bold;
 }
 
 .check-box {
@@ -1460,4 +1459,13 @@
 
 .separator-menu-item > .line {
     -fx-border-color: -fx-grid-line transparent transparent transparent;
+}
+
+.section-flush > .section-body {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.editor-sections {
+    -fx-padding: 0;
 }

@@ -58,6 +58,7 @@ import javafx.scene.input.InputMethodEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -168,14 +169,18 @@ public class WorkspaceController implements Routable {
         CollapsibleSectionView body = sections.create("Body", bodyEditor.getRoot());
         bodyEditor.previewProperty().addListener((observable, oldValue, newValue) -> body.setPreview(newValue));
         body.setPreview(bodyEditor.getPreview());
+        body.setHeaderContent(bodyEditor.getHeader());
+        body.getRoot().getStyleClass().add("section-flush");
         body.setExpanded(true);
 
         VBox sectionBox = new VBox(query.getRoot(), headers.getRoot(), auth.getRoot(), body.getRoot());
         sectionBox.getStyleClass().add("editor-sections");
+        VBox.setVgrow(body.getRoot(), Priority.ALWAYS);
 
         ScrollPane scroll = new ScrollPane(sectionBox);
         scroll.getStyleClass().add("editor-scroll");
         scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
         editorPane.getChildren().setAll(scroll);
     }
 
