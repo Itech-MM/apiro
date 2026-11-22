@@ -1,43 +1,76 @@
 package io.github.itech_mm.apiro.ui.layout;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
+import io.github.itech_framework.core.annotations.dependency.Use;
 import io.github.itech_framework.java_fx.annotations.FxController;
 import io.github.itech_framework.java_fx.router.core.Routable;
 import io.github.itech_framework.java_fx.ui.layout.LayoutController;
+import io.github.itech_mm.apiro.http.RequestRunService;
+import io.github.itech_mm.apiro.http.RunCommand;
+import io.github.itech_mm.apiro.model.Environment;
+import io.github.itech_mm.apiro.model.Folder;
+import io.github.itech_mm.apiro.model.HttpMethod;
+import io.github.itech_mm.apiro.model.Project;
+import io.github.itech_mm.apiro.model.ProjectItem;
+import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.project.ProjectSession;
+import io.github.itech_mm.apiro.project.ProjectTree;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.util.StringConverter;
 
 @FxController
 public class MainLayoutController extends LayoutController implements Routable {
 
     private static final String RAIL_ACTIVE = "rail-active";
+    private static final String EXTENSION = ".apiro.json";
     private static final double REQUESTS_PANEL_WIDTH = 240.0;
+    private static final KeyCodeCombination DUPLICATE_KEYS = new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN);
 
-    public record RequestNode(String name, String method) {
+    private enum Zone {
+        NONE, BEFORE, AFTER, INTO
+    }
 
-        public boolean isFolder() {
-            return method == null;
-        }
-
-        public String badge() {
-            return "DELETE".equals(method) ? "DEL" : method;
-        }
+    private record Drop(String parentId, String anchorId, boolean after, Zone zone) {
     }
 
     @FXML
@@ -83,10 +116,7 @@ public class MainLayoutController extends LayoutController implements Routable {
     private Label cookiesLabel;
 
     @FXML
-    private ComboBox<String> projectCombo;
-
-    @FXML
-    private ComboBox<String> envCombo;
+    private ComboBox<Environment> envCombo;
 
     @FXML
     private Button runButton;
@@ -104,6 +134,9 @@ public class MainLayoutController extends LayoutController implements Routable {
     private Button addRequestButton;
 
     @FXML
+    private Button addFolderButton;
+
+    @FXML
     private Button collapseAllButton;
 
     @FXML
@@ -116,9 +149,21 @@ public class MainLayoutController extends LayoutController implements Routable {
     private Button environmentsRailButton;
 
     @FXML
-    private TreeView<RequestNode> requestTree;
+    private TreeView<ProjectItem> requestTree;
+
+    @Use
+    private ProjectSession session;
+
+    @Use
+    private RequestRunService runService;
+
+    @Use
+    private RunCommand runCommand;
 
     private Button activeRail;
+    private boolean syncingEnvironment;
+    private boolean rebuilding;
+    private String draggedId;
 
     @Override
     public void setContent(Parent content) {
@@ -132,10 +177,16 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @Override
     public void onLayoutLoaded() {
-        setupProjects();
         setupEnvironments();
         setupRequestTree();
         stopButton.setDisable(true);
+        addRequestButton.setTooltip(new Tooltip("New request"));
+        addFolderButton.setTooltip(new Tooltip("New folder"));
+        collapseAllButton.setTooltip(new Tooltip("Collapse all"));
+        session.structureProperty().addListener((obs, oldValue, newValue) -> rebuild());
+        session.projectProperty().addListener((obs, oldValue, newValue) -> refreshValues(newValue));
+        runService.runningProperty().addListener((obs, was, running) -> onRunningChanged(running));
+        installShortcuts();
         Platform.runLater(() -> {
             setActiveRail(requestsRailButton);
             applyInitialDivider();
@@ -147,53 +198,282 @@ public class MainLayoutController extends LayoutController implements Routable {
         requestTree.setRoot(null);
     }
 
-    private void setupProjects() {
-        projectCombo.setItems(FXCollections.observableArrayList("petstore-api"));
-        projectCombo.getSelectionModel().selectFirst();
+    private void installShortcuts() {
+        Runnable install = () -> {
+            Scene scene = rootPane.getScene();
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN), this::onSave);
+            scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ENTER, KeyCombination.SHORTCUT_DOWN), this::onRun);
+        };
+        if (rootPane.getScene() != null) {
+            install.run();
+        } else {
+            rootPane.sceneProperty().addListener((obs, oldValue, scene) -> {
+                if (scene != null) {
+                    install.run();
+                }
+            });
+        }
     }
 
     private void setupEnvironments() {
-        envCombo.setItems(FXCollections.observableArrayList("Dev", "Staging", "Prod"));
-        envCombo.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldValue, newValue) -> envStatusLabel.setText("Env: " + newValue));
-        envCombo.getSelectionModel().selectFirst();
+        envCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Environment environment) {
+                return environment == null ? "" : environment.name();
+            }
+
+            @Override
+            public Environment fromString(String text) {
+                return null;
+            }
+        });
+        envCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (syncingEnvironment) {
+                return;
+            }
+            session.selectEnvironment(newValue == null ? "" : newValue.id());
+            envStatusLabel.setText(newValue == null ? "Env: none" : "Env: " + newValue.name());
+        });
     }
 
     private void setupRequestTree() {
-        TreeItem<RequestNode> root = new TreeItem<>(new RequestNode("petstore-api", null));
-        root.setExpanded(true);
-
-        TreeItem<RequestNode> users = folder("users",
-                request("create-user", "POST"),
-                request("list-users", "GET"),
-                request("get-user", "GET"),
-                request("update-user", "PUT"),
-                request("delete-user", "DELETE"));
-        users.setExpanded(true);
-
-        TreeItem<RequestNode> orders = folder("orders");
-        TreeItem<RequestNode> auth = folder("auth");
-        TreeItem<RequestNode> internal = folder("internal",
-                request("health", "GET"),
-                request("webhook-test", "POST"));
-        internal.setExpanded(true);
-
-        root.getChildren().addAll(users, orders, auth, internal);
-
         requestTree.setCellFactory(tree -> new RequestTreeCell());
-        requestTree.setRoot(root);
-        requestTree.setShowRoot(true);
-        requestTree.getSelectionModel().select(users.getChildren().get(0));
+        requestTree.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            if (rebuilding) {
+                return;
+            }
+            boolean request = newValue != null && newValue.getValue() instanceof RequestItem;
+            session.selectedRequestIdProperty().set(request ? newValue.getValue().id() : "");
+        });
+        requestTree.setOnKeyPressed(event -> {
+            TreeItem<ProjectItem> node = requestTree.getSelectionModel().getSelectedItem();
+            if (event.getCode() == KeyCode.F2) {
+                renameItem(node);
+                event.consume();
+            } else if (event.getCode() == KeyCode.DELETE) {
+                deleteItem(node);
+                event.consume();
+            } else if (DUPLICATE_KEYS.match(event)) {
+                duplicateItem(node);
+                event.consume();
+            }
+        });
     }
 
-    private TreeItem<RequestNode> folder(String name, TreeItem<RequestNode>... requests) {
-        TreeItem<RequestNode> item = new TreeItem<>(new RequestNode(name, null));
-        item.getChildren().addAll(requests);
-        return item;
+    private void rebuild() {
+        Project project = session.project();
+        String selectedId = session.selectedRequestIdProperty().get();
+        Set<String> collapsed = collapsedIds();
+        TreeItem<ProjectItem> restored = null;
+        rebuilding = true;
+        try {
+            requestTree.setRoot(project == null ? null : buildTree(project, collapsed));
+            syncEnvironments(project);
+            if (project != null && !selectedId.isEmpty()) {
+                restored = find(requestTree.getRoot(), selectedId);
+            }
+            if (restored != null) {
+                requestTree.getSelectionModel().select(restored);
+            }
+        } finally {
+            rebuilding = false;
+        }
+        if (restored == null) {
+            session.selectedRequestIdProperty().set("");
+        }
     }
 
-    private TreeItem<RequestNode> request(String name, String method) {
-        return new TreeItem<>(new RequestNode(name, method));
+    private void syncEnvironments(Project project) {
+        syncingEnvironment = true;
+        envCombo.setItems(FXCollections.observableArrayList(project == null ? List.of() : project.environments()));
+        String active = session.environmentIdProperty().get();
+        envCombo.getItems().stream()
+                .filter(environment -> environment.id().equals(active))
+                .findFirst()
+                .ifPresentOrElse(envCombo.getSelectionModel()::select, envCombo.getSelectionModel()::clearSelection);
+        syncingEnvironment = false;
+        Environment selected = envCombo.getSelectionModel().getSelectedItem();
+        envStatusLabel.setText(selected == null ? "Env: none" : "Env: " + selected.name());
+    }
+
+    private void refreshValues(Project project) {
+        TreeItem<ProjectItem> root = requestTree.getRoot();
+        if (project != null && root != null) {
+            refresh(root, project);
+        }
+    }
+
+    private void refresh(TreeItem<ProjectItem> node, Project project) {
+        ProjectItem value = node.getValue();
+        if (value instanceof RequestItem) {
+            project.findItem(value.id()).filter(found -> !found.equals(value)).ifPresent(node::setValue);
+        }
+        node.getChildren().forEach(child -> refresh(child, project));
+    }
+
+    private Set<String> collapsedIds() {
+        Set<String> ids = new HashSet<>();
+        TreeItem<ProjectItem> root = requestTree.getRoot();
+        if (root != null) {
+            root.getChildren().forEach(child -> collectCollapsed(child, ids));
+        }
+        return ids;
+    }
+
+    private void collectCollapsed(TreeItem<ProjectItem> node, Set<String> ids) {
+        if (node.getValue() instanceof Folder && !node.isExpanded()) {
+            ids.add(node.getValue().id());
+        }
+        node.getChildren().forEach(child -> collectCollapsed(child, ids));
+    }
+
+    private TreeItem<ProjectItem> buildTree(Project project, Set<String> collapsed) {
+        TreeItem<ProjectItem> root = new TreeItem<>(Folder.of(project.name(), project.items()));
+        root.setExpanded(true);
+        project.items().forEach(item -> root.getChildren().add(node(item, collapsed)));
+        return root;
+    }
+
+    private TreeItem<ProjectItem> node(ProjectItem item, Set<String> collapsed) {
+        TreeItem<ProjectItem> node = new TreeItem<>(item);
+        if (item instanceof Folder folder) {
+            node.setExpanded(!collapsed.contains(folder.id()));
+            folder.items().forEach(child -> node.getChildren().add(node(child, collapsed)));
+        }
+        return node;
+    }
+
+    private TreeItem<ProjectItem> find(TreeItem<ProjectItem> node, String id) {
+        if (node.getValue() != null && node.getValue().id().equals(id)) {
+            return node;
+        }
+        for (TreeItem<ProjectItem> child : node.getChildren()) {
+            TreeItem<ProjectItem> found = find(child, id);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private void select(String id) {
+        TreeItem<ProjectItem> root = requestTree.getRoot();
+        TreeItem<ProjectItem> item = root == null ? null : find(root, id);
+        if (item == null) {
+            return;
+        }
+        for (TreeItem<ProjectItem> parent = item.getParent(); parent != null; parent = parent.getParent()) {
+            parent.setExpanded(true);
+        }
+        requestTree.getSelectionModel().select(item);
+    }
+
+    private boolean isRoot(TreeItem<ProjectItem> node) {
+        return node == null || node == requestTree.getRoot() || node.getValue() == null;
+    }
+
+    private String folderFor(TreeItem<ProjectItem> node) {
+        if (isRoot(node)) {
+            return "";
+        }
+        ProjectItem value = node.getValue();
+        if (value instanceof Folder) {
+            return value.id();
+        }
+        return ProjectTree.parentOf(session.project(), value.id()).orElse("");
+    }
+
+    private Optional<String> ask(String title, String label, String initial) {
+        TextInputDialog dialog = new TextInputDialog(initial);
+        dialog.initOwner(rootPane.getScene().getWindow());
+        dialog.setTitle(title);
+        dialog.setHeaderText(null);
+        dialog.setContentText(label);
+        return dialog.showAndWait().map(String::trim).filter(text -> !text.isEmpty());
+    }
+
+    private void addRequest(TreeItem<ProjectItem> target) {
+        if (!session.isOpen()) {
+            statusLabel.setText("Open or create a project first");
+            return;
+        }
+        ask("New request", "Name", "new-request").ifPresent(name -> {
+            RequestItem created = RequestItem.of(name, HttpMethod.GET, "");
+            session.addItem(folderFor(target), created);
+            select(created.id());
+        });
+    }
+
+    private void addFolder(TreeItem<ProjectItem> target) {
+        if (!session.isOpen()) {
+            statusLabel.setText("Open or create a project first");
+            return;
+        }
+        ask("New folder", "Name", "new-folder").ifPresent(name -> {
+            Folder created = Folder.of(name, List.of());
+            session.addItem(folderFor(target), created);
+            select(created.id());
+        });
+    }
+
+    private void renameItem(TreeItem<ProjectItem> node) {
+        if (isRoot(node)) {
+            return;
+        }
+        ProjectItem item = node.getValue();
+        ask("Rename", "Name", item.name()).ifPresent(name -> session.rename(item.id(), name));
+    }
+
+    private void duplicateItem(TreeItem<ProjectItem> node) {
+        if (isRoot(node)) {
+            return;
+        }
+        session.duplicate(node.getValue().id()).ifPresent(this::select);
+    }
+
+    private void deleteItem(TreeItem<ProjectItem> node) {
+        if (isRoot(node)) {
+            return;
+        }
+        ProjectItem item = node.getValue();
+        int count = ProjectTree.requestCount(item);
+        String message = item instanceof Folder
+                ? "Delete folder \"" + item.name() + "\" and " + count + (count == 1 ? " request" : " requests") + " inside it?"
+                : "Delete request \"" + item.name() + "\"?";
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.OK, ButtonType.CANCEL);
+        alert.initOwner(rootPane.getScene().getWindow());
+        alert.setTitle("Delete");
+        alert.setHeaderText(null);
+        alert.showAndWait().filter(button -> button == ButtonType.OK).ifPresent(button -> session.delete(item.id()));
+    }
+
+    private Drop dropFor(TreeItem<ProjectItem> node, double y, double height) {
+        if (node == null || node.getValue() == null) {
+            return null;
+        }
+        if (node == requestTree.getRoot()) {
+            return new Drop("", "", false, Zone.INTO);
+        }
+        ProjectItem item = node.getValue();
+        double ratio = height <= 0 ? 0.5 : y / height;
+        String parent = ProjectTree.parentOf(session.project(), item.id()).orElse("");
+        if (item instanceof Folder) {
+            if (ratio < 0.25) {
+                return new Drop(parent, item.id(), false, Zone.BEFORE);
+            }
+            if (ratio > 0.75) {
+                return new Drop(parent, item.id(), true, Zone.AFTER);
+            }
+            return new Drop(item.id(), "", false, Zone.INTO);
+        }
+        return ratio < 0.5
+                ? new Drop(parent, item.id(), false, Zone.BEFORE)
+                : new Drop(parent, item.id(), true, Zone.AFTER);
+    }
+
+    private boolean acceptable(Drop drop) {
+        return drop != null && draggedId != null
+                && ProjectTree.isValidMove(session.project(), draggedId, drop.parentId(), drop.anchorId());
     }
 
     private void applyInitialDivider() {
@@ -238,23 +518,80 @@ public class MainLayoutController extends LayoutController implements Routable {
         activeRail = active;
     }
 
-    private void collapse(TreeItem<RequestNode> item) {
+    private void collapse(TreeItem<ProjectItem> item) {
         item.setExpanded(false);
         item.getChildren().forEach(this::collapse);
     }
 
+    private void onRunningChanged(boolean running) {
+        runButton.setDisable(running);
+        stopButton.setDisable(!running);
+        statusLabel.setText(running ? "Running..." : "Ready");
+    }
+
+    private static FileChooser chooser(String title) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(title);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Apiro project", "*" + EXTENSION));
+        return chooser;
+    }
+
+    private static Path toPath(File file) {
+        return file == null ? null : file.toPath();
+    }
+
+    private void onSave() {
+        if (!session.isOpen()) {
+            statusLabel.setText("No project to save");
+            return;
+        }
+        try {
+            session.save();
+            statusLabel.setText("Saved");
+        } catch (IOException e) {
+            statusLabel.setText("Could not save: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onNewProject() {
+        Path path = toPath(chooser("New project").showSaveDialog(rootPane.getScene().getWindow()));
+        if (path == null) {
+            return;
+        }
+        Path target = path.getFileName().toString().endsWith(EXTENSION)
+                ? path
+                : path.resolveSibling(path.getFileName() + EXTENSION);
+        try {
+            session.create(target);
+            statusLabel.setText("Created " + session.project().name());
+        } catch (IOException e) {
+            statusLabel.setText("Could not create project: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onOpenProject() {
+        Path path = toPath(chooser("Open project").showOpenDialog(rootPane.getScene().getWindow()));
+        if (path == null) {
+            return;
+        }
+        try {
+            session.open(path);
+            statusLabel.setText("Opened " + session.project().name());
+        } catch (IOException | RuntimeException e) {
+            statusLabel.setText("Could not open project: " + e.getMessage());
+        }
+    }
+
     @FXML
     private void onRun() {
-        statusLabel.setText("Running...");
-        runButton.setDisable(true);
-        stopButton.setDisable(false);
+        runCommand.run();
     }
 
     @FXML
     private void onStop() {
-        statusLabel.setText("Stopped");
-        runButton.setDisable(false);
-        stopButton.setDisable(true);
+        runService.cancel();
     }
 
     @FXML
@@ -269,12 +606,17 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @FXML
     private void onAddRequest() {
-        statusLabel.setText("New request");
+        addRequest(requestTree.getSelectionModel().getSelectedItem());
+    }
+
+    @FXML
+    private void onAddFolder() {
+        addFolder(requestTree.getSelectionModel().getSelectedItem());
     }
 
     @FXML
     private void onCollapseAll() {
-        TreeItem<RequestNode> root = requestTree.getRoot();
+        TreeItem<ProjectItem> root = requestTree.getRoot();
         if (root != null) {
             root.getChildren().forEach(this::collapse);
         }
@@ -295,26 +637,102 @@ public class MainLayoutController extends LayoutController implements Routable {
         selectRail(environmentsRailButton, "Environments");
     }
 
-    private static final class RequestTreeCell extends TreeCell<RequestNode> {
+    private final class RequestTreeCell extends TreeCell<ProjectItem> {
+
+        private final ContextMenu menu = new ContextMenu();
+        private final MenuItem newRequest = new MenuItem("New request");
+        private final MenuItem newFolder = new MenuItem("New folder");
+        private final SeparatorMenuItem separator = new SeparatorMenuItem();
+        private final MenuItem rename = new MenuItem("Rename");
+        private final MenuItem duplicate = new MenuItem("Duplicate");
+        private final MenuItem delete = new MenuItem("Delete");
+
+        RequestTreeCell() {
+            newRequest.setOnAction(event -> addRequest(getTreeItem()));
+            newFolder.setOnAction(event -> addFolder(getTreeItem()));
+            rename.setOnAction(event -> renameItem(getTreeItem()));
+            duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
+            delete.setOnAction(event -> deleteItem(getTreeItem()));
+            menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete);
+            setOnDragDetected(this::onDragDetected);
+            setOnDragOver(this::onDragOver);
+            setOnDragDropped(this::onDragDropped);
+            setOnDragExited(event -> mark(Zone.NONE));
+            setOnDragDone(event -> {
+                draggedId = null;
+                mark(Zone.NONE);
+            });
+        }
 
         @Override
-        protected void updateItem(RequestNode node, boolean empty) {
-            super.updateItem(node, empty);
-            if (empty || node == null) {
+        protected void updateItem(ProjectItem item, boolean empty) {
+            super.updateItem(item, empty);
+            mark(Zone.NONE);
+            if (empty || item == null) {
                 setText(null);
                 setGraphic(null);
+                setContextMenu(null);
                 return;
             }
-            setText(node.name());
-            if (node.isFolder()) {
+            boolean root = getTreeItem() == requestTree.getRoot();
+            separator.setVisible(!root);
+            rename.setVisible(!root);
+            duplicate.setVisible(!root);
+            delete.setVisible(!root);
+            setContextMenu(menu);
+            setText(item.name());
+            if (item instanceof RequestItem request) {
+                Label badge = new Label(request.method().shortLabel());
+                badge.getStyleClass().addAll("method-badge", "method-" + request.method().name().toLowerCase());
+                setGraphic(badge);
+            } else {
                 Region icon = new Region();
                 icon.getStyleClass().addAll("icon", "icon-folder", "icon-sm", "icon-muted");
                 setGraphic(icon);
-            } else {
-                Label badge = new Label(node.badge());
-                badge.getStyleClass().addAll("method-badge", "method-" + node.method().toLowerCase());
-                setGraphic(badge);
             }
+        }
+
+        private void onDragDetected(MouseEvent event) {
+            TreeItem<ProjectItem> node = getTreeItem();
+            if (isRoot(node)) {
+                return;
+            }
+            Dragboard board = startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent();
+            content.putString(node.getValue().id());
+            board.setContent(content);
+            draggedId = node.getValue().id();
+            event.consume();
+        }
+
+        private void onDragOver(DragEvent event) {
+            Drop drop = dropFor(getTreeItem(), event.getY(), getHeight());
+            if (acceptable(drop)) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                mark(drop.zone());
+            } else {
+                mark(Zone.NONE);
+            }
+            event.consume();
+        }
+
+        private void onDragDropped(DragEvent event) {
+            Drop drop = dropFor(getTreeItem(), event.getY(), getHeight());
+            boolean done = acceptable(drop);
+            if (done) {
+                session.move(draggedId, drop.parentId(), drop.anchorId(), drop.after());
+            }
+            event.setDropCompleted(done);
+            event.consume();
+        }
+
+        private void mark(Zone zone) {
+            setStyle(switch (zone) {
+                case BEFORE -> "-fx-border-color: #3574f0 transparent transparent transparent; -fx-border-width: 2 0 0 0;";
+                case AFTER -> "-fx-border-color: transparent transparent #3574f0 transparent; -fx-border-width: 0 0 2 0;";
+                case INTO -> "-fx-background-color: rgba(53, 116, 240, 0.18);";
+                case NONE -> "";
+            });
         }
     }
 }

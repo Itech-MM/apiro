@@ -8,7 +8,8 @@
     <top>
         <HBox fx:id="topBar" styleClass="top-bar" spacing="10" alignment="CENTER_LEFT">
             <Label fx:id="logoLabel" text="A" styleClass="app-logo" />
-            <ComboBox fx:id="projectCombo" styleClass="project-combo" />
+            <Button text="New" styleClass="icon-button" onAction="#onNewProject" />
+			<Button text="Open" styleClass="icon-button" onAction="#onOpenProject" />
             <Region HBox.hgrow="ALWAYS" />
             <HBox styleClass="env-box" spacing="6" alignment="CENTER_LEFT">
                 <Region styleClass="env-dot" />
@@ -72,6 +73,11 @@
                             <Region styleClass="icon, icon-plus, icon-sm" />
                         </graphic>
                     </Button>
+                    <Button fx:id="addFolderButton" styleClass="icon-button, icon-button-sm" onAction="#onAddFolder">
+					    <graphic>
+					        <Region styleClass="icon, icon-folder, icon-sm" />
+					    </graphic>
+					</Button>
                     <Button fx:id="collapseAllButton" styleClass="icon-button, icon-button-sm" onAction="#onCollapseAll">
                         <graphic>
                             <Region styleClass="icon, icon-minus, icon-sm" />

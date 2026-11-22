@@ -6,10 +6,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.github.itech_framework.api_client.interceptor.HeaderRedactor;
+import io.github.itech_framework.api_client.utils.response.RedirectHop;
+import io.github.itech_framework.api_client.utils.response.SentRequest;
 import io.github.itech_framework.code_editor.CodeEditor;
 import io.github.itech_framework.core.annotations.methods.OnInit;
 import io.github.itech_framework.java_fx.annotations.components.FxComponent;
 import io.github.itech_framework.java_fx.annotations.components.Root;
+import io.github.itech_mm.apiro.http.ExchangeResult;
+import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.ResponseData;
 import javafx.fxml.FXML;
@@ -26,7 +31,7 @@ import javafx.scene.layout.VBox;
 public class ResponsePanelView {
 
     private enum ResponseTab {
-        BODY, HEADERS, SENT, COOKIES
+        BODY, HEADERS, SENT, COOKIES, TIMELINE
     }
 
     private static final double BAR_WIDTH = 120;
@@ -66,6 +71,9 @@ public class ResponsePanelView {
     private final ToggleGroup group = new ToggleGroup();
     private final Map<ResponseTab, ToggleButton> tabs = new EnumMap<>(ResponseTab.class);
     private ResponseData data;
+    private ExchangeResult exchange;
+    private List<String> unresolved = List.of();
+    private String notice = "";
 
     @OnInit
     private void init() {
@@ -89,17 +97,48 @@ public class ResponsePanelView {
         return root;
     }
 
-    public void showResponse(ResponseData response) {
-        data = response;
+    public void showResult(ExchangeResult result, List<String> undefined) {
+        exchange = result;
+        data = result.response();
+        unresolved = undefined == null ? List.of() : List.copyOf(undefined);
+        notice = "";
         show(statusBox, true);
-        updateStatus(response);
+        updateStatus(data);
         updateTabLabels();
         renderContent();
     }
 
+    public void showFailure(FailureKind kind, String message) {
+        showNotice("Failed", label(kind), message == null ? "" : message, "status-error");
+    }
+
+    public void showCancelled() {
+        showNotice("Cancelled", "", "The request was cancelled.", "status-info");
+    }
+
     public void clear() {
         data = null;
+        exchange = null;
+        unresolved = List.of();
+        notice = "";
         show(statusBox, false);
+        updateTabLabels();
+        renderContent();
+    }
+
+    private void showNotice(String title, String meta, String message, String style) {
+        data = null;
+        exchange = null;
+        unresolved = List.of();
+        notice = message;
+        show(statusBox, true);
+        applyStyle(statusDot, style);
+        applyStyle(statusLabel, style);
+        statusLabel.setText(title);
+        metaLabel.setText(meta);
+        setWidth(timingHeaders, 0);
+        setWidth(timingBody, 0);
+        headersTimeLabel.setText("");
         updateTabLabels();
         renderContent();
     }
@@ -137,19 +176,55 @@ public class ResponsePanelView {
         tabs.get(ResponseTab.HEADERS).setText(withCount("Headers", data == null ? 0 : data.headers().size()));
         tabs.get(ResponseTab.SENT).setText("Sent");
         tabs.get(ResponseTab.COOKIES).setText(withCount("Cookies", data == null ? 0 : data.cookies().size()));
+        tabs.get(ResponseTab.TIMELINE).setText("Timeline");
     }
 
     private void renderContent() {
         if (data == null) {
-            display("plaintext", "");
+            display("plaintext", selectedTab() == ResponseTab.BODY ? notice : "");
             return;
         }
         switch (selectedTab()) {
             case BODY -> display(looksLikeJson(data.body()) ? "json" : "plaintext", data.body());
             case HEADERS -> display("plaintext", lines(data.headers(), ": "));
-            case SENT -> display("plaintext", "Not available yet");
+            case SENT -> display("plaintext", sentText());
             case COOKIES -> display("plaintext", lines(data.cookies(), "="));
+            case TIMELINE -> display("plaintext", timelineText());
         }
+    }
+
+    private String sentText() {
+        StringBuilder text = new StringBuilder();
+        if (!unresolved.isEmpty()) {
+            text.append("Undefined variables: ")
+                    .append(unresolved.stream().map(name -> "{{" + name + "}}").collect(Collectors.joining(", ")))
+                    .append("\n\n");
+        }
+        SentRequest sent = exchange == null ? null : exchange.sent();
+        if (sent == null) {
+            return text.append("Not available").toString();
+        }
+        text.append(sent.method()).append(' ').append(sent.uri()).append('\n');
+        HeaderRedactor.defaults().redact(sent.headers())
+                .forEach((name, values) -> values.forEach(value -> text.append(name).append(": ").append(value).append('\n')));
+        return text.toString().stripTrailing();
+    }
+
+    private String timelineText() {
+        List<RedirectHop> hops = exchange == null ? List.of() : exchange.redirects();
+        StringBuilder text = new StringBuilder();
+        text.append("Headers received  ").append(data.headersMillis()).append(" ms\n");
+        text.append("Total             ").append(data.totalMillis()).append(" ms\n");
+        text.append("Attempts          ").append(data.attempts()).append('\n');
+        text.append("Redirects         ").append(hops.size());
+        for (RedirectHop hop : hops) {
+            text.append("\n  ").append(hop.status()).append(' ').append(hop.from()).append(" -> ").append(hop.location());
+        }
+        if (!hops.isEmpty()) {
+            text.append("\n\nHeaders other than Accept, Accept-Charset, Accept-Language, Content-Type and User-Agent")
+                    .append(" are dropped when a redirect leaves the origin.");
+        }
+        return text.toString();
     }
 
     private void display(String language, String text) {
@@ -170,6 +245,19 @@ public class ResponsePanelView {
 
     private static String withCount(String title, int count) {
         return count > 0 ? title + " " + count : title;
+    }
+
+    private static String label(FailureKind kind) {
+        return switch (kind) {
+            case INVALID_REQUEST -> "Invalid request";
+            case FILE_MISSING -> "File missing";
+            case TIMEOUT -> "Timed out";
+            case UNKNOWN_HOST -> "Unknown host";
+            case CONNECTION -> "Connection failed";
+            case TLS -> "TLS error";
+            case BODY_TOO_LARGE -> "Response too large";
+            case OTHER -> "Error";
+        };
     }
 
     private static String styleFor(int status) {
