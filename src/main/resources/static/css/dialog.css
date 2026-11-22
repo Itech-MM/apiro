@@ -1,0 +1,18 @@
+.alert-container {
+    -fx-border-color: #A1A1AA;
+    -fx-border-width: 1px;
+}
+
+.root.dark-mode .alert-container {
+    -fx-border-color: #5A5A5A;
+}
+
+.text-area .scroll-pane,
+.text-area .scroll-pane > .viewport,
+.text-area .content {
+    -fx-background-color: transparent;
+}
+
+.muted {
+    -fx-opacity: 0.7;
+}

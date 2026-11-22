@@ -10,6 +10,9 @@ import java.util.Set;
 
 import io.github.itech_framework.core.annotations.dependency.Use;
 import io.github.itech_framework.java_fx.annotations.FxController;
+import io.github.itech_framework.java_fx.annotations.FxUse;
+import io.github.itech_framework.java_fx.annotations.components.FxScope;
+import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_framework.java_fx.router.core.Routable;
 import io.github.itech_framework.java_fx.ui.layout.LayoutController;
 import io.github.itech_mm.apiro.http.RequestRunService;
@@ -22,6 +25,8 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
+import io.github.itech_mm.apiro.ui.component.AuthEditorView;
+import io.github.itech_mm.apiro.ui.settings.ProjectSettingsDialog;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
@@ -184,6 +189,9 @@ public class MainLayoutController extends LayoutController implements Routable {
     @Use
     private ProjectSession session;
 
+    @FxUse(scope = FxScope.PROTOTYPE)
+    private FxProvider<AuthEditorView> authEditors;
+    
     @Use
     private RequestRunService runService;
 
@@ -482,6 +490,10 @@ public class MainLayoutController extends LayoutController implements Routable {
         });
     }
 
+    private void openProjectSettings() {
+        ProjectSettingsDialog.open(rootPane.getScene().getWindow(), session, authEditors);
+    }
+    
     private void renameItem(TreeItem<ProjectItem> node) {
         if (isRoot(node)) {
             return;
@@ -718,6 +730,9 @@ public class MainLayoutController extends LayoutController implements Routable {
         private final MenuItem rename = new MenuItem("Rename");
         private final MenuItem duplicate = new MenuItem("Duplicate");
         private final MenuItem delete = new MenuItem("Delete");
+        
+        private final SeparatorMenuItem settingsSeparator = new SeparatorMenuItem();
+        private final MenuItem projectSettings = new MenuItem("Project settings");
 
         RequestTreeCell() {
             newRequest.setOnAction(event -> addRequest(getTreeItem()));
@@ -725,7 +740,9 @@ public class MainLayoutController extends LayoutController implements Routable {
             rename.setOnAction(event -> renameItem(getTreeItem()));
             duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
             delete.setOnAction(event -> deleteItem(getTreeItem()));
-            menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete);
+            projectSettings.setOnAction(event -> openProjectSettings());
+            menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete, settingsSeparator,
+                    projectSettings);
             setOnDragDetected(this::onDragDetected);
             setOnDragOver(this::onDragOver);
             setOnDragDropped(this::onDragDropped);
@@ -751,6 +768,8 @@ public class MainLayoutController extends LayoutController implements Routable {
             rename.setVisible(!root);
             duplicate.setVisible(!root);
             delete.setVisible(!root);
+            settingsSeparator.setVisible(root);
+            projectSettings.setVisible(root);
             setContextMenu(menu);
             setText(item.name());
             if (item instanceof RequestItem request) {

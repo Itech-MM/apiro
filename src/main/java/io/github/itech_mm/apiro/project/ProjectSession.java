@@ -1,5 +1,10 @@
 package io.github.itech_mm.apiro.project;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+
 import io.github.itech_framework.core.annotations.components.levels.Service;
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
@@ -13,10 +18,6 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Optional;
 
 @Service
 public class ProjectSession {
@@ -161,6 +162,17 @@ public class ProjectSession {
         }
     }
 
+    public void updateProject(UnaryOperator<Project> change) {
+        Project current = project.get();
+        if (current == null) {
+            return;
+        }
+        Project next = change.apply(current);
+        if (next != null && !next.equals(current)) {
+            changed(next);
+        }
+    }
+    
     private void changed(Project next) {
         project.set(next);
         structure.set(structure.get() + 1);
