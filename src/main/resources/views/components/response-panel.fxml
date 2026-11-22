@@ -11,6 +11,9 @@
         <HBox fx:id="tabBox" alignment="CENTER_LEFT" spacing="2" />
         <Region HBox.hgrow="ALWAYS" />
         <HBox fx:id="statusBox" alignment="CENTER_LEFT" spacing="8">
+            <ProgressIndicator fx:id="sendingSpinner" styleClass="sending-spinner"
+                   minWidth="14" minHeight="14" prefWidth="14" prefHeight="14"
+                   maxWidth="14" maxHeight="14" visible="false" managed="false" />
             <Region fx:id="statusDot" styleClass="status-dot" />
             <Label fx:id="statusLabel" styleClass="status-text" />
             <Label fx:id="metaLabel" styleClass="muted" />

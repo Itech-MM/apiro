@@ -11,6 +11,7 @@ import io.github.itech_framework.java_fx.annotations.FxUse;
 import io.github.itech_framework.java_fx.annotations.components.FxScope;
 import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_framework.java_fx.router.core.Routable;
+import io.github.itech_framework.java_fx.ui.dialog.AlertDialog;
 import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.http.RequestPreparer;
 import io.github.itech_mm.apiro.http.RequestPreparer.PreparedRequest;
@@ -39,6 +40,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
@@ -48,6 +50,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 @FxController
 public class WorkspaceController implements Routable {
@@ -72,6 +75,12 @@ public class WorkspaceController implements Routable {
 
     @FXML
     private StackPane responsePane;
+    
+    @FXML
+    private ProgressBar sendProgress;
+
+    private String runningId = "";
+    private long runStartedNanos;
 
     @FxUse(scope = FxScope.PROTOTYPE)
     private FxProvider<KeyValueTableView> tables;
@@ -113,7 +122,10 @@ public class WorkspaceController implements Routable {
         Platform.runLater(this::hideTabContent);
         bindDividerHover();
         session.selectedRequestIdProperty().addListener((obs, oldValue, newValue) -> onSelectionChanged());
-        runService.runningProperty().addListener((obs, was, running) -> sendButton.setDisable(running || loadedId.isEmpty()));
+        runService.runningProperty().addListener((obs, was, running) -> {
+            sendButton.setDisable(running || loadedId.isEmpty());
+            refreshRunning();
+        });
         runCommand.register(this::send);
         session.registerFlush(this::commit);
         session.structureProperty().addListener((obs, oldValue, newValue) -> refreshTab());
@@ -243,8 +255,12 @@ public class WorkspaceController implements Routable {
         RequestBody edited = bodyEditor.getBody();
         boolean keepStored = edited.type() == BodyType.MULTIPART || edited.type() == BodyType.BINARY;
         HttpMethod method = methodCombo.getValue() == null ? original.method() : methodCombo.getValue();
+        AuthConfig auth = authEditor.getConfig();
+        if (auth.isInherit() && original.auth() == null) {
+            auth = null;
+        }
         return new RequestItem(original.id(), original.name(), method, urlField.getText(),
-                queryTable.getItems(), headersTable.getItems(), authEditor.getConfig(),
+                queryTable.getItems(), headersTable.getItems(), auth,
                 keepStored ? original.body() : edited, original.settings());
     }
 
@@ -300,13 +316,55 @@ public class WorkspaceController implements Routable {
             response.showFailure(FailureKind.INVALID_REQUEST, message(e));
             return;
         }
-        String requestId = edited.id();
+        if (prepared.unresolved().isEmpty()) {
+            dispatch(edited.id(), prepared);
+            return;
+        }
+        confirmUnresolved(prepared.unresolved(), () -> dispatch(edited.id(), prepared));
+    }
+
+    private void dispatch(String requestId, PreparedRequest prepared) {
+        if (runService.runningProperty().get()) {
+            return;
+        }
         List<String> unresolved = prepared.unresolved();
-        runService.run(prepared, outcome -> {
+        runningId = requestId;
+        runStartedNanos = System.nanoTime();
+        boolean started = runService.run(prepared, outcome -> {
+            runningId = "";
             if (requestId.equals(loadedId)) {
                 show(outcome, unresolved);
             }
         });
+        if (!started) {
+            runningId = "";
+        }
+    }
+
+    private void refreshRunning() {
+        boolean here = runService.runningProperty().get() && !runningId.isEmpty() && runningId.equals(loadedId);
+        sendProgress.setVisible(here);
+        if (here) {
+            response.showSending(runStartedNanos);
+        }
+    }
+
+    private void confirmUnresolved(List<String> names, Runnable proceed) {
+        String list = names.stream().limit(8).map(name -> "{{" + name + "}}").collect(Collectors.joining(", "));
+        String more = names.size() > 8 ? " and " + (names.size() - 8) + " more" : "";
+        AlertDialog.builder()
+                .level(AlertDialog.Level.WARNING)
+                .title("Undefined variables")
+                .message("These variables have no value: " + list + more + ". They will be sent as written.")
+                .addOwner(owner())
+                .addButton("Send anyway", proceed)
+                .addButton("Cancel", null)
+                .build()
+                .showAsync();
+    }
+
+    private Stage owner() {
+        return sendButton.getScene() != null && sendButton.getScene().getWindow() instanceof Stage stage ? stage : null;
     }
 
     private void show(SendOutcome outcome, List<String> unresolved) {

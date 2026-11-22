@@ -1,5 +1,6 @@
 package io.github.itech_mm.apiro.ui.component;
 
+import java.util.Arrays;
 import java.util.List;
 
 import io.github.itech_framework.core.annotations.methods.OnInit;
@@ -54,11 +55,14 @@ public class AuthEditorView {
 	@FXML
 	private PasswordField keyValueField;
 
-	private final ReadOnlyStringWrapper preview = new ReadOnlyStringWrapper("None");
+	private boolean allowInherit = true;
 
+	private final ReadOnlyStringWrapper preview = new ReadOnlyStringWrapper("Inherit from parent");
+	
 	@OnInit
 	private void init() {
-		typeCombo.setItems(FXCollections.observableArrayList(AuthType.values()));
+		typeCombo.setItems(FXCollections.observableArrayList(typesFor(allowInherit)));
+		
 		typeCombo.setConverter(new StringConverter<>() {
 			@Override
 			public String toString(AuthType type) {
@@ -70,7 +74,7 @@ public class AuthEditorView {
 				return null;
 			}
 		});
-		typeCombo.setValue(AuthType.NONE);
+		typeCombo.setValue(defaultType());
 		typeCombo.valueProperty().addListener((observable, oldValue, newValue) -> refresh());
 
 		List.of(usernameField, passwordField, tokenField, keyNameField, keyValueField)
@@ -90,23 +94,41 @@ public class AuthEditorView {
 		return preview.get();
 	}
 
+	public void setAllowInherit(boolean allow) {
+		allowInherit = allow;
+		AuthType current = typeCombo.getValue();
+		typeCombo.setItems(FXCollections.observableArrayList(typesFor(allow)));
+		typeCombo.setValue(current == null || (current == AuthType.INHERIT && !allow) ? defaultType() : current);
+		refresh();
+	}
+
 	public void setConfig(AuthConfig config) {
-		usernameField.setText(config.username());
-		passwordField.setText(config.password());
-		tokenField.setText(config.token());
-		keyNameField.setText(config.keyName());
-		keyValueField.setText(config.keyValue());
-		typeCombo.setValue(config.type());
+		AuthConfig source = config == null ? AuthConfig.inherit() : config;
+		usernameField.setText(source.username());
+		passwordField.setText(source.password());
+		tokenField.setText(source.token());
+		keyNameField.setText(source.keyName());
+		keyValueField.setText(source.keyValue());
+		typeCombo.setValue(source.isInherit() && !allowInherit ? AuthType.NONE : source.type());
 		refresh();
 	}
 
 	public AuthConfig getConfig() {
-		return new AuthConfig(typeCombo.getValue(), usernameField.getText(), passwordField.getText(),
+		AuthType type = typeCombo.getValue() == null ? defaultType() : typeCombo.getValue();
+		return new AuthConfig(type, usernameField.getText(), passwordField.getText(),
 				tokenField.getText(), keyNameField.getText(), keyValueField.getText());
 	}
 
+	private AuthType defaultType() {
+		return allowInherit ? AuthType.INHERIT : AuthType.NONE;
+	}
+
+	private static List<AuthType> typesFor(boolean allowInherit) {
+		return Arrays.stream(AuthType.values()).filter(type -> allowInherit || type != AuthType.INHERIT).toList();
+	}
+
 	private void refresh() {
-		AuthType type = typeCombo.getValue() == null ? AuthType.NONE : typeCombo.getValue();
+		AuthType type = typeCombo.getValue() == null ? defaultType() : typeCombo.getValue();
 		show(basicBox, type == AuthType.BASIC);
 		show(bearerBox, type == AuthType.BEARER);
 		show(apiKeyBox, type == AuthType.API_KEY);

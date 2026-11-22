@@ -17,15 +17,19 @@ import io.github.itech_mm.apiro.http.ExchangeResult;
 import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.ResponseData;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 @FxComponent("/views/components/response-panel.fxml")
 public class ResponsePanelView {
@@ -67,6 +71,11 @@ public class ResponsePanelView {
 
     @FXML
     private CodeEditor viewer;
+    
+    @FXML
+    private ProgressIndicator sendingSpinner;
+
+    private Timeline ticker;
 
     private final ToggleGroup group = new ToggleGroup();
     private final Map<ResponseTab, ToggleButton> tabs = new EnumMap<>(ResponseTab.class);
@@ -98,6 +107,7 @@ public class ResponsePanelView {
     }
 
     public void showResult(ExchangeResult result, List<String> undefined) {
+        setSending(false);
         exchange = result;
         data = result.response();
         unresolved = undefined == null ? List.of() : List.copyOf(undefined);
@@ -117,6 +127,7 @@ public class ResponsePanelView {
     }
 
     public void clear() {
+        setSending(false);
         data = null;
         exchange = null;
         unresolved = List.of();
@@ -125,8 +136,43 @@ public class ResponsePanelView {
         updateTabLabels();
         renderContent();
     }
+    
+    public void showSending(long startedNanos) {
+        data = null;
+        exchange = null;
+        unresolved = List.of();
+        notice = "Waiting for the server to respond...";
+        setSending(true);
+        show(statusBox, true);
+        applyStyle(statusLabel, "status-info");
+        statusLabel.setText("Sending request...");
+        setWidth(timingHeaders, 0);
+        setWidth(timingBody, 0);
+        headersTimeLabel.setText("");
+        updateElapsed(startedNanos);
+        ticker = new Timeline(new KeyFrame(Duration.millis(100), event -> updateElapsed(startedNanos)));
+        ticker.setCycleCount(Timeline.INDEFINITE);
+        ticker.play();
+        updateTabLabels();
+        renderContent();
+    }
+
+    private void updateElapsed(long startedNanos) {
+        double seconds = (System.nanoTime() - startedNanos) / 1_000_000_000.0;
+        metaLabel.setText(String.format(Locale.ROOT, "%.1f s", seconds));
+    }
+
+    private void setSending(boolean on) {
+        if (ticker != null) {
+            ticker.stop();
+            ticker = null;
+        }
+        show(sendingSpinner, on);
+        show(statusDot, !on);
+    }
 
     private void showNotice(String title, String meta, String message, String style) {
+        setSending(false);
         data = null;
         exchange = null;
         unresolved = List.of();

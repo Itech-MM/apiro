@@ -26,6 +26,7 @@
         <TextField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
         <Label text="HTTP/1.1" styleClass="protocol-label" />
     </HBox>
+        <ProgressBar fx:id="sendProgress" styleClass="send-progress" progress="-1" maxWidth="Infinity" visible="false" />
     <SplitPane fx:id="editorSplit" styleClass="editor-split" orientation="VERTICAL" dividerPositions="0.55" VBox.vgrow="ALWAYS">
         <StackPane fx:id="editorPane" styleClass="page" minHeight="120">
             <Label text="Query / Headers / Auth / Body (step 6)" styleClass="muted" />

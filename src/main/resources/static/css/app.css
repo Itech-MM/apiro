@@ -1366,3 +1366,29 @@
 .editor-split > .split-pane-divider.divider-hot {
     -fx-background-color: -fx-primary;
 }
+
+.send-progress {
+    -fx-pref-height: 3px;
+    -fx-min-height: 3px;
+    -fx-max-height: 3px;
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.send-progress > .track {
+    -fx-background-color: -fx-border-base;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+.send-progress > .bar {
+    -fx-background-color: -fx-primary;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+.sending-spinner {
+    -fx-progress-color: -fx-info;
+}

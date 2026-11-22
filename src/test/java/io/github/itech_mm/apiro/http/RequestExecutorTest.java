@@ -6,17 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import io.github.itech_framework.api_client.interceptor.HeaderRedactor;
-import io.github.itech_framework.api_client.utils.CancelToken;
-import io.github.itech_mm.apiro.http.RequestPreparer.PreparedRequest;
-import io.github.itech_mm.apiro.model.BodyType;
-import io.github.itech_mm.apiro.model.FormPart;
-import io.github.itech_mm.apiro.model.HttpMethod;
-import io.github.itech_mm.apiro.model.KeyValue;
-import io.github.itech_mm.apiro.model.RequestBody;
-import io.github.itech_mm.apiro.model.RequestSettings;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -37,12 +26,26 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
+import io.github.itech_framework.api_client.interceptor.HeaderRedactor;
+import io.github.itech_framework.api_client.utils.CancelToken;
+import io.github.itech_mm.apiro.http.RequestPreparer.PreparedRequest;
+import io.github.itech_mm.apiro.model.BodyType;
+import io.github.itech_mm.apiro.model.FormPart;
+import io.github.itech_mm.apiro.model.HttpMethod;
+import io.github.itech_mm.apiro.model.KeyValue;
+import io.github.itech_mm.apiro.model.RequestBody;
+import io.github.itech_mm.apiro.model.RequestSettings;
 
 class RequestExecutorTest {
 
@@ -58,7 +61,6 @@ class RequestExecutorTest {
     private static ExecutorService pool;
     private static HttpServer server;
     private static String base;
-    private static ApiClientFactory factory;
     private static RequestExecutor executor;
     
     private static TestApiClients clients;
@@ -112,7 +114,6 @@ class RequestExecutorTest {
         });
         server.start();
         base = "http://127.0.0.1:" + server.getAddress().getPort();
-        factory = new ApiClientFactory(ClientSettings.defaults());
         clients = new TestApiClients(50L * 1024 * 1024);
         executor = new RequestExecutor(clients.calls());
     }
