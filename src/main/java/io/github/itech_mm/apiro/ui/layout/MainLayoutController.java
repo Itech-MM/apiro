@@ -424,6 +424,8 @@ public class MainLayoutController extends LayoutController implements Routable {
 		}
 		if (restored == null) {
 			session.selectedRequestIdProperty().set("");
+		} else {
+			reveal(restored);
 		}
 	}
 
@@ -518,23 +520,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	private void reveal(TreeItem<ProjectItem> item) {
 		int row = requestTree.getRow(item);
-		if (row < 0) {
-			return;
+		if (row >= 0) {
+			Platform.runLater(() -> requestTree.scrollTo(Math.max(0, row - 2)));
 		}
-		Platform.runLater(() -> {
-			double top = requestTree.localToScene(requestTree.getBoundsInLocal()).getMinY();
-			double bottom = requestTree.localToScene(requestTree.getBoundsInLocal()).getMaxY();
-			boolean visible = requestTree.lookupAll(".tree-cell").stream()
-					.filter(node -> node instanceof TreeCell<?> cell && cell.isVisible() && !cell.isEmpty()
-							&& (Object) cell.getTreeItem() == item)
-					.anyMatch(node -> {
-						javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
-						return bounds.getMinY() >= top && bounds.getMaxY() <= bottom;
-					});
-			if (!visible) {
-				requestTree.scrollTo(Math.max(0, row - 3));
-			}
-		});
 	}
 
 	private boolean isRoot(TreeItem<ProjectItem> node) {
@@ -1015,7 +1003,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			setText(item.name());
 			if (item instanceof RequestItem request) {
 				Label tag = new Label(request.method().shortLabel());
-				tag.getStyleClass().addAll("method-text", "method-tag", "method-" + request.method().name().toLowerCase());
+				tag.getStyleClass().addAll("method-text", "method-" + request.method().name().toLowerCase());
 				setGraphic(tag);
 			} else {
 				Region icon = new Region();

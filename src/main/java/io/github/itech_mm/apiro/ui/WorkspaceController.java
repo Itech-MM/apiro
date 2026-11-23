@@ -59,6 +59,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.SetChangeListener;
+import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -91,6 +92,9 @@ public class WorkspaceController implements Routable {
 	private TabPane requestTabs;
 
 	@FXML
+	private HBox urlGroup;
+
+	@FXML
 	private ComboBox<HttpMethod> methodCombo;
 
 	@FXML
@@ -119,6 +123,8 @@ public class WorkspaceController implements Routable {
 
 	@FXML
 	private Label lastRunLabel;
+
+	private static final PseudoClass FOCUS_WITHIN = PseudoClass.getPseudoClass("focus-within");
 
 	private static final DateTimeFormatter TODAY_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -152,7 +158,7 @@ public class WorkspaceController implements Routable {
 
 	@Use
 	private RunCommand runCommand;
-	
+
 	@Use
 	private OpenProjectsStore tabStore;
 
@@ -171,7 +177,7 @@ public class WorkspaceController implements Routable {
 	private boolean loading;
 	private boolean checkQueued;
 	private String saveOnly = "";
-	
+
 	private final PauseTransition draftTimer = new PauseTransition(Duration.millis(700));
 
 	private static final int HEAVY_ROWS = 6;
@@ -179,10 +185,11 @@ public class WorkspaceController implements Routable {
 	private static final int HEAVY_BODY = 200_000;
 
 	private final BusyOverlay busy = new BusyOverlay();
-	
+
 	@OnInit
 	private void init() {
 		setupMethodCombo();
+		setupUrlGroup();
 		setupSections();
 		setupResponse();
 		setEditable(false);
@@ -227,7 +234,7 @@ public class WorkspaceController implements Routable {
 		});
 		runCommand.register(this::send);
 		session.registerFlush(this::commit);
-		
+
 		savedOrder = new ArrayList<>(tabStore.loadTabs());
 		savedSelected = tabStore.selectedTab();
 		for (OpenProject loaded : List.copyOf(session.projects())) {
@@ -235,8 +242,39 @@ public class WorkspaceController implements Routable {
 		}
 		requestTabs.getTabs().addListener((ListChangeListener<Tab>) change -> persistTabs());
 		requestTabs.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> persistTabs());
-		
+
 		draftTimer.setOnFinished(event -> persistDrafts());
+	}
+
+	private void setupUrlGroup() {
+	    urlGroup.sceneProperty().addListener((obs, oldScene, newScene) -> {
+	        if (newScene == null) {
+	            urlGroup.pseudoClassStateChanged(FOCUS_WITHIN, false);
+	            return;
+	        }
+	        newScene.focusOwnerProperty().addListener((o, oldFocus, newFocus) ->
+	                urlGroup.pseudoClassStateChanged(FOCUS_WITHIN, isDescendant(newFocus, urlGroup)));
+	        urlGroup.pseudoClassStateChanged(FOCUS_WITHIN, isDescendant(newScene.getFocusOwner(), urlGroup));
+	    });
+
+	    urlGroup.setOnMousePressed(event -> {
+	        Object target = event.getTarget();
+	        if (!(target instanceof Node node)) {
+	            return;
+	        }
+	        if (!isDescendant(node, methodCombo) && !isDescendant(node, urlField)) {
+	            urlField.requestFocus();
+	        }
+	    });
+	}
+
+	private static boolean isDescendant(Node node, Node ancestor) {
+	    for (Node current = node; current != null; current = current.getParent()) {
+	        if (current == ancestor) {
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 
 	private void refreshWelcome() {
@@ -485,7 +523,7 @@ public class WorkspaceController implements Routable {
 			project.setDrafts(drafts);
 		}
 	}
-	
+
 	private void onProjectActivated(OpenProject next) {
 		refreshWelcome();
 		refreshScope();
@@ -789,7 +827,7 @@ public class WorkspaceController implements Routable {
 		if (loading) {
 			return;
 		}
-		
+
 		if (active == null || runService.isRunning(active.id)) {
 			return;
 		}
@@ -1000,7 +1038,7 @@ public class WorkspaceController implements Routable {
 			dot.setVisible(on);
 			dot.setManaged(on);
 		}
-		
+
 		void refreshText() {
 			String where = project.isVisible() ? " · " + owner.project().name() : "";
 			tab.setText(badge.getText() + " " + title.getText() + ".req" + where);

@@ -1606,3 +1606,151 @@
     -fx-text-fill: -app-text-secondary;
     -fx-font-size: 12px;
 }
+
+.url-bar {
+    -fx-padding: 8 10 8 10;
+}
+
+.url-group {
+    -fx-background-color: -fx-control-inner-background;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-box-border;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0; 
+    -fx-alignment: center-left;
+}
+
+.url-group:hover {
+    -fx-border-color: derive(-fx-box-border, -15%);
+}
+
+.url-group:focus-within {
+    -fx-border-color: -fx-accent;
+}
+
+.url-group .method-combo {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0 6 0 10;
+}
+
+.url-group .url-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0 8 0 8;
+    -fx-alignment: center-left;
+}
+
+.url-group .url-field .text-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 4 0 4 0;
+    -fx-alignment: center-left;
+}
+
+.url-group .protocol-label {
+    -fx-background-color: transparent;
+    -fx-padding: 0 12 0 8;
+}
+
+.url-group-divider {
+    -fx-padding: 6 0 6 0;
+}
+
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 100px;
+    -fx-border-radius: 100px;
+    -fx-padding: 0;
+    -fx-min-width: 20px;
+    -fx-min-height: 20px;
+    -fx-pref-width: 20px;
+    -fx-pref-height: 20px;
+    -fx-max-width: 20px;
+    -fx-max-height: 20px;
+    -fx-alignment: center;
+}
+
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover {
+    -fx-background-color: -fx-hover-base;
+}
+
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button > .arrow {
+    -fx-background-color: -fx-mark-highlight-color, -fx-mark-color;
+    -fx-background-insets: 0 0 -1 0, 0;
+    -fx-padding: 0.166667em 0.333333em 0.166667em 0.333333em;
+    -fx-shape: "M 0 0 h 7 l -3.5 4 z";
+}
+
+.tab-pane > .tab-header-area {
+    -fx-padding: 0;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-padding: 2 8 2 8;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.button,
+.toggle-button,
+.combo-box,
+.menu-button,
+.split-menu-button,
+.tab,
+.check-box,
+.radio-button,
+.hyperlink,
+.menu-item,
+.list-cell,
+.table-row-cell,
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button,
+.tab-pane > .tab-header-area > .headers-region > .tab > .tab-container > .tab-close-button {
+    -fx-cursor: hand;
+}
+
+.button:disabled,
+.toggle-button:disabled,
+.combo-box:disabled,
+.menu-button:disabled,
+.split-menu-button:disabled,
+.check-box:disabled,
+.radio-button:disabled {
+    -fx-cursor: default;
+}
+
+.app-menu-bar {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0 0 0 12;
+}
+
+.app-menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 6 10 6 10;
+    -fx-border-width: 0;
+}
+
+.app-menu-bar > .container > .menu-button:hover,
+.app-menu-bar > .container > .menu-button:showing {
+    -fx-background-color: -fx-hover-base;
+    -fx-background-radius: 4;
+}

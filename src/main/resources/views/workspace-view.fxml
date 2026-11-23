@@ -14,17 +14,22 @@
 		    <Region HBox.hgrow="ALWAYS" />
 		    <Label fx:id="lastRunLabel" styleClass="muted" />
 		</HBox>
-        <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="6">
-            <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
-                <graphic>
-                    <Region styleClass="icon, icon-play" />
-                </graphic>
-            </Button>
-            <Separator orientation="VERTICAL" />
-            <ComboBox fx:id="methodCombo" styleClass="method-combo" />
-            <VariableField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
-            <Label text="HTTP/1.1" styleClass="protocol-label" />
-        </HBox>
+        <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="8">
+		    <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
+		        <graphic>
+		            <Region styleClass="icon, icon-play" />
+		        </graphic>
+		    </Button>
+		
+		    <HBox fx:id="urlGroup" styleClass="url-group"
+		          alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+		        <ComboBox fx:id="methodCombo" styleClass="method-combo" />
+		        <Separator orientation="VERTICAL" styleClass="url-group-divider" />
+		        <VariableField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
+		        <Separator orientation="VERTICAL" styleClass="url-group-divider" />
+		        <Label text="HTTP/1.1" styleClass="protocol-label" />
+		    </HBox>
+		</HBox>
         <ProgressBar fx:id="sendProgress" styleClass="send-progress" progress="-1" maxWidth="Infinity" visible="false" />
         <SplitPane fx:id="editorSplit" styleClass="editor-split" orientation="VERTICAL" dividerPositions="0.55" VBox.vgrow="ALWAYS">
             <StackPane fx:id="editorPane" styleClass="page" minHeight="120">

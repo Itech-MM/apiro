@@ -3,14 +3,16 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+
 <BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="io.github.itech_mm.apiro.ui.layout.MainLayoutController" styleClass="app-shell">
-  <top>
+    <top>
         <BorderPane fx:id="topBar" styleClass="top-bar">
             <left>
                 <HBox spacing="8" alignment="CENTER_LEFT" BorderPane.alignment="CENTER_LEFT">
-                    <Label fx:id="logoLabel" text="A" styleClass="app-logo" />
-                    <Label text="Apiro" styleClass="app-title" />
                     <MenuBar styleClass="app-menu-bar">
                         <Menu text="File">
                             <MenuItem fx:id="newProjectItem" text="New Project..." onAction="#onNewProject" />

@@ -11,6 +11,7 @@ import io.github.itech_framework.java_fx.router.config.RouterConfig;
 import io.github.itech_framework.java_fx.ui.layout.LayoutConfig;
 import io.github.itech_mm.apiro.ui.MonoFont;
 import io.github.itech_mm.apiro.ui.WorkspaceController;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 @ComponentScan(basePackage = "io.github.itech_mm.apiro")
@@ -41,6 +42,15 @@ public class ApiroMain extends ITechJavaFxApplication {
         router.getConfig().addStyleSheets(MonoFont.stylesheet());
         router.to("workspace");
         primaryStage.setMaximized(true);
+
+        primaryStage.getIcons().addAll(
+        	    new Image(getClass().getResourceAsStream("/static/logo/logo-24.png")),
+        	    new Image(getClass().getResourceAsStream("/static/logo/logo-32.png")),
+        	    new Image(getClass().getResourceAsStream("/static/logo/logo-48.png")),
+        	    new Image(getClass().getResourceAsStream("/static/logo/logo-80.png")),
+        	    new Image(getClass().getResourceAsStream("/static/logo/logo-128.png"))
+        	);
+        
         primaryStage.show();
     }
 
