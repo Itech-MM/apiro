@@ -275,6 +275,21 @@ public class ProjectSession {
         persist();
     }
 
+    /** Deletes the project file and its local state from disk, then closes the project. */
+    public void deleteFromDisk(String projectId) throws IOException {
+        Optional<OpenProject> found = findById(projectId);
+        if (found.isEmpty()) {
+            return;
+        }
+        OpenProject target = found.get();
+        Path file = target.file();
+        ProjectStore.delete(file, target.id());
+        closeProject(projectId);
+        if (recents != null) {
+            recents.remove(file);
+        }
+    }
+
     public void removePlaceholder(String slotId) {
         slotFor(slotId).filter(slot -> slot.state() != ProjectSlot.State.READY).ifPresent(slot -> {
             slots.remove(slot);

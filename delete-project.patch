@@ -1,0 +1,204 @@
+diff --git a/src/main/java/io/github/itech_mm/apiro/project/ProjectSession.java b/src/main/java/io/github/itech_mm/apiro/project/ProjectSession.java
+index 3b19bef..9ef416a 100644
+--- a/src/main/java/io/github/itech_mm/apiro/project/ProjectSession.java
++++ b/src/main/java/io/github/itech_mm/apiro/project/ProjectSession.java
+@@ -275,6 +275,21 @@ public class ProjectSession {
+         persist();
+     }
+ 
++    /** Deletes the project file and its local state from disk, then closes the project. */
++    public void deleteFromDisk(String projectId) throws IOException {
++        Optional<OpenProject> found = findById(projectId);
++        if (found.isEmpty()) {
++            return;
++        }
++        OpenProject target = found.get();
++        Path file = target.file();
++        ProjectStore.delete(file, target.id());
++        closeProject(projectId);
++        if (recents != null) {
++            recents.remove(file);
++        }
++    }
++
+     public void removePlaceholder(String slotId) {
+         slotFor(slotId).filter(slot -> slot.state() != ProjectSlot.State.READY).ifPresent(slot -> {
+             slots.remove(slot);
+diff --git a/src/main/java/io/github/itech_mm/apiro/storage/ProjectStore.java b/src/main/java/io/github/itech_mm/apiro/storage/ProjectStore.java
+index b03c59b..70fc7f5 100644
+--- a/src/main/java/io/github/itech_mm/apiro/storage/ProjectStore.java
++++ b/src/main/java/io/github/itech_mm/apiro/storage/ProjectStore.java
+@@ -27,4 +27,26 @@ public final class ProjectStore {
+         AtomicFiles.write(file, ProjectJson.toJson(split.project()));
+         return split.state();
+     }
+-}
+\ No newline at end of file
++
++    /**
++     * Deletes the project file, then makes a best effort to remove its local state and the then-empty state folder.
++     * A failure on the project file is reported; leftover local state is not.
++     */
++    public static void delete(Path file, String projectId) throws IOException {
++        Files.delete(file);
++        Path state = LocalStateStore.pathFor(file, projectId);
++        try {
++            Files.deleteIfExists(state);
++            Path directory = state.getParent();
++            if (directory != null && Files.isDirectory(directory)) {
++                try (var entries = Files.list(directory)) {
++                    if (entries.findAny().isEmpty()) {
++                        Files.delete(directory);
++                    }
++                }
++            }
++        } catch (IOException ignored) {
++            // The project file is gone; stale local state is harmless.
++        }
++    }
++}
+diff --git a/src/main/java/io/github/itech_mm/apiro/ui/layout/MainLayoutController.java b/src/main/java/io/github/itech_mm/apiro/ui/layout/MainLayoutController.java
+index 49830e7..5ba323a 100644
+--- a/src/main/java/io/github/itech_mm/apiro/ui/layout/MainLayoutController.java
++++ b/src/main/java/io/github/itech_mm/apiro/ui/layout/MainLayoutController.java
+@@ -84,6 +84,13 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 
+ 	private static final String RAIL_ACTIVE = "rail-active";
+ 	private static final String EXTENSION = ".apiro.json";
++
++	private static final String DANGER_BUTTON = "alert-danger-button";
++
++	private static final String CLOSE_BUTTON = "dialog-close-button";
++
++	private static final String DIALOG_STYLESHEET = MainLayoutController.class.getResource("/static/css/dialog.css")
++			.toExternalForm();
+ 	private static final double REQUESTS_PANEL_WIDTH = 240.0;
+ 	private static final KeyCodeCombination DUPLICATE_KEYS = new KeyCodeCombination(KeyCode.D,
+ 			KeyCombination.SHORTCUT_DOWN);
+@@ -921,6 +928,51 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 				.orElse(null);
+ 	}
+ 
++	private void deleteProject(TreeItem<ProjectItem> node) {
++		if (!isRoot(node) || placeholderOf(node) != null) {
++			return;
++		}
++		Optional<ProjectSlot> found = session.slotFor(projectIdOf(node));
++		if (found.isEmpty()) {
++			return;
++		}
++		ProjectSlot slot = found.get();
++		String message = "What should happen to \"" + slot.name() + "\"?\n\n"
++				+ "Remove from workspace closes the project and keeps its file on disk. Unsaved edits in its open "
++				+ "requests are discarded.\n\n"
++				+ "Delete from disk permanently deletes the project file and its local data.\n\n" + slot.file();
++		AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Delete project").message(message)
++				.addOwner(owner()).stylesheets(DIALOG_STYLESHEET)
++				.addButton("Remove from workspace", () -> {
++					session.closeProject(slot.id());
++					statusLabel.setText("Removed " + slot.name() + " from workspace");
++				}).addButton("Delete from disk", DANGER_BUTTON, () -> Platform.runLater(() -> confirmDeleteFromDisk(slot)))
++				.addButton("Cancel", CLOSE_BUTTON, null).build().showAsync();
++	}
++
++	private void confirmDeleteFromDisk(ProjectSlot slot) {
++		String message = "Permanently delete \"" + slot.name() + "\" from disk?\n\n"
++				+ "The project file and the local data stored next to it in the .apiro folder are deleted. "
++				+ "This cannot be undone.\n\n" + slot.file();
++		AlertDialog.builder().level(AlertDialog.Level.ERROR).title("Delete from disk").message(message)
++				.addOwner(owner()).stylesheets(DIALOG_STYLESHEET).addButton("Delete permanently", DANGER_BUTTON, () -> {
++					try {
++						session.deleteFromDisk(slot.id());
++						statusLabel.setText("Deleted " + slot.name() + " from disk");
++					} catch (IOException e) {
++						statusLabel.setText("Could not delete project: " + e.getMessage());
++						Platform.runLater(() -> showDeleteError(slot, e));
++					}
++				}).addButton("Cancel", CLOSE_BUTTON, null).build().showAsync();
++	}
++
++	private void showDeleteError(ProjectSlot slot, IOException error) {
++		String detail = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
++		AlertDialog.builder().level(AlertDialog.Level.ERROR).title("Could not delete project")
++				.message("\"" + slot.name() + "\" was not deleted and stays open: " + detail).addOwner(owner())
++				.addButton("OK", null).build().showAsync();
++	}
++
+ 	private void removePlaceholder(TreeItem<ProjectItem> node) {
+ 		ProjectSlot slot = placeholderOf(node);
+ 		if (slot == null) {
+@@ -946,6 +998,8 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 
+ 		private final SeparatorMenuItem settingsSeparator = new SeparatorMenuItem();
+ 		private final MenuItem projectSettings = new MenuItem("Project settings");
++		private final SeparatorMenuItem deleteSeparator = new SeparatorMenuItem();
++		private final MenuItem deleteProject = new MenuItem("Delete project...");
+ 
+ 		RequestTreeCell() {
+ 			newRequest.setOnAction(event -> addRequest(getTreeItem()));
+@@ -954,6 +1008,7 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 			duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
+ 			delete.setOnAction(event -> deleteItem(getTreeItem()));
+ 			projectSettings.setOnAction(event -> openProjectSettings(getTreeItem()));
++			deleteProject.setOnAction(event -> deleteProject(getTreeItem()));
+ 			removeFromWorkspace.setOnAction(event -> removePlaceholder(getTreeItem()));
+ 			newRequest.setGraphic(menuIcon("icon-plus"));
+ 			newFolder.setGraphic(menuIcon("icon-folder-plus"));
+@@ -961,12 +1016,13 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 			duplicate.setGraphic(menuIcon("icon-copy"));
+ 			delete.setGraphic(menuIcon("icon-trash"));
+ 			projectSettings.setGraphic(menuIcon("icon-settings"));
++			deleteProject.setGraphic(menuIcon("icon-trash"));
+ 			removeFromWorkspace.setGraphic(menuIcon("icon-close"));
+ 			rename.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+ 			duplicate.setAccelerator(DUPLICATE_KEYS);
+ 			delete.setAccelerator(new KeyCodeCombination(KeyCode.DELETE));
+ 			menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete, settingsSeparator,
+-					projectSettings, removeFromWorkspace);
++					projectSettings, deleteSeparator, deleteProject, removeFromWorkspace);
+ 			setOnDragDetected(this::onDragDetected);
+ 			setOnDragOver(this::onDragOver);
+ 			setOnDragDropped(this::onDragDropped);
+@@ -1004,6 +1060,8 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 			delete.setVisible(!root);
+ 			settingsSeparator.setVisible(root);
+ 			projectSettings.setVisible(root);
++			deleteSeparator.setVisible(root);
++			deleteProject.setVisible(root);
+ 			setContextMenu(menu);
+ 			setText(item.name());
+ 			if (item instanceof RequestItem request) {
+@@ -1034,6 +1092,8 @@ public class MainLayoutController extends LayoutController implements Routable {
+ 			delete.setVisible(false);
+ 			settingsSeparator.setVisible(false);
+ 			projectSettings.setVisible(false);
++			deleteSeparator.setVisible(false);
++			deleteProject.setVisible(false);
+ 			removeFromWorkspace.setVisible(true);
+ 			setText(slot.name());
+ 			getStyleClass().add("project-placeholder");
+diff --git a/src/main/resources/static/css/dialog.css b/src/main/resources/static/css/dialog.css
+index a060d0e..9503208 100644
+--- a/src/main/resources/static/css/dialog.css
++++ b/src/main/resources/static/css/dialog.css
+@@ -12,3 +12,20 @@
+ .text-area .content {
+     -fx-background-color: transparent;
+ }
++
++.alert-danger-button {
++    -fx-background-color: -fx-danger;
++    -fx-text-fill: #FFFFFF;
++    -fx-padding: 4px 12px;
++    -fx-font-size: 12px;
++    -fx-background-radius: 4px;
++    -fx-cursor: hand;
++}
++
++.alert-danger-button:hover {
++    -fx-background-color: -fx-danger-dark;
++}
++
++.alert-danger-button:pressed {
++    -fx-background-color: derive(-fx-danger-dark, -10%);
++}

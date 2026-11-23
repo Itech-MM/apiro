@@ -12,3 +12,20 @@
 .text-area .content {
     -fx-background-color: transparent;
 }
+
+.alert-danger-button {
+    -fx-background-color: -fx-danger;
+    -fx-text-fill: #FFFFFF;
+    -fx-padding: 4px 12px;
+    -fx-font-size: 12px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.alert-danger-button:hover {
+    -fx-background-color: -fx-danger-dark;
+}
+
+.alert-danger-button:pressed {
+    -fx-background-color: derive(-fx-danger-dark, -10%);
+}
