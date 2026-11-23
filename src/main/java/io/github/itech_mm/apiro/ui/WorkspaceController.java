@@ -539,7 +539,8 @@ public class WorkspaceController implements Routable {
         AlertDialog.builder()
                 .level(AlertDialog.Level.WARNING)
                 .title("Undefined variables")
-                .message("These variables have no value: " + list + more + ". They will be sent as written.")
+                .message("These variables have no value: " + list + more
+                        + ". In headers and body they are sent as written; in the URL the request will fail.")
                 .addOwner(owner())
                 .addButton("Send anyway", proceed)
                 .addButton("Cancel", null)

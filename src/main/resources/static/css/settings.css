@@ -66,3 +66,28 @@
 .settings-error {
     -fx-text-fill: -fx-danger;
 }
+
+.settings-nav {
+    -fx-min-width: 180;
+    -fx-pref-width: 180;
+    -fx-padding: 16 12 16 12;
+    -fx-border-color: transparent -fx-border-base transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.settings-content {
+    -fx-padding: 16 20 16 20;
+}
+
+.dialog-root > .alert-container {
+    -fx-padding: 0;
+    -fx-spacing: 0;
+}
+
+.dialog-root > .alert-container > HBox {
+    -fx-padding: 12 16 12 16;
+}
+
+.dialog-root > .alert-container > .settings-shell {
+    -fx-padding: 0;
+}
