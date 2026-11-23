@@ -2,7 +2,6 @@ package io.github.itech_mm.apiro.ui.settings;
 
 import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_framework.java_fx.ui.dialog.AlertDialog;
-import io.github.itech_framework.java_fx.ui.dialog.ModalDialog;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
@@ -39,13 +38,13 @@ public final class ProjectSettingsDialog {
 		EnvironmentsPage environments = new EnvironmentsPage(draft);
 		List<SettingsPage> pages = List.of(overview.page(), authorization.page(), headers.page(), variables.page(),
 				environments.page(), new RequestDefaultsPage(draft).page());
-		SettingsShell shell = new SettingsShell(pages);
-		ModalDialog.builder().addOwner(owner instanceof Stage stage ? stage : null)
-				.stylesheets(ProjectSettingsDialog.class.getResource(APP_STYLESHEET).toExternalForm(),
+		String projectName = project.name() == null || project.name().isBlank() ? "Untitled" : project.name();
+		SettingsShell shell = new SettingsShell("Project Settings", projectName, pages);
+		SettingsModal.create(owner instanceof Stage stage ? stage : null,
+				List.of(ProjectSettingsDialog.class.getResource(APP_STYLESHEET).toExternalForm(),
 						ProjectSettingsDialog.class.getResource(DIALOG_STYLESHEET).toExternalForm(),
-						ProjectSettingsDialog.class.getResource(STYLESHEET).toExternalForm())
-				.addContent(shell).addActionButton("Save", () -> save(owner, session, draft, pages, shell))
-				.addCloseButton("Cancel").build().show();
+						ProjectSettingsDialog.class.getResource(STYLESHEET).toExternalForm()),
+				shell, "Save", () -> save(owner, session, draft, pages, shell), "Cancel").show();
 	}
 
 	private static void save(Window owner, ProjectSession session, ProjectDraft draft, List<SettingsPage> pages,
@@ -77,7 +76,7 @@ public final class ProjectSettingsDialog {
 	}
 
 	private static void closeCurrent() {
-		ModalDialog dialog = ModalDialog.getCurrentDialog();
+		SettingsModal dialog = SettingsModal.current();
 		if (dialog != null) {
 			dialog.close();
 		}

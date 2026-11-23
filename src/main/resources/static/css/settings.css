@@ -1,9 +1,55 @@
+/* ---- Title bar ---- */
+
+.settings-header {
+    -fx-background-color: -app-chrome;
+    -fx-background-radius: 7 7 0 0;
+    -fx-padding: 8 10 8 16;
+    -fx-min-height: 40;
+    -fx-border-color: transparent transparent -fx-border-base transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.settings-header .icon {
+    -fx-background-color: -app-muted;
+}
+
+.settings-header-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+}
+
+.settings-header-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-muted;
+    -fx-padding: 0 0 0 4;
+}
+
+/* ---- Navigation tree ---- */
+
+.settings-nav {
+    -fx-background-color: -app-chrome;
+    -fx-min-width: 200;
+    -fx-pref-width: 200;
+    -fx-max-width: 200;
+    -fx-padding: 10 8 10 8;
+    -fx-border-color: transparent -fx-border-base transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.settings-nav-section {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-muted;
+    -fx-padding: 4 10 6 10;
+}
+
 .settings-nav-item,
 .settings-nav-item:focused {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-background-radius: 6;
-    -fx-padding: 7 12 7 12;
+    -fx-background-radius: 4;
+    -fx-padding: 6 10 6 10;
     -fx-alignment: CENTER_LEFT;
     -fx-text-fill: -fx-text-color;
     -fx-cursor: hand;
@@ -14,9 +60,34 @@
 }
 
 .settings-nav-item:selected,
+.settings-nav-item:selected:focused,
 .settings-nav-item:selected:hover {
-    -fx-background-color: -fx-selection-bg;
-    -fx-text-fill: -fx-primary;
+    -fx-background-color: -app-tree-selected;
+    -fx-text-fill: -fx-text-color;
+}
+
+/* ---- Page header (breadcrumb) and content ---- */
+
+.settings-page-header {
+    -fx-padding: 9 20 9 20;
+    -fx-min-height: 38;
+    -fx-border-color: transparent transparent -fx-border-base transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.settings-crumb {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-muted;
+}
+
+.settings-crumb-current {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-color;
+}
+
+.settings-content {
+    -fx-padding: 16 20 16 20;
 }
 
 .settings-page-title {
@@ -55,27 +126,74 @@
     -fx-text-fill: -fx-danger;
 }
 
-.settings-nav {
-    -fx-min-width: 180;
-    -fx-pref-width: 180;
-    -fx-padding: 16 12 16 12;
-    -fx-border-color: transparent -fx-border-base transparent transparent;
-    -fx-border-width: 0 1 0 0;
-}
-
-.settings-content {
-    -fx-padding: 16 20 16 20;
-}
+/* ---- Dialog frame ---- */
 
 .dialog-root > .alert-container {
     -fx-padding: 0;
     -fx-spacing: 0;
-}
-
-.dialog-root > .alert-container > HBox {
-    -fx-padding: 12 16 12 16;
+    /* The dialog root already carries a drop shadow; a second one on the container doubles the render cost. */
+    -fx-effect: none;
 }
 
 .dialog-root > .alert-container > .settings-shell {
     -fx-padding: 0;
+}
+
+/* ---- Button footer (framework buttonContainer, the only HBox directly under the container) ---- */
+
+.dialog-root > .alert-container > HBox {
+    -fx-background-color: -app-chrome;
+    -fx-background-radius: 0 0 7 7;
+    -fx-padding: 10 16 10 16;
+    -fx-spacing: 8;
+    -fx-alignment: CENTER_RIGHT;
+    -fx-border-color: -fx-border-base transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.dialog-root > .alert-container > HBox > .button {
+    -fx-font-size: 12px;
+    -fx-padding: 5 18 5 18;
+    -fx-min-width: 80;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-action-button,
+.dialog-root > .alert-container > HBox > .dialog-action-button:focused {
+    -fx-background-color: -fx-primary;
+    -fx-background-insets: 0;
+    -fx-text-fill: -fx-on-primary;
+    -fx-font-weight: bold;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-action-button:focused {
+    -fx-background-color: -app-accent-wash-strong, -fx-primary;
+    -fx-background-insets: -2, 0;
+    -fx-background-radius: 6, 4;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-action-button:hover {
+    -fx-background-color: -fx-primary-dark;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-action-button:pressed {
+    -fx-background-color: derive(-fx-primary-dark, -10%);
+}
+
+.dialog-root > .alert-container > HBox > .dialog-close-button,
+.dialog-root > .alert-container > HBox > .dialog-close-button:focused {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 4;
+    -fx-text-fill: -fx-text-color;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-close-button:hover {
+    -fx-background-color: -fx-control-hover;
+}
+
+.dialog-root > .alert-container > HBox > .dialog-close-button:pressed {
+    -fx-background-color: -fx-control-pressed;
 }
