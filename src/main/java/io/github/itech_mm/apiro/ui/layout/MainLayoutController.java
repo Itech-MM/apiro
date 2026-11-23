@@ -27,6 +27,7 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.OpenProject;
 import io.github.itech_mm.apiro.project.ProjectSession;
+import io.github.itech_mm.apiro.project.ProjectSlot;
 import io.github.itech_mm.apiro.project.ProjectTree;
 import io.github.itech_mm.apiro.project.RecentProjects;
 import io.github.itech_mm.apiro.ui.AppCommands;
@@ -49,6 +50,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
@@ -72,6 +74,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 
 @FxController
@@ -262,11 +265,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			applyInitialDivider();
 		});
 
-		Platform.runLater(() -> recents.startupProject().ifPresent(path -> {
-			if (!session.isOpen()) {
-				openPath(path);
-			}
-		}));
+		Platform.runLater(session::restore);
 	}
 
 	@Override
@@ -380,13 +379,13 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	private void rebuild() {
 		String selectedId = session.selectedRequestIdProperty().get();
-		Set<String> collapsed = collapsedIds();
+		Set<String> expanded = expandedIds();
 		TreeItem<ProjectItem> restored = null;
 		rebuilding = true;
 		try {
 			TreeItem<ProjectItem> root = new TreeItem<>();
 			for (OpenProject open : session.projects()) {
-				root.getChildren().add(buildTree(open.project(), collapsed));
+				root.getChildren().add(buildTree(open.project(), expanded));
 			}
 			requestTree.setRoot(root);
 			syncEnvironments(session.project());
@@ -394,6 +393,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 				restored = find(root, selectedId);
 			}
 			if (restored != null) {
+				for (TreeItem<ProjectItem> parent = restored.getParent(); parent != null; parent = parent.getParent()) {
+					parent.setExpanded(true);
+				}
 				requestTree.getSelectionModel().select(restored);
 			}
 		} finally {
@@ -435,35 +437,35 @@ public class MainLayoutController extends LayoutController implements Routable {
 		node.getChildren().forEach(child -> refresh(child, project));
 	}
 
-	private Set<String> collapsedIds() {
+	private Set<String> expandedIds() {
 		Set<String> ids = new HashSet<>();
 		TreeItem<ProjectItem> root = requestTree.getRoot();
 		if (root != null) {
-			root.getChildren().forEach(child -> collectCollapsed(child, ids));
+			root.getChildren().forEach(child -> collectExpanded(child, ids));
 		}
 		return ids;
 	}
 
-	private void collectCollapsed(TreeItem<ProjectItem> node, Set<String> ids) {
-		if (node.getValue() instanceof Folder && !node.isExpanded()) {
+	private void collectExpanded(TreeItem<ProjectItem> node, Set<String> ids) {
+		if (node.getValue() instanceof Folder && node.isExpanded()) {
 			ids.add(node.getValue().id());
 		}
-		node.getChildren().forEach(child -> collectCollapsed(child, ids));
+		node.getChildren().forEach(child -> collectExpanded(child, ids));
 	}
 
-	private TreeItem<ProjectItem> buildTree(Project project, Set<String> collapsed) {
+	private TreeItem<ProjectItem> buildTree(Project project, Set<String> expanded) {
 		Folder value = new Folder(project.id(), project.name(), null, null, null, null, project.items());
 		TreeItem<ProjectItem> root = new TreeItem<>(value);
-		root.setExpanded(!collapsed.contains(project.id()));
-		project.items().forEach(item -> root.getChildren().add(node(item, collapsed)));
+		root.setExpanded(expanded.contains(project.id()));
+		project.items().forEach(item -> root.getChildren().add(node(item, expanded)));
 		return root;
 	}
 
-	private TreeItem<ProjectItem> node(ProjectItem item, Set<String> collapsed) {
+	private TreeItem<ProjectItem> node(ProjectItem item, Set<String> expanded) {
 		TreeItem<ProjectItem> node = new TreeItem<>(item);
 		if (item instanceof Folder folder) {
-			node.setExpanded(!collapsed.contains(folder.id()));
-			folder.items().forEach(child -> node.getChildren().add(node(child, collapsed)));
+			node.setExpanded(expanded.contains(folder.id()));
+			folder.items().forEach(child -> node.getChildren().add(node(child, expanded)));
 		}
 		return node;
 	}
@@ -578,6 +580,10 @@ public class MainLayoutController extends LayoutController implements Routable {
 	}
 
 	private void addRequest(TreeItem<ProjectItem> target) {
+		if (placeholderOf(target) != null) {
+			statusLabel.setText("That project is not loaded");
+			return;
+		}
 		if (!session.isOpen()) {
 			statusLabel.setText("Open or create a project first");
 			return;
@@ -784,13 +790,15 @@ public class MainLayoutController extends LayoutController implements Routable {
 	}
 
 	private void openPath(Path path) {
-		try {
-			session.open(path);
-			statusLabel.setText("Opened " + session.project().name());
-		} catch (IOException | RuntimeException e) {
-			recents.remove(path);
-			statusLabel.setText("Could not open project: " + e.getMessage());
-		}
+		statusLabel.setText("Opening " + path.getFileName() + "...");
+		session.open(path, slot -> {
+			if (slot.state() == ProjectSlot.State.READY) {
+				statusLabel.setText("Opened " + slot.name());
+			} else {
+				recents.remove(path);
+				statusLabel.setText("Could not open project: " + slot.message());
+			}
+		});
 	}
 
 	@FXML
@@ -870,6 +878,26 @@ public class MainLayoutController extends LayoutController implements Routable {
 		return parent == null ? shown : shown + " - " + parent;
 	}
 
+	private ProjectSlot placeholderOf(TreeItem<ProjectItem> node) {
+		if (node == null || node.getValue() == null || node.getParent() != requestTree.getRoot()) {
+			return null;
+		}
+		return session.slotFor(node.getValue().id()).filter(slot -> slot.state() != ProjectSlot.State.READY)
+				.orElse(null);
+	}
+
+	private void removePlaceholder(TreeItem<ProjectItem> node) {
+		ProjectSlot slot = placeholderOf(node);
+		if (slot == null) {
+			return;
+		}
+		String message = "Remove \"" + slot.name() + "\" from the workspace? The project file is not deleted:\n"
+				+ slot.file();
+		AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Remove project").message(message)
+				.addOwner(owner()).addButton("Remove", () -> session.removePlaceholder(slot.id()))
+				.addButton("Cancel", null).build().showAsync();
+	}
+
 	private final class RequestTreeCell extends TreeCell<ProjectItem> {
 
 		private final ContextMenu menu = new ContextMenu();
@@ -879,6 +907,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 		private final MenuItem rename = new MenuItem("Rename");
 		private final MenuItem duplicate = new MenuItem("Duplicate");
 		private final MenuItem delete = new MenuItem("Delete");
+		private final MenuItem removeFromWorkspace = new MenuItem("Remove project from workspace");
 
 		private final SeparatorMenuItem settingsSeparator = new SeparatorMenuItem();
 		private final MenuItem projectSettings = new MenuItem("Project settings");
@@ -890,8 +919,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 			duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
 			delete.setOnAction(event -> deleteItem(getTreeItem()));
 			projectSettings.setOnAction(event -> openProjectSettings(getTreeItem()));
+			removeFromWorkspace.setOnAction(event -> removePlaceholder(getTreeItem()));
 			menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete, settingsSeparator,
-					projectSettings);
+					projectSettings, removeFromWorkspace);
 			setOnDragDetected(this::onDragDetected);
 			setOnDragOver(this::onDragOver);
 			setOnDragDropped(this::onDragDropped);
@@ -906,13 +936,23 @@ public class MainLayoutController extends LayoutController implements Routable {
 		protected void updateItem(ProjectItem item, boolean empty) {
 			super.updateItem(item, empty);
 			mark(Zone.NONE);
+			getStyleClass().removeAll("project-placeholder", "project-failed");
+			setTooltip(null);
 			if (empty || item == null) {
 				setText(null);
 				setGraphic(null);
 				setContextMenu(null);
 				return;
 			}
+			ProjectSlot placeholder = placeholderOf(getTreeItem());
+			if (placeholder != null) {
+				showPlaceholder(placeholder);
+				return;
+			}
 			boolean root = isRoot(getTreeItem());
+			newRequest.setVisible(true);
+			newFolder.setVisible(true);
+			removeFromWorkspace.setVisible(false);
 			separator.setVisible(!root);
 			rename.setVisible(!root);
 			duplicate.setVisible(!root);
@@ -929,6 +969,42 @@ public class MainLayoutController extends LayoutController implements Routable {
 				Region icon = new Region();
 				icon.getStyleClass().addAll("icon", "icon-folder", "icon-sm", "icon-muted");
 				setGraphic(icon);
+			}
+		}
+
+		private void showPlaceholder(ProjectSlot slot) {
+			newRequest.setVisible(false);
+			newFolder.setVisible(false);
+			separator.setVisible(false);
+			rename.setVisible(false);
+			duplicate.setVisible(false);
+			delete.setVisible(false);
+			settingsSeparator.setVisible(false);
+			projectSettings.setVisible(false);
+			removeFromWorkspace.setVisible(true);
+			setText(slot.name());
+			getStyleClass().add("project-placeholder");
+			if (slot.state() == ProjectSlot.State.FAILED) {
+				getStyleClass().add("project-failed");
+				Region icon = new Region();
+				icon.getStyleClass().addAll("icon", "icon-folder", "icon-sm", "icon-muted");
+				setGraphic(icon);
+				Tooltip tip = new Tooltip(slot.message());
+				tip.getStyleClass().add("project-error-tooltip");
+				tip.setWrapText(true);
+				tip.setMaxWidth(360);
+				tip.setShowDelay(Duration.millis(250));
+				tip.setHideDelay(Duration.millis(100));
+				tip.setShowDuration(Duration.INDEFINITE);
+				setTooltip(tip);
+				setContextMenu(menu);
+			} else {
+				ProgressIndicator spinner = new ProgressIndicator();
+				spinner.setPrefSize(14, 14);
+				spinner.setMaxSize(14, 14);
+				spinner.getStyleClass().add("project-loading");
+				setGraphic(spinner);
+				setContextMenu(null);
 			}
 		}
 

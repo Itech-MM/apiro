@@ -1543,3 +1543,23 @@
     -fx-background-radius: 4;
     -fx-padding: 2 6 2 6;
 }
+
+.tree-cell.project-placeholder {
+    -fx-opacity: 0.55;
+}
+
+.tooltip {
+    -fx-background-color: #2b2d30;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: #dfe1e5;
+    -fx-font-size: 12px;
+    -fx-padding: 7 10 7 10;
+}
+
+.tooltip.project-error-tooltip {
+    -fx-border-color: transparent transparent transparent #e5534b;
+    -fx-border-width: 0 0 0 3;
+    -fx-border-radius: 6;
+}

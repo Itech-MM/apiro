@@ -41,6 +41,10 @@ public final class OpenProject {
         ProjectStore.Opened opened = ProjectStore.open(path);
         return new OpenProject(path, opened.project(), opened.state());
     }
+    
+    public static OpenProject from(Path path, ProjectStore.Opened opened) {
+        return new OpenProject(path, opened.project(), opened.state());
+    }
 
     public static OpenProject create(Path path) throws IOException {
         Project created = Project.create(nameFrom(path));
