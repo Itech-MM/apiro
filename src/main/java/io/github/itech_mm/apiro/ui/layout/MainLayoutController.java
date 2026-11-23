@@ -139,6 +139,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 	private ComboBox<Environment> envCombo;
 
 	@FXML
+	private Region envDot;
+
+	@FXML
 	private Button runButton;
 
 	@FXML
@@ -172,7 +175,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 	private TreeView<ProjectItem> requestTree;
 
 	@FXML
-	private Label breadcrumbLabel;
+	private Label projectTitleLabel;
 
 	@FXML
 	private MenuItem newProjectItem;
@@ -247,6 +250,14 @@ public class MainLayoutController extends LayoutController implements Routable {
 		addRequestButton.setTooltip(new Tooltip("New request"));
 		addFolderButton.setTooltip(new Tooltip("New folder"));
 		collapseAllButton.setTooltip(new Tooltip("Collapse all"));
+		runButton.setTooltip(new Tooltip("Run request (Ctrl+Enter)"));
+		stopButton.setTooltip(new Tooltip("Stop"));
+		searchButton.setTooltip(new Tooltip("Find"));
+		settingsButton.setTooltip(new Tooltip("Settings"));
+		requestsRailButton.setTooltip(new Tooltip("Requests"));
+		historyRailButton.setTooltip(new Tooltip("History"));
+		environmentsRailButton.setTooltip(new Tooltip("Environments"));
+		Tooltip.install(envStatusLabel, new Tooltip("Switch environment"));
 		session.treeVersionProperty().addListener((obs, oldValue, newValue) -> rebuild());
 		session.activeProperty().addListener((obs, oldValue, newValue) -> syncEnvironments(session.project()));
 
@@ -289,20 +300,15 @@ public class MainLayoutController extends LayoutController implements Routable {
 		saveItem.disableProperty().bind(noProject);
 		newRequestItem.disableProperty().bind(noProject);
 		newFolderItem.disableProperty().bind(noProject);
-		session.projectProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
-		session.selectedRequestIdProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
-		session.structureProperty().addListener((obs, oldValue, newValue) -> refreshBreadcrumb());
-		refreshBreadcrumb();
+		session.projectProperty().addListener((obs, oldValue, newValue) -> refreshProjectTitle());
+		session.selectedRequestIdProperty().addListener((obs, oldValue, newValue) -> refreshProjectTitle());
+		session.structureProperty().addListener((obs, oldValue, newValue) -> refreshProjectTitle());
+		refreshProjectTitle();
 	}
 
-	private void refreshBreadcrumb() {
+	private void refreshProjectTitle() {
 		Project project = session.project();
-		if (project == null) {
-			breadcrumbLabel.setText("No project open");
-			return;
-		}
-		String request = session.selectedRequest().map(RequestItem::name).orElse("");
-		breadcrumbLabel.setText(request.isBlank() ? project.name() : project.name() + "  /  " + request);
+		projectTitleLabel.setText(project == null ? "No project open" : project.name());
 	}
 
 	@FXML
@@ -328,8 +334,23 @@ public class MainLayoutController extends LayoutController implements Routable {
 				return;
 			}
 			session.selectEnvironment(newValue == null ? "" : newValue.id());
-			envStatusLabel.setText(newValue == null ? "Env: none" : "Env: " + newValue.name());
+			updateEnvIndicator(newValue);
 		});
+	}
+
+	private void updateEnvIndicator(Environment environment) {
+		envStatusLabel.setText(environment == null ? "Env: none" : "Env: " + environment.name());
+		envDot.getStyleClass().remove("env-none");
+		if (environment == null) {
+			envDot.getStyleClass().add("env-none");
+		}
+	}
+
+	@FXML
+	private void onEnvStatusClicked() {
+		if (!envCombo.getItems().isEmpty()) {
+			envCombo.show();
+		}
 	}
 
 	private void setupRequestTree() {
@@ -413,8 +434,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 		envCombo.getItems().stream().filter(environment -> environment.id().equals(active)).findFirst()
 				.ifPresentOrElse(envCombo.getSelectionModel()::select, envCombo.getSelectionModel()::clearSelection);
 		syncingEnvironment = false;
-		Environment selected = envCombo.getSelectionModel().getSelectedItem();
-		envStatusLabel.setText(selected == null ? "Env: none" : "Env: " + selected.name());
+		updateEnvIndicator(envCombo.getSelectionModel().getSelectedItem());
 	}
 
 	private void refreshValues(Project project) {

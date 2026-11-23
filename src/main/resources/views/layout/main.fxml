@@ -40,13 +40,13 @@
                 </HBox>
             </left>
             <center>
-                <Label fx:id="breadcrumbLabel" styleClass="breadcrumb" BorderPane.alignment="CENTER" />
+                <Label fx:id="projectTitleLabel" styleClass="project-title" BorderPane.alignment="CENTER" />
             </center>
             <right>
                 <HBox spacing="10" alignment="CENTER_RIGHT" BorderPane.alignment="CENTER_RIGHT">
                     <HBox styleClass="env-box" spacing="6" alignment="CENTER_LEFT">
-                        <Region styleClass="env-dot" />
-                        <ComboBox fx:id="envCombo" styleClass="env-combo" />
+                        <Region fx:id="envDot" styleClass="env-dot, env-none" />
+                        <ComboBox fx:id="envCombo" styleClass="env-combo" promptText="No environment" />
                     </HBox>
                     <Button fx:id="runButton" styleClass="run-button" contentDisplay="GRAPHIC_ONLY" onAction="#onRun">
                         <graphic>
@@ -110,7 +110,7 @@
                     </Button>
                     <Button fx:id="addFolderButton" styleClass="icon-button, icon-button-sm" onAction="#onAddFolder">
 					    <graphic>
-					        <Region styleClass="icon, icon-folder, icon-sm" />
+					        <Region styleClass="icon, icon-folder-plus, icon-sm" />
 					    </graphic>
 					</Button>
                     <Button fx:id="collapseAllButton" styleClass="icon-button, icon-button-sm" onAction="#onCollapseAll">
@@ -132,7 +132,7 @@
             <Label fx:id="syntaxLabel" text="JSON" styleClass="muted" />
             <Label fx:id="encodingLabel" text="UTF-8" styleClass="muted" />
             <Label fx:id="lineEndingLabel" text="LF" styleClass="muted" />
-            <Label fx:id="envStatusLabel" text="Env: Dev" styleClass="muted" />
+            <Label fx:id="envStatusLabel" text="Env: none" styleClass="muted, status-widget" onMouseClicked="#onEnvStatusClicked" />
             <Label fx:id="tlsLabel" text="TLS verify: on" styleClass="muted" />
             <Label fx:id="cookiesLabel" text="Cookies: on" styleClass="muted" />
         </HBox>
