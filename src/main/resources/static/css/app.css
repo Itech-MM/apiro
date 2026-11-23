@@ -298,10 +298,15 @@
 }
 
 .menu-icon {
-    -fx-min-width: 18;
-    -fx-pref-width: 18;
-    -fx-max-width: 18;
+    -fx-min-width: 16;
+    -fx-pref-width: 16;
+    -fx-max-width: 16;
     -fx-alignment: CENTER;
+}
+
+.menu-icon > .icon {
+    -fx-scale-x: 0.82;
+    -fx-scale-y: 0.82;
 }
 
 .icon-history {
@@ -383,12 +388,41 @@
 
 .top-bar {
     -fx-background-color: -app-chrome;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 16 0 16;
+    -fx-border-width: 0;
+    -fx-padding: 0 12 0 8;
     -fx-min-height: 40;
     -fx-pref-height: 40;
     -fx-max-height: 40;
+}
+
+.app-menu-bar {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.app-menu-bar > .container {
+    -fx-spacing: 2;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.app-menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-width: 0;
+    -fx-padding: 6 12 6 12;
+}
+
+.app-menu-bar > .container > .menu-button:hover,
+.app-menu-bar > .container > .menu-button:showing {
+    -fx-background-color: -fx-hover-base;
+}
+
+.app-menu-bar > .container > .menu-button > .label {
+    -fx-text-fill: -fx-text-color;
+    -fx-font-size: 13px;
 }
 
 .app-logo {
@@ -1428,26 +1462,6 @@
     -fx-padding: 0 8 0 0;
 }
 
-.app-menu-bar {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.app-menu-bar > .container > .menu-button {
-    -fx-background-color: transparent;
-    -fx-background-radius: 6;
-    -fx-padding: 5 10 5 10;
-}
-
-.app-menu-bar > .container > .menu-button:hover,
-.app-menu-bar > .container > .menu-button:showing {
-    -fx-background-color: -fx-row-hover;
-}
-
-.app-menu-bar > .container > .menu-button > .label {
-    -fx-text-fill: -fx-text-color;
-    -fx-font-size: 13px;
-}
 
 .project-title {
     -fx-text-fill: -fx-text-color;
@@ -1459,10 +1473,15 @@
 .context-menu {
     -fx-background-color: -fx-surface;
     -fx-background-insets: 0;
-    -fx-background-radius: 8;
-    -fx-border-color: -fx-grid-line;
-    -fx-border-radius: 8;
-    -fx-padding: 6 0 6 0;
+    -fx-background-radius: 4;
+    -fx-border-color: #A1A1AA;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-padding: 0;
+}
+
+.root.dark-mode .context-menu {
+    -fx-border-color: #5A5A5A;
 }
 
 .menu-item {
@@ -1663,50 +1682,63 @@
 .url-group-divider {
     -fx-padding: 6 0 6 0;
 }
-
 .tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 100px;
-    -fx-border-radius: 100px;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
     -fx-padding: 0;
-    -fx-min-width: 20px;
-    -fx-min-height: 20px;
-    -fx-pref-width: 20px;
-    -fx-pref-height: 20px;
-    -fx-max-width: 20px;
-    -fx-max-height: 20px;
+    -fx-min-width: 24;
+    -fx-pref-width: 24;
+    -fx-max-width: 24;
+    -fx-min-height: 24;
+    -fx-pref-height: 24;
+    -fx-max-height: 24;
     -fx-alignment: center;
+    -fx-translate-y: -7;
 }
 
 .tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover {
-    -fx-background-color: -fx-hover-base;
+    -fx-text-fill: -app-icon;
+}
+
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:pressed {
+    -fx-background-color: -fx-control-pressed;
 }
 
 .tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button > .arrow {
-    -fx-background-color: -fx-mark-highlight-color, -fx-mark-color;
-    -fx-background-insets: 0 0 -1 0, 0;
-    -fx-padding: 0.166667em 0.333333em 0.166667em 0.333333em;
-    -fx-shape: "M 0 0 h 7 l -3.5 4 z";
-}
-
-.tab-pane > .tab-header-area {
+    -fx-background-color: -app-muted;
+    -fx-background-insets: 0;
     -fx-padding: 0;
+    -fx-shape: "M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z";
+    -fx-min-width: 10;
+    -fx-pref-width: 10;
+    -fx-max-width: 10;
+    -fx-min-height: 6.2;
+    -fx-pref-height: 6.2;
+    -fx-max-height: 6.2;
 }
 
-.tab-pane > .tab-header-area > .headers-region > .tab {
-    -fx-padding: 2 8 2 8;
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button:hover > .arrow {
+    -fx-background-color: -fx-text-color;
 }
 
-.tab-pane > .tab-header-area > .headers-region > .tab:focused {
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
-    -fx-background-insets: 0;
+.tab-pane > .tab-header-area > .headers-region > .tab .focus-indicator,
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
 }
 
-.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected {
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
-    -fx-background-insets: 0;
+.app-menu-bar > .container > .menu-button:hover,
+.app-menu-bar > .container > .menu-button:showing {
+    -fx-text-fill: -app-icon;
+}
+
+.request-tabs {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-tab-min-height: 26;
+    -fx-tab-max-height: 26;
 }
 
 .button,
@@ -1734,23 +1766,4 @@
 .check-box:disabled,
 .radio-button:disabled {
     -fx-cursor: default;
-}
-
-.app-menu-bar {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0 0 0 12;
-}
-
-.app-menu-bar > .container > .menu-button {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 6 10 6 10;
-    -fx-border-width: 0;
-}
-
-.app-menu-bar > .container > .menu-button:hover,
-.app-menu-bar > .container > .menu-button:showing {
-    -fx-background-color: -fx-hover-base;
-    -fx-background-radius: 4;
 }
