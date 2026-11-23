@@ -57,7 +57,16 @@
     -method-delete: #DC2626;
     -method-other: #787885;
 
-    
+    -app-text-secondary: #57606A;
+    -app-kbd-bg: #EEF1F4;
+    -app-accent-wash: rgba(59, 130, 246, 0.10);
+    -app-accent-wash-strong: rgba(59, 130, 246, 0.14);
+    -app-tooltip-bg: #2B2D30;
+    -app-tooltip-text: #DFE1E5;
+    -app-scrim: rgba(255, 255, 255, 0.7);
+    /* Variable highlight colour. The code editors are still light-only, so this has no dark value yet;
+       override it in .root.dark-mode together with the dark editor theme. */
+    -app-var-ref: #7C3AED;
 }
 
 .root.dark-mode {
@@ -112,6 +121,14 @@
     -method-patch: #A78BFA;
     -method-delete: #F87171;
     -method-other: #8B90A0;
+
+    -app-text-secondary: #A9AEBD;
+    -app-kbd-bg: #232833;
+    -app-accent-wash: rgba(110, 162, 255, 0.12);
+    -app-accent-wash-strong: rgba(110, 162, 255, 0.18);
+    -app-tooltip-bg: #3A3F4B;
+    -app-tooltip-text: #ECECF1;
+    -app-scrim: rgba(15, 17, 21, 0.7);
 }
 
 .label {
@@ -1392,13 +1409,13 @@
 
 .variable-field {
     -fx-background-color: -fx-control-inner-background;
-    -fx-border-color: #d0d7de;
+    -fx-border-color: -fx-border-base;
     -fx-border-radius: 4;
     -fx-background-radius: 4;
 }
 
 .variable-field:focused {
-    -fx-border-color: #3b82f6;
+    -fx-border-color: -fx-primary;
 }
 
 .kv-disabled .variable-field {
@@ -1410,7 +1427,7 @@
 }
 
 .code-editor .text.var-ref {
-    -fx-fill: #7c3aed;
+    -fx-fill: -app-var-ref;
     -fx-font-family: "JetBrains Mono";
     -fx-font-weight: bold;
     -fx-font-style: italic;
@@ -1432,12 +1449,12 @@
 .welcome-section {
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-text-fill: #8b949e;
+    -fx-text-fill: -app-muted;
 }
 
 .welcome-tip {
     -fx-font-size: 12.5px;
-    -fx-text-fill: #57606a;
+    -fx-text-fill: -app-text-secondary;
 }
 
 .welcome-action {
@@ -1448,18 +1465,18 @@
 }
 
 .welcome-action:hover {
-    -fx-background-color: rgba(59, 130, 246, 0.10);
+    -fx-background-color: -app-accent-wash;
 }
 
 .welcome-action:focused {
-    -fx-background-color: rgba(59, 130, 246, 0.14);
+    -fx-background-color: -app-accent-wash-strong;
 }
 
 .welcome-shortcut {
     -fx-font-family: "JetBrains Mono";
     -fx-font-size: 11px;
-    -fx-text-fill: #57606a;
-    -fx-background-color: #eef1f4;
+    -fx-text-fill: -app-text-secondary;
+    -fx-background-color: -app-kbd-bg;
     -fx-background-radius: 4;
     -fx-padding: 2 6 2 6;
 }
@@ -1469,17 +1486,17 @@
 }
 
 .tooltip {
-    -fx-background-color: #2b2d30;
+    -fx-background-color: -app-tooltip-bg;
     -fx-background-radius: 6;
     -fx-background-insets: 0;
     -fx-border-color: transparent;
-    -fx-text-fill: #dfe1e5;
+    -fx-text-fill: -app-tooltip-text;
     -fx-font-size: 12px;
     -fx-padding: 7 10 7 10;
 }
 
 .tooltip.project-error-tooltip {
-    -fx-border-color: transparent transparent transparent #e5534b;
+    -fx-border-color: transparent transparent transparent -fx-danger;
     -fx-border-width: 0 0 0 3;
     -fx-border-radius: 6;
 }
@@ -1489,10 +1506,10 @@
 }
 
 .busy-overlay {
-    -fx-background-color: rgba(255, 255, 255, 0.7);
+    -fx-background-color: -app-scrim;
 }
 
 .busy-overlay .label {
-    -fx-text-fill: #57606a;
+    -fx-text-fill: -app-text-secondary;
     -fx-font-size: 12px;
 }

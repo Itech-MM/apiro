@@ -11,8 +11,6 @@
         <HBox fx:id="tabBox" alignment="CENTER_LEFT" spacing="2" />
         <Region HBox.hgrow="ALWAYS" />
         <ToggleButton fx:id="prettyToggle" text="Pretty" selected="true" styleClass="resp-tab" />
-		<Hyperlink fx:id="fullBodyButton" text="Show full body" onAction="#onShowFullBody"
-		           visible="false" managed="false" />
         <Hyperlink fx:id="fullBodyButton" text="Show full body" onAction="#onShowFullBody"
                    visible="false" managed="false" />
         <HBox fx:id="statusBox" alignment="CENTER_LEFT" spacing="8">

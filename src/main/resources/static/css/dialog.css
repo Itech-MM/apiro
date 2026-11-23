@@ -12,7 +12,3 @@
 .text-area .content {
     -fx-background-color: transparent;
 }
-
-.muted {
-    -fx-opacity: 0.7;
-}
