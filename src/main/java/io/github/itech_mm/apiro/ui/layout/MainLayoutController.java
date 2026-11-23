@@ -25,6 +25,7 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
+import io.github.itech_mm.apiro.project.RecentProjects;
 import io.github.itech_mm.apiro.ui.AppCommands;
 import io.github.itech_mm.apiro.ui.AppCommands.Command;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
@@ -35,6 +36,7 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.SetChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
@@ -44,6 +46,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
@@ -188,6 +191,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @FXML
     private MenuItem stopItem;
+    
+    @FXML
+    private Menu recentMenu;
 
     @Use
     private ProjectSession session;
@@ -207,6 +213,9 @@ public class MainLayoutController extends LayoutController implements Routable {
     @Use
     private AppCommands commands;
 
+    @Use
+    private RecentProjects recents;
+    
     private Button activeRail;
     private boolean syncingEnvironment;
     private boolean rebuilding;
@@ -237,12 +246,22 @@ public class MainLayoutController extends LayoutController implements Routable {
         runService.runningIds().addListener((SetChangeListener<String>) change -> refreshRunState());
         session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> refreshRunState());
         setupMenu();
+        
+        recents.items().addListener((ListChangeListener<Path>) change -> rebuildRecentMenu());
+        rebuildRecentMenu();
+        
         refreshRunState();
         
         Platform.runLater(() -> {
             setActiveRail(requestsRailButton);
             applyInitialDivider();
         });
+        
+        Platform.runLater(() -> recents.startupProject().ifPresent(path -> {
+            if (!session.isOpen()) {
+                openPath(path);
+            }
+        }));
     }
 
     @Override
@@ -674,10 +693,15 @@ public class MainLayoutController extends LayoutController implements Routable {
         if (path == null) {
             return;
         }
+        openPath(path);
+    }
+
+    private void openPath(Path path) {
         try {
             session.open(path);
             statusLabel.setText("Opened " + session.project().name());
         } catch (IOException | RuntimeException e) {
+            recents.remove(path);
             statusLabel.setText("Could not open project: " + e.getMessage());
         }
     }
@@ -733,6 +757,30 @@ public class MainLayoutController extends LayoutController implements Routable {
     @FXML
     private void onRailEnvironments() {
         selectRail(environmentsRailButton, "Environments");
+    }
+    
+    private void rebuildRecentMenu() {
+        recentMenu.getItems().clear();
+        for (Path path : recents.items()) {
+            MenuItem item = new MenuItem(recentLabel(path));
+            item.setMnemonicParsing(false);
+            item.setOnAction(event -> openPath(path));
+            recentMenu.getItems().add(item);
+        }
+        if (!recents.items().isEmpty()) {
+            recentMenu.getItems().add(new SeparatorMenuItem());
+            MenuItem clear = new MenuItem("Clear Recent");
+            clear.setOnAction(event -> recents.clear());
+            recentMenu.getItems().add(clear);
+        }
+        recentMenu.setDisable(recents.items().isEmpty());
+    }
+
+    private static String recentLabel(Path path) {
+        String name = path.getFileName().toString();
+        String shown = name.endsWith(EXTENSION) ? name.substring(0, name.length() - EXTENSION.length()) : name;
+        Path parent = path.getParent();
+        return parent == null ? shown : shown + " - " + parent;
     }
 
     private final class RequestTreeCell extends TreeCell<ProjectItem> {

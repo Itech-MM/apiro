@@ -23,6 +23,7 @@
                             <SeparatorMenuItem />
                             <MenuItem fx:id="exitItem" text="Exit" onAction="#onExit" />
                         </Menu>
+                        <Menu fx:id="recentMenu" text="Open Recent" />
                         <Menu text="View">
                             <MenuItem text="Requests" onAction="#onRailRequests" />
                             <MenuItem text="History" onAction="#onRailHistory" />

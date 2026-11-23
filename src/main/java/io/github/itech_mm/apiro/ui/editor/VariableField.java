@@ -6,8 +6,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 
 public class VariableField extends CodeEditor {
 
@@ -48,9 +46,9 @@ public class VariableField extends CodeEditor {
                 syncing = false;
             }
         });
-        addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.ENTER && onAction != null && !event.isConsumed()) {
-                onAction.handle(new ActionEvent(this, this));
+        addEventHandler(ActionEvent.ACTION, event -> {
+            if (onAction != null) {
+                onAction.handle(event);
             }
         });
         VariableStyler.install(this);

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import io.github.itech_framework.core.annotations.components.levels.Service;
+import io.github.itech_framework.core.annotations.dependency.Use;
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
@@ -31,6 +32,10 @@ public class ProjectSession {
     private final StringProperty selectedRequestId = new SimpleStringProperty("");
     private final StringProperty environmentId = new SimpleStringProperty("");
     private LocalState state = LocalState.empty();
+    
+    @Use
+    private RecentProjects recents;
+    
     private Runnable flush = () -> {
     };
 
@@ -188,6 +193,9 @@ public class ProjectSession {
         project.set(loaded);
         environmentId.set(initialEnvironment(loaded));
         structure.set(structure.get() + 1);
+        if (recents != null) {
+            recents.touch(path);
+        }
     }
 
     private String initialEnvironment(Project loaded) {
