@@ -267,6 +267,43 @@
     -fx-max-height: 10.7;
 }
 
+.icon-edit {
+    -fx-shape: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z";
+    -fx-min-width: 13.8;
+    -fx-pref-width: 13.8;
+    -fx-max-width: 13.8;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
+}
+
+.icon-copy {
+    -fx-shape: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z";
+    -fx-min-width: 12.1;
+    -fx-pref-width: 12.1;
+    -fx-max-width: 12.1;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
+}
+
+.icon-trash {
+    -fx-shape: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z";
+    -fx-min-width: 10.9;
+    -fx-pref-width: 10.9;
+    -fx-max-width: 10.9;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
+}
+
+.menu-icon {
+    -fx-min-width: 18;
+    -fx-pref-width: 18;
+    -fx-max-width: 18;
+    -fx-alignment: CENTER;
+}
+
 .icon-history {
     -fx-shape: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z";
     -fx-min-width: 17.5;
@@ -566,9 +603,9 @@
 
 .panel-header {
     -fx-padding: 0 8 0 16;
-    -fx-min-height: 44;
-    -fx-pref-height: 44;
-    -fx-max-height: 44;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
 }
 
 .panel-title {
@@ -582,7 +619,7 @@
     -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-padding: 0 8 8 8;
-    -fx-fixed-cell-size: 30;
+    -fx-fixed-cell-size: 26;
 }
 
 .request-tree .tree-cell {
@@ -607,9 +644,9 @@
 .request-tree .tree-disclosure-node {
     -fx-padding: 0 4 0 6;
     -fx-alignment: CENTER;
-    -fx-min-height: 30;
-    -fx-pref-height: 30;
-    -fx-max-height: 30;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
 }
 
 .request-tree .tree-disclosure-node .arrow {
@@ -642,6 +679,15 @@
 .method-text {
     -fx-font-weight: bold;
     -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+}
+
+.method-tag {
+    -fx-font-size: 10px;
+    -fx-text-fill: -method-other;
+    -fx-alignment: CENTER_LEFT;
+    -fx-min-width: 30;
+    -fx-pref-width: 30;
+    -fx-max-width: 30;
 }
 
 .method-get,
@@ -715,10 +761,16 @@
 .request-tabs {
     -fx-background-color: transparent;
     -fx-padding: 0;
-}.request-tabs > .tab-content-area {
+    -fx-tab-min-height: 36;
+    -fx-tab-max-height: 36;
+}
+
+.request-tabs > .tab-content-area {
     -fx-background-color: transparent;
     -fx-padding: 0;
-}.request-tabs > .tab-header-area > .tab-header-background {
+}
+
+.request-tabs > .tab-header-area > .tab-header-background {
     -fx-background-color: transparent;
     -fx-border-color: transparent transparent -fx-grid-line transparent;
     -fx-border-width: 0 0 1 0;
@@ -762,7 +814,9 @@
 
 .request-tabs .tab .tab-close-button:hover {
     -fx-background-color: -fx-text-color;
-}.url-bar {
+}
+
+.url-bar {
     -fx-border-color: -fx-grid-line transparent -fx-grid-line transparent;
     -fx-border-width: 1 0 1 0;
 }
@@ -791,7 +845,9 @@
 .crumb:hover {
     -fx-background-color: -fx-row-hover;
     -fx-text-fill: -fx-text-color;
-}.crumb-sep {
+}
+
+.crumb-sep {
     -fx-text-fill: -fx-disabled;
 }
 
@@ -828,7 +884,9 @@
     -fx-background-color: transparent;
     -fx-padding: 0;
     -fx-box-border: transparent;
-}.tab-dirty {
+}
+
+.tab-dirty {
     -fx-background-color: -fx-primary;
     -fx-background-radius: 4;
     -fx-min-width: 8;

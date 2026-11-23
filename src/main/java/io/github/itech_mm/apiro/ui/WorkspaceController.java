@@ -71,6 +71,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.InputMethodEvent;
 import javafx.scene.input.KeyEvent;
@@ -965,8 +966,6 @@ public class WorkspaceController implements Routable {
 			this.owner = owner;
 			this.id = item.id();
 			this.draft = item;
-			Label extension = new Label(".req");
-			extension.getStyleClass().add("muted");
 			project.getStyleClass().add("muted");
 			project.setVisible(false);
 			project.setManaged(false);
@@ -974,8 +973,9 @@ public class WorkspaceController implements Routable {
 			dot.setVisible(false);
 			dot.setManaged(false);
 			title.setText(item.name());
+			title.setMaxWidth(180);
 			showMethod(item.method());
-			HBox header = new HBox(6, badge, title, extension, project, dot);
+			HBox header = new HBox(6, badge, title, project, dot);
 			header.setAlignment(Pos.CENTER_LEFT);
 			tab.setGraphic(header);
 			tab.setClosable(true);
@@ -1004,6 +1004,7 @@ public class WorkspaceController implements Routable {
 		void refreshText() {
 			String where = project.isVisible() ? " · " + owner.project().name() : "";
 			tab.setText(badge.getText() + " " + title.getText() + ".req" + where);
+			tab.setTooltip(new Tooltip(owner.project().name() + "  ›  " + title.getText() + ".req"));
 		}
 
 		void rename(String name) {

@@ -513,6 +513,28 @@ public class MainLayoutController extends LayoutController implements Routable {
 			parent.setExpanded(true);
 		}
 		requestTree.getSelectionModel().select(item);
+		reveal(item);
+	}
+
+	private void reveal(TreeItem<ProjectItem> item) {
+		int row = requestTree.getRow(item);
+		if (row < 0) {
+			return;
+		}
+		Platform.runLater(() -> {
+			double top = requestTree.localToScene(requestTree.getBoundsInLocal()).getMinY();
+			double bottom = requestTree.localToScene(requestTree.getBoundsInLocal()).getMaxY();
+			boolean visible = requestTree.lookupAll(".tree-cell").stream()
+					.filter(node -> node instanceof TreeCell<?> cell && cell.isVisible() && !cell.isEmpty()
+							&& (Object) cell.getTreeItem() == item)
+					.anyMatch(node -> {
+						javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
+						return bounds.getMinY() >= top && bounds.getMaxY() <= bottom;
+					});
+			if (!visible) {
+				requestTree.scrollTo(Math.max(0, row - 3));
+			}
+		});
 	}
 
 	private boolean isRoot(TreeItem<ProjectItem> node) {
@@ -940,6 +962,16 @@ public class MainLayoutController extends LayoutController implements Routable {
 			delete.setOnAction(event -> deleteItem(getTreeItem()));
 			projectSettings.setOnAction(event -> openProjectSettings(getTreeItem()));
 			removeFromWorkspace.setOnAction(event -> removePlaceholder(getTreeItem()));
+			newRequest.setGraphic(menuIcon("icon-plus"));
+			newFolder.setGraphic(menuIcon("icon-folder-plus"));
+			rename.setGraphic(menuIcon("icon-edit"));
+			duplicate.setGraphic(menuIcon("icon-copy"));
+			delete.setGraphic(menuIcon("icon-trash"));
+			projectSettings.setGraphic(menuIcon("icon-settings"));
+			removeFromWorkspace.setGraphic(menuIcon("icon-close"));
+			rename.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+			duplicate.setAccelerator(DUPLICATE_KEYS);
+			delete.setAccelerator(new KeyCodeCombination(KeyCode.DELETE));
 			menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete, settingsSeparator,
 					projectSettings, removeFromWorkspace);
 			setOnDragDetected(this::onDragDetected);
@@ -982,14 +1014,22 @@ public class MainLayoutController extends LayoutController implements Routable {
 			setContextMenu(menu);
 			setText(item.name());
 			if (item instanceof RequestItem request) {
-				Label badge = new Label(request.method().shortLabel());
-				badge.getStyleClass().addAll("method-badge", "method-" + request.method().name().toLowerCase());
-				setGraphic(badge);
+				Label tag = new Label(request.method().shortLabel());
+				tag.getStyleClass().addAll("method-text", "method-tag", "method-" + request.method().name().toLowerCase());
+				setGraphic(tag);
 			} else {
 				Region icon = new Region();
 				icon.getStyleClass().addAll("icon", "icon-folder", "icon-sm", "icon-muted");
 				setGraphic(icon);
 			}
+		}
+
+		private StackPane menuIcon(String shape) {
+			Region icon = new Region();
+			icon.getStyleClass().addAll("icon", shape);
+			StackPane slot = new StackPane(icon);
+			slot.getStyleClass().add("menu-icon");
+			return slot;
 		}
 
 		private void showPlaceholder(ProjectSlot slot) {
@@ -1064,9 +1104,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 		private void mark(Zone zone) {
 			setStyle(switch (zone) {
-			case BEFORE -> "-fx-border-color: #3574f0 transparent transparent transparent; -fx-border-width: 2 0 0 0;";
-			case AFTER -> "-fx-border-color: transparent transparent #3574f0 transparent; -fx-border-width: 0 0 2 0;";
-			case INTO -> "-fx-background-color: rgba(53, 116, 240, 0.18);";
+			case BEFORE -> "-fx-border-color: -fx-primary transparent transparent transparent; -fx-border-width: 2 0 0 0;";
+			case AFTER -> "-fx-border-color: transparent transparent -fx-primary transparent; -fx-border-width: 0 0 2 0;";
+			case INTO -> "-fx-background-color: -app-accent-wash-strong;";
 			case NONE -> "";
 			});
 		}

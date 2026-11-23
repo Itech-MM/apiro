@@ -17,7 +17,9 @@
 .settings-nav-item:selected:hover {
     -fx-background-color: -fx-selection-bg;
     -fx-text-fill: -fx-primary;
-}.settings-page-title {
+}
+
+.settings-page-title {
     -fx-font-size: 15px;
     -fx-font-weight: bold;
 }
