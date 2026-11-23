@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.editor;
 
 import io.github.itech_framework.code_editor.CodeEditor;
+import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.MonoFont;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -22,7 +23,7 @@ public class VariableField extends CodeEditor {
     public VariableField() {
         setSingleLine(true);
         setShowLineNumbers(false);
-        setTheme("light-plus");
+        EditorStyle.follow(this, "light-plus");
         setFontSize(MonoFont.EDITOR_SIZE);
         setCompletionProvider(COMPLETION);
         setCompletionAutoOpen(true);

@@ -1,6 +1,6 @@
 .code-editor .code-editor-line-number,
 .code-editor .code-editor-fold {
-    -fx-background-color: #F7F8FA;
+    -fx-background-color: -app-gutter;
 }
 
 .code-editor .code-editor-line-number {
@@ -10,6 +10,6 @@
 .code-editor .code-editor-fold {
     -fx-padding: 0;
     -fx-font-size: 16px;
-    -fx-border-color: transparent #ECEDF1 transparent transparent;
+    -fx-border-color: transparent -app-gutter-border transparent transparent;
     -fx-border-width: 0 1 0 0;
 }

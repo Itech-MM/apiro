@@ -10,10 +10,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.github.itech_framework.core.annotations.dependency.Use;
+import io.github.itech_framework.core.utils.DataStorageUtil;
 import io.github.itech_framework.java_fx.annotations.FxController;
 import io.github.itech_framework.java_fx.annotations.FxUse;
 import io.github.itech_framework.java_fx.annotations.components.FxScope;
 import io.github.itech_framework.java_fx.loader.FxProvider;
+import io.github.itech_framework.java_fx.router.Router;
+import io.github.itech_framework.java_fx.router.config.RouterConfig;
 import io.github.itech_framework.java_fx.router.core.Routable;
 import io.github.itech_framework.java_fx.ui.dialog.AlertDialog;
 import io.github.itech_framework.java_fx.ui.dialog.ModalDialog;
@@ -33,6 +36,7 @@ import io.github.itech_mm.apiro.project.ProjectTree;
 import io.github.itech_mm.apiro.project.RecentProjects;
 import io.github.itech_mm.apiro.ui.AppCommands;
 import io.github.itech_mm.apiro.ui.AppCommands.Command;
+import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
 import io.github.itech_mm.apiro.ui.settings.NewProjectDialog;
@@ -163,6 +167,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 	private Button settingsButton;
 
 	@FXML
+	private Button themeButton;
+
+	@FXML
 	private Button addRequestButton;
 
 	@FXML
@@ -214,6 +221,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 	private Menu recentMenu;
 	
 	@Use
+	private Router router;
+
+	@Use
 	private ProjectSession session;
 
 	@FxUse(scope = FxScope.PROTOTYPE)
@@ -263,6 +273,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 		stopButton.setTooltip(new Tooltip("Stop"));
 		searchButton.setTooltip(new Tooltip("Find"));
 		settingsButton.setTooltip(new Tooltip("Settings"));
+		updateThemeButton();
 		requestsRailButton.setTooltip(new Tooltip("Requests"));
 		historyRailButton.setTooltip(new Tooltip("History"));
 		environmentsRailButton.setTooltip(new Tooltip("Environments"));
@@ -861,6 +872,24 @@ public class MainLayoutController extends LayoutController implements Routable {
 	@FXML
 	private void onSettings() {
 		statusLabel.setText("Settings");
+	}
+
+	@FXML
+	private void onToggleTheme() {
+		boolean dark = !isDark();
+		DataStorageUtil.save(RouterConfig.getDarkModeKey(), dark);
+		EditorStyle.darkProperty().set(dark);
+		router.refreshTheme();
+		updateThemeButton();
+	}
+
+	private boolean isDark() {
+		Object stored = DataStorageUtil.load(RouterConfig.getDarkModeKey());
+		return Boolean.parseBoolean(String.valueOf(stored).replace("\"", ""));
+	}
+
+	private void updateThemeButton() {
+		themeButton.setTooltip(new Tooltip(isDark() ? "Switch to light mode" : "Switch to dark mode"));
 	}
 
 	@FXML
