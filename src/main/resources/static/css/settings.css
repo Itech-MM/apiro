@@ -126,6 +126,26 @@
     -fx-text-fill: -fx-danger;
 }
 
+.button.settings-browse-button,
+.button.settings-browse-button:focused {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 4;
+    -fx-padding: 4 14 4 14;
+    -fx-text-fill: -fx-text-color;
+    -fx-cursor: hand;
+}
+
+.button.settings-browse-button:hover {
+    -fx-background-color: -fx-control-hover;
+}
+
+.button.settings-browse-button:pressed {
+    -fx-background-color: -fx-control-pressed;
+}
+
 /* ---- Dialog frame ---- */
 
 .dialog-root > .alert-container {

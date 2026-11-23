@@ -163,11 +163,15 @@ public class ProjectSession {
     }
 
     public void create(Path path) throws IOException {
+        create(path, null);
+    }
+
+    public void create(Path path, Project initial) throws IOException {
         Path normal = path.toAbsolutePath().normalize();
         if (findSlot(normal).isPresent()) {
             throw new IOException("That file is already open as a project");
         }
-        OpenProject created = OpenProject.create(normal);
+        OpenProject created = initial == null ? OpenProject.create(normal) : OpenProject.create(normal, initial);
         ProjectSlot slot = new ProjectSlot(normal);
         slot.ready(created);
         slots.add(slot);

@@ -50,7 +50,10 @@ public final class OpenProject {
     }
 
     public static OpenProject create(Path path) throws IOException {
-        Project created = Project.create(nameFrom(path));
+        return create(path, Project.create(nameFrom(path)));
+    }
+
+    public static OpenProject create(Path path, Project created) throws IOException {
         LocalState saved = ProjectStore.save(created, LocalState.empty(), path);
         return new OpenProject(path, created, saved);
     }

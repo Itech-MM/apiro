@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.ui.layout;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,7 @@ import io.github.itech_mm.apiro.ui.AppCommands;
 import io.github.itech_mm.apiro.ui.AppCommands.Command;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
+import io.github.itech_mm.apiro.ui.settings.NewProjectDialog;
 import io.github.itech_mm.apiro.ui.settings.ProjectSettingsDialog;
 import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
@@ -796,18 +798,21 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	@FXML
 	private void onNewProject() {
-		Path path = toPath(chooser("New project").showSaveDialog(rootPane.getScene().getWindow()));
-		if (path == null) {
-			return;
+		NewProjectDialog.open(rootPane.getScene().getWindow(), defaultProjectLocation(), authEditors, keyValueTables,
+				(file, project) -> {
+					session.create(file, project);
+					statusLabel.setText("Created " + session.project().name());
+				});
+	}
+
+	private Path defaultProjectLocation() {
+		for (Path recent : recents.items()) {
+			Path parent = recent.getParent();
+			if (parent != null && Files.isDirectory(parent)) {
+				return parent;
+			}
 		}
-		Path target = path.getFileName().toString().endsWith(EXTENSION) ? path
-				: path.resolveSibling(path.getFileName() + EXTENSION);
-		try {
-			session.create(target);
-			statusLabel.setText("Created " + session.project().name());
-		} catch (IOException e) {
-			statusLabel.setText("Could not create project: " + e.getMessage());
-		}
+		return Path.of(System.getProperty("user.home"));
 	}
 
 	@FXML
