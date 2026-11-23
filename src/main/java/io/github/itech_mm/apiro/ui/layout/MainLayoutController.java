@@ -23,6 +23,7 @@ import io.github.itech_mm.apiro.model.HttpMethod;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.project.OpenProject;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
 import io.github.itech_mm.apiro.project.RecentProjects;
@@ -241,7 +242,9 @@ public class MainLayoutController extends LayoutController implements Routable {
         addRequestButton.setTooltip(new Tooltip("New request"));
         addFolderButton.setTooltip(new Tooltip("New folder"));
         collapseAllButton.setTooltip(new Tooltip("Collapse all"));
-        session.structureProperty().addListener((obs, oldValue, newValue) -> rebuild());
+        session.treeVersionProperty().addListener((obs, oldValue, newValue) -> rebuild());
+        session.activeProperty().addListener((obs, oldValue, newValue) -> syncEnvironments(session.project()));
+        
         session.projectProperty().addListener((obs, oldValue, newValue) -> refreshValues(newValue));
         runService.runningIds().addListener((SetChangeListener<String>) change -> refreshRunState());
         session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> refreshRunState());
@@ -329,15 +332,21 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private void setupRequestTree() {
+        requestTree.setShowRoot(false);
         requestTree.setCellFactory(tree -> new RequestTreeCell());
         requestTree.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
             if (rebuilding) {
                 return;
             }
             boolean request = newValue != null && newValue.getValue() instanceof RequestItem;
+            String projectId = projectIdOf(newValue);
             syncingSelection = true;
             try {
-                session.selectedRequestIdProperty().set(request ? newValue.getValue().id() : "");
+                if (projectId.isEmpty()) {
+                    session.selectedRequestIdProperty().set("");
+                } else {
+                    session.selectRequest(projectId, request ? newValue.getValue().id() : "");
+                }
             } finally {
                 syncingSelection = false;
             }
@@ -368,16 +377,19 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private void rebuild() {
-        Project project = session.project();
         String selectedId = session.selectedRequestIdProperty().get();
         Set<String> collapsed = collapsedIds();
         TreeItem<ProjectItem> restored = null;
         rebuilding = true;
         try {
-            requestTree.setRoot(project == null ? null : buildTree(project, collapsed));
-            syncEnvironments(project);
-            if (project != null && !selectedId.isEmpty()) {
-                restored = find(requestTree.getRoot(), selectedId);
+            TreeItem<ProjectItem> root = new TreeItem<>();
+            for (OpenProject open : session.projects()) {
+                root.getChildren().add(buildTree(open.project(), collapsed));
+            }
+            requestTree.setRoot(root);
+            syncEnvironments(session.project());
+            if (!selectedId.isEmpty()) {
+                restored = find(root, selectedId);
             }
             if (restored != null) {
                 requestTree.getSelectionModel().select(restored);
@@ -405,8 +417,13 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     private void refreshValues(Project project) {
         TreeItem<ProjectItem> root = requestTree.getRoot();
-        if (project != null && root != null) {
-            refresh(root, project);
+        if (project == null || root == null) {
+            return;
+        }
+        for (TreeItem<ProjectItem> node : root.getChildren()) {
+            if (node.getValue() != null && node.getValue().id().equals(project.id())) {
+                refresh(node, project);
+            }
         }
     }
 
@@ -435,8 +452,9 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private TreeItem<ProjectItem> buildTree(Project project, Set<String> collapsed) {
-        TreeItem<ProjectItem> root = new TreeItem<>(Folder.of(project.name(), project.items()));
-        root.setExpanded(true);
+        Folder value = new Folder(project.id(), project.name(), null, null, null, null, project.items());
+        TreeItem<ProjectItem> root = new TreeItem<>(value);
+        root.setExpanded(!collapsed.contains(project.id()));
         project.items().forEach(item -> root.getChildren().add(node(item, collapsed)));
         return root;
     }
@@ -476,7 +494,18 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private boolean isRoot(TreeItem<ProjectItem> node) {
-        return node == null || node == requestTree.getRoot() || node.getValue() == null;
+        return node == null || node == requestTree.getRoot() || node.getParent() == requestTree.getRoot();
+    }
+
+    private String projectIdOf(TreeItem<ProjectItem> node) {
+        TreeItem<ProjectItem> current = node;
+        while (current != null && current.getParent() != null && current.getParent() != requestTree.getRoot()) {
+            current = current.getParent();
+        }
+        if (current == null || current.getParent() == null || current.getValue() == null) {
+            return "";
+        }
+        return current.getValue().id();
     }
 
     private String folderFor(TreeItem<ProjectItem> node) {
@@ -562,7 +591,10 @@ public class MainLayoutController extends LayoutController implements Routable {
         if (node == null || node.getValue() == null) {
             return null;
         }
-        if (node == requestTree.getRoot()) {
+        if (session.project() == null || !projectIdOf(node).equals(session.project().id())) {
+            return null;
+        }
+        if (isRoot(node)) {
             return new Drop("", "", false, Zone.INTO);
         }
         ProjectItem item = node.getValue();
@@ -825,7 +857,7 @@ public class MainLayoutController extends LayoutController implements Routable {
                 setContextMenu(null);
                 return;
             }
-            boolean root = getTreeItem() == requestTree.getRoot();
+            boolean root = isRoot(getTreeItem());
             separator.setVisible(!root);
             rename.setVisible(!root);
             duplicate.setVisible(!root);
