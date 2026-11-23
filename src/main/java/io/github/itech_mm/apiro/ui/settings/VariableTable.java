@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.settings;
 
 import io.github.itech_mm.apiro.model.Variable;
+import io.github.itech_mm.apiro.ui.editor.VariableField;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.application.Platform;
@@ -67,7 +68,7 @@ public final class VariableTable extends VBox {
 
         private final TextField key = new TextField();
 
-        private final TextField plain = new TextField();
+        private final VariableField plain = new VariableField();
 
         private final PasswordField hidden = new PasswordField();
 
@@ -82,12 +83,12 @@ public final class VariableTable extends VBox {
             key.setPrefWidth(140);
             key.setMinWidth(100);
             key.getStyleClass().add("kv-field");
-            plain.setText(variable.value());
-            plain.setPromptText("value");
+            plain.setText(variable.value() == null ? "" : variable.value());
             plain.getStyleClass().add("kv-field");
             hidden.setPromptText("value");
             hidden.getStyleClass().add("kv-field");
-            hidden.textProperty().bindBidirectional(plain.textProperty());
+            hidden.setText(plain.getText());
+            hidden.textProperty().bindBidirectional(plain.valueProperty());
             secret.setSelected(allowSecret && variable.secret());
             plain.visibleProperty().bind(secret.selectedProperty().not());
             plain.managedProperty().bind(plain.visibleProperty());

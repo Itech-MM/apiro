@@ -1,38 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import io.github.itech_mm.apiro.ui.editor.VariableField?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="io.github.itech_mm.apiro.ui.WorkspaceController" styleClass="page">
     <TabPane fx:id="requestTabs" styleClass="request-tabs" tabClosingPolicy="SELECTED_TAB" />
-    <HBox styleClass="breadcrumb-bar" alignment="CENTER_LEFT" spacing="2">
-        <Label fx:id="projectCrumb" text="petstore-api" styleClass="crumb" />
-        <Label text="›" styleClass="crumb-sep" />
-        <Label fx:id="folderCrumb" text="users" styleClass="crumb" />
-        <Label text="›" styleClass="crumb-sep" />
-        <Label fx:id="requestCrumb" text="create-user.req" styleClass="crumb-current" />
-        <Region HBox.hgrow="ALWAYS" />
-        <Label fx:id="lastRunLabel" text="Last run 09:12:44" styleClass="muted" />
-    </HBox>
-    <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="6">
-        <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
-            <graphic>
-                <Region styleClass="icon, icon-play" />
-            </graphic>
-        </Button>
-        <Separator orientation="VERTICAL" />
-        <ComboBox fx:id="methodCombo" styleClass="method-combo" />
-        <TextField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
-        <Label text="HTTP/1.1" styleClass="protocol-label" />
-    </HBox>
+    <StackPane fx:id="welcomeHost" styleClass="page" VBox.vgrow="ALWAYS" />
+    <VBox fx:id="editorArea" VBox.vgrow="ALWAYS">
+        <HBox styleClass="breadcrumb-bar" alignment="CENTER_LEFT" spacing="2">
+            <Label fx:id="projectCrumb" text="petstore-api" styleClass="crumb" />
+            <Label text="›" styleClass="crumb-sep" />
+            <Label fx:id="folderCrumb" text="users" styleClass="crumb" />
+            <Label text="›" styleClass="crumb-sep" />
+            <Label fx:id="requestCrumb" text="create-user.req" styleClass="crumb-current" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="lastRunLabel" text="Last run 09:12:44" styleClass="muted" />
+        </HBox>
+        <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="6">
+            <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
+                <graphic>
+                    <Region styleClass="icon, icon-play" />
+                </graphic>
+            </Button>
+            <Separator orientation="VERTICAL" />
+            <ComboBox fx:id="methodCombo" styleClass="method-combo" />
+            <VariableField fx:id="urlField" styleClass="url-field" HBox.hgrow="ALWAYS" />
+            <Label text="HTTP/1.1" styleClass="protocol-label" />
+        </HBox>
         <ProgressBar fx:id="sendProgress" styleClass="send-progress" progress="-1" maxWidth="Infinity" visible="false" />
-    <SplitPane fx:id="editorSplit" styleClass="editor-split" orientation="VERTICAL" dividerPositions="0.55" VBox.vgrow="ALWAYS">
-        <StackPane fx:id="editorPane" styleClass="page" minHeight="120">
-            <Label text="Query / Headers / Auth / Body (step 6)" styleClass="muted" />
-        </StackPane>
-        <StackPane fx:id="responsePane" styleClass="page" minHeight="120">
-            <Label text="Response (step 7)" styleClass="muted" />
-        </StackPane>
-    </SplitPane>
+        <SplitPane fx:id="editorSplit" styleClass="editor-split" orientation="VERTICAL" dividerPositions="0.55" VBox.vgrow="ALWAYS">
+            <StackPane fx:id="editorPane" styleClass="page" minHeight="120">
+                <Label text="Query / Headers / Auth / Body (step 6)" styleClass="muted" />
+            </StackPane>
+            <StackPane fx:id="responsePane" styleClass="page" minHeight="120">
+                <Label text="Response (step 7)" styleClass="muted" />
+            </StackPane>
+        </SplitPane>
+    </VBox>
 </VBox>

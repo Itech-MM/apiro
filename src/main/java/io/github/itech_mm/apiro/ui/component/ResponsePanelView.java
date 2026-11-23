@@ -18,6 +18,7 @@ import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.ResponseData;
 import io.github.itech_mm.apiro.ui.EditorStyle;
+import io.github.itech_mm.apiro.ui.JsonPretty;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
@@ -81,6 +82,9 @@ public class ResponsePanelView {
 
     @FXML
     private Hyperlink fullBodyButton;
+    
+    @FXML
+    private ToggleButton prettyToggle;
 
     private boolean fullBody;
 
@@ -108,6 +112,7 @@ public class ResponsePanelView {
         }
         group.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> onSelectionChanged(oldToggle, newToggle));
         group.selectToggle(tabs.get(ResponseTab.BODY));
+        prettyToggle.selectedProperty().addListener((observable, oldValue, newValue) -> renderContent());
         clear();
     }
 
@@ -253,7 +258,12 @@ public class ResponsePanelView {
 
     private boolean displayBody(String body) {
         if (fullBody || body.length() <= PREVIEW_LIMIT) {
-            display(looksLikeJson(body) ? "json" : "plaintext", body);
+            boolean json = looksLikeJson(body);
+            String text = body;
+            if (json && prettyToggle.isSelected()) {
+                text = JsonPretty.format(body).orElse(body);
+            }
+            display(json ? "json" : "plaintext", text);
             return false;
         }
         int end = PREVIEW_LIMIT;

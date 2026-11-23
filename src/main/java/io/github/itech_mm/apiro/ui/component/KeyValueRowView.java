@@ -5,10 +5,10 @@ import io.github.itech_framework.core.annotations.methods.OnInit;
 import io.github.itech_framework.core.annotations.methods.PreDestroy;
 import io.github.itech_framework.java_fx.annotations.components.FxComponent;
 import io.github.itech_framework.java_fx.annotations.components.Root;
+import io.github.itech_mm.apiro.ui.editor.VariableField;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
 @FxComponent("/views/components/key-value-row.fxml")
@@ -24,10 +24,10 @@ public class KeyValueRowView {
     private CheckBox enabledCheck;
 
     @FXML
-    private TextField keyField;
+    private VariableField keyField;
 
     @FXML
-    private TextField valueField;
+    private VariableField valueField;
 
     private KeyValueRow row;
     private Runnable onRemove;
@@ -45,8 +45,8 @@ public class KeyValueRowView {
     @OnInit
     private void init() {
         enabledCheck.selectedProperty().bindBidirectional(row.enabledProperty());
-        keyField.textProperty().bindBidirectional(row.keyProperty());
-        valueField.textProperty().bindBidirectional(row.valueProperty());
+        keyField.valueProperty().bindBidirectional(row.keyProperty());
+        valueField.valueProperty().bindBidirectional(row.valueProperty());
         row.enabledProperty().addListener(enabledListener);
         syncStyle();
     }
@@ -54,8 +54,8 @@ public class KeyValueRowView {
     @PreDestroy
     private void destroy() {
         enabledCheck.selectedProperty().unbindBidirectional(row.enabledProperty());
-        keyField.textProperty().unbindBidirectional(row.keyProperty());
-        valueField.textProperty().unbindBidirectional(row.valueProperty());
+        keyField.valueProperty().unbindBidirectional(row.keyProperty());
+        valueField.valueProperty().unbindBidirectional(row.valueProperty());
         row.enabledProperty().removeListener(enabledListener);
     }
 

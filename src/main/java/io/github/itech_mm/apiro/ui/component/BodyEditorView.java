@@ -16,6 +16,7 @@ import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.ui.EditorStyle;
+import io.github.itech_mm.apiro.ui.editor.VariableStyler;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -72,7 +73,7 @@ public class BodyEditorView {
         contentPane.getChildren().add(formTable.getRoot());
         formTable.getRoot().setPadding(new Insets(12, 16, 12, 16));
         EditorStyle.apply(editor);
-
+        VariableStyler.install(editor);
         for (BodyType type : BodyType.values()) {
             ToggleButton chip = new ToggleButton(label(type));
             chip.getStyleClass().add("chip");

@@ -1469,3 +1469,77 @@
 .editor-sections {
     -fx-padding: 0;
 }
+
+.variable-field {
+    -fx-background-color: -fx-control-inner-background;
+    -fx-border-color: #d0d7de;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.variable-field:focused {
+    -fx-border-color: #3b82f6;
+}
+
+.kv-disabled .variable-field {
+    -fx-opacity: 0.5;
+}
+
+.url-bar .variable-field {
+    -fx-border-color: transparent;
+}
+
+.code-editor .text.var-ref {
+    -fx-fill: #7c3aed;
+    -fx-font-family: "JetBrains Mono";
+    -fx-font-weight: bold;
+    -fx-font-style: italic;
+}
+
+.welcome-pane {
+    -fx-padding: 24;
+}
+
+.welcome-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.welcome-subtitle {
+    -fx-font-size: 13px;
+}
+
+.welcome-section {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8b949e;
+}
+
+.welcome-tip {
+    -fx-font-size: 12.5px;
+    -fx-text-fill: #57606a;
+}
+
+.welcome-action {
+    -fx-background-color: transparent;
+    -fx-padding: 7 10 7 10;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.welcome-action:hover {
+    -fx-background-color: rgba(59, 130, 246, 0.10);
+}
+
+.welcome-action:focused {
+    -fx-background-color: rgba(59, 130, 246, 0.14);
+}
+
+.welcome-shortcut {
+    -fx-font-family: "JetBrains Mono";
+    -fx-font-size: 11px;
+    -fx-text-fill: #57606a;
+    -fx-background-color: #eef1f4;
+    -fx-background-radius: 4;
+    -fx-padding: 2 6 2 6;
+}

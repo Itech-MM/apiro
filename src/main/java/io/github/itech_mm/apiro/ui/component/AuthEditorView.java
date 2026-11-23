@@ -8,6 +8,7 @@ import io.github.itech_framework.java_fx.annotations.components.FxComponent;
 import io.github.itech_framework.java_fx.annotations.components.Root;
 import io.github.itech_mm.apiro.model.AuthConfig;
 import io.github.itech_mm.apiro.model.AuthType;
+import io.github.itech_mm.apiro.ui.editor.VariableField;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -15,7 +16,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
@@ -41,7 +41,7 @@ public class AuthEditorView {
 	private VBox apiKeyBox;
 
 	@FXML
-	private TextField usernameField;
+	private VariableField usernameField;
 
 	@FXML
 	private PasswordField passwordField;
@@ -50,7 +50,7 @@ public class AuthEditorView {
 	private PasswordField tokenField;
 
 	@FXML
-	private TextField keyNameField;
+	private VariableField keyNameField;
 
 	@FXML
 	private PasswordField keyValueField;
@@ -58,11 +58,11 @@ public class AuthEditorView {
 	private boolean allowInherit = true;
 
 	private final ReadOnlyStringWrapper preview = new ReadOnlyStringWrapper("Inherit from parent");
-	
+
 	@OnInit
 	private void init() {
 		typeCombo.setItems(FXCollections.observableArrayList(typesFor(allowInherit)));
-		
+
 		typeCombo.setConverter(new StringConverter<>() {
 			@Override
 			public String toString(AuthType type) {
@@ -77,7 +77,9 @@ public class AuthEditorView {
 		typeCombo.setValue(defaultType());
 		typeCombo.valueProperty().addListener((observable, oldValue, newValue) -> refresh());
 
-		List.of(usernameField, passwordField, tokenField, keyNameField, keyValueField)
+		usernameField.valueProperty().addListener((observable, oldValue, newValue) -> refresh());
+		keyNameField.valueProperty().addListener((observable, oldValue, newValue) -> refresh());
+		List.of(passwordField, tokenField, keyValueField)
 				.forEach(field -> field.textProperty().addListener((observable, oldValue, newValue) -> refresh()));
 		refresh();
 	}
@@ -104,11 +106,11 @@ public class AuthEditorView {
 
 	public void setConfig(AuthConfig config) {
 		AuthConfig source = config == null ? AuthConfig.inherit() : config;
-		usernameField.setText(source.username());
-		passwordField.setText(source.password());
-		tokenField.setText(source.token());
-		keyNameField.setText(source.keyName());
-		keyValueField.setText(source.keyValue());
+		usernameField.setText(nonNull(source.username()));
+		passwordField.setText(nonNull(source.password()));
+		tokenField.setText(nonNull(source.token()));
+		keyNameField.setText(nonNull(source.keyName()));
+		keyValueField.setText(nonNull(source.keyValue()));
 		typeCombo.setValue(source.isInherit() && !allowInherit ? AuthType.NONE : source.type());
 		refresh();
 	}
@@ -117,6 +119,10 @@ public class AuthEditorView {
 		AuthType type = typeCombo.getValue() == null ? defaultType() : typeCombo.getValue();
 		return new AuthConfig(type, usernameField.getText(), passwordField.getText(),
 				tokenField.getText(), keyNameField.getText(), keyValueField.getText());
+	}
+
+	private static String nonNull(String value) {
+		return value == null ? "" : value;
 	}
 
 	private AuthType defaultType() {

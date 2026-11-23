@@ -25,6 +25,8 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.project.ProjectSession;
 import io.github.itech_mm.apiro.project.ProjectTree;
+import io.github.itech_mm.apiro.ui.AppCommands;
+import io.github.itech_mm.apiro.ui.AppCommands.Command;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
 import io.github.itech_mm.apiro.ui.settings.ProjectSettingsDialog;
@@ -201,6 +203,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
     @Use
     private RunCommand runCommand;
+    
+    @Use
+    private AppCommands commands;
 
     private Button activeRail;
     private boolean syncingEnvironment;
@@ -246,6 +251,11 @@ public class MainLayoutController extends LayoutController implements Routable {
     }
 
     private void setupMenu() {
+    	commands.register(Command.NEW_PROJECT, this::onNewProject);
+    	commands.register(Command.OPEN_PROJECT, this::onOpenProject);
+    	commands.register(Command.NEW_REQUEST, this::onAddRequest);
+    	commands.register(Command.NEW_FOLDER, this::onAddFolder);
+    	commands.register(Command.SAVE, this::onSave);
         newProjectItem.setAccelerator(KeyCombination.keyCombination("Shortcut+Shift+N"));
         openProjectItem.setAccelerator(KeyCombination.keyCombination("Shortcut+O"));
         newRequestItem.setAccelerator(KeyCombination.keyCombination("Shortcut+N"));

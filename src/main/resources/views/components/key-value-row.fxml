@@ -2,12 +2,13 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import io.github.itech_mm.apiro.ui.editor.VariableField?>
 
 <HBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:id="root" alignment="CENTER_LEFT" spacing="8" styleClass="kv-row">
     <CheckBox fx:id="enabledCheck" />
-    <TextField fx:id="keyField" promptText="key" prefWidth="200" styleClass="kv-field" />
-    <TextField fx:id="valueField" promptText="value" styleClass="kv-field" HBox.hgrow="ALWAYS" />
+    <VariableField fx:id="keyField" prefWidth="200" styleClass="kv-field" />
+    <VariableField fx:id="valueField" styleClass="kv-field" HBox.hgrow="ALWAYS" />
     <Button styleClass="icon-button, icon-button-sm" onAction="#onRemoveClicked">
         <graphic>
             <Region styleClass="icon, icon-sm, icon-close" />
