@@ -200,7 +200,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	@FXML
 	private Menu recentMenu;
-
+	
 	@Use
 	private ProjectSession session;
 

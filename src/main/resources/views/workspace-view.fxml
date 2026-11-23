@@ -10,14 +10,10 @@
     <StackPane fx:id="welcomeHost" styleClass="page" VBox.vgrow="ALWAYS" />
     <VBox fx:id="editorArea" VBox.vgrow="ALWAYS">
         <HBox styleClass="breadcrumb-bar" alignment="CENTER_LEFT" spacing="2">
-            <Label fx:id="projectCrumb" text="petstore-api" styleClass="crumb" />
-            <Label text="›" styleClass="crumb-sep" />
-            <Label fx:id="folderCrumb" text="users" styleClass="crumb" />
-            <Label text="›" styleClass="crumb-sep" />
-            <Label fx:id="requestCrumb" text="create-user.req" styleClass="crumb-current" />
-            <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="lastRunLabel" text="Last run 09:12:44" styleClass="muted" />
-        </HBox>
+		    <HBox fx:id="crumbBox" alignment="CENTER_LEFT" spacing="2" />
+		    <Region HBox.hgrow="ALWAYS" />
+		    <Label fx:id="lastRunLabel" styleClass="muted" />
+		</HBox>
         <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="6">
             <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
                 <graphic>

@@ -1563,3 +1563,16 @@
     -fx-border-width: 0 0 0 3;
     -fx-border-radius: 6;
 }
+
+.request-tabs .tab-label {
+    -fx-content-display: graphic-only;
+}
+
+.busy-overlay {
+    -fx-background-color: rgba(255, 255, 255, 0.7);
+}
+
+.busy-overlay .label {
+    -fx-text-fill: #57606a;
+    -fx-font-size: 12px;
+}

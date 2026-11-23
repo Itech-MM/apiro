@@ -14,6 +14,48 @@ public class OpenProjectsStore {
     private static final String LIST_KEY = "apiro.openProjects";
 
     private static final String ACTIVE_KEY = "apiro.activeProject";
+    
+    private static final String TABS_KEY = "apiro.openTabs";
+
+    private static final String SELECTED_TAB_KEY = "apiro.selectedTab";
+
+    private static final int MAX_TABS = 60;
+
+    public List<String> loadTabs() {
+        List<String> keys = new ArrayList<>();
+        try {
+            String[] texts = DataStorageUtil.load(TABS_KEY, String[].class);
+            if (texts != null) {
+                for (String text : texts) {
+                    if (text != null && !text.isBlank()) {
+                        keys.add(text);
+                    }
+                }
+            }
+        } catch (RuntimeException error) {
+            keys.clear();
+        }
+        return keys;
+    }
+
+    public String selectedTab() {
+        try {
+            String text = DataStorageUtil.load(SELECTED_TAB_KEY, String.class);
+            return text == null ? "" : text;
+        } catch (RuntimeException error) {
+            return "";
+        }
+    }
+
+    public void saveTabs(List<String> keys, String selected) {
+        List<String> limited = keys.size() > MAX_TABS ? keys.subList(0, MAX_TABS) : keys;
+        try {
+            DataStorageUtil.save(TABS_KEY, limited.isEmpty() ? null : limited.toArray(new String[0]));
+            DataStorageUtil.save(SELECTED_TAB_KEY, selected == null || selected.isEmpty() ? null : selected);
+        } catch (RuntimeException error) {
+            return;
+        }
+    }
 
     public List<Path> load() {
         List<Path> paths = new ArrayList<>();

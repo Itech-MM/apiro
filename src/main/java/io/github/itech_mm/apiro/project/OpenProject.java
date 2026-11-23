@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.project;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -9,7 +10,9 @@ import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.storage.LastRun;
 import io.github.itech_mm.apiro.storage.LocalState;
+import io.github.itech_mm.apiro.storage.LocalStateStore;
 import io.github.itech_mm.apiro.storage.ProjectStore;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
@@ -150,6 +153,22 @@ public final class OpenProject {
         changed(next);
     }
 
+    public Optional<LastRun> lastRun(String requestId) {
+        return Optional.ofNullable(state.lastRun(requestId));
+    }
+
+    public void recordRun(String requestId, LastRun run) {
+        if (requestId == null || requestId.isBlank() || run == null) {
+            return;
+        }
+        state = state.withLastRun(requestId, run);
+        try {
+            LocalStateStore.save(state, file, project.get().id());
+        } catch (IOException error) {
+            return;
+        }
+    }
+    
     private void changed(Project next) {
         project.set(next);
         structure.set(structure.get() + 1);
@@ -166,5 +185,21 @@ public final class OpenProject {
     private static String nameFrom(Path path) {
         String name = path.getFileName().toString();
         return name.endsWith(EXTENSION) ? name.substring(0, name.length() - EXTENSION.length()) : name;
+    }
+    
+    public Map<String, RequestItem> drafts() {
+        return state.drafts();
+    }
+
+    public void setDrafts(Map<String, RequestItem> next) {
+        if (state.drafts().equals(next)) {
+            return;
+        }
+        state = state.withDrafts(next);
+        try {
+            LocalStateStore.save(state, file, project.get().id());
+        } catch (IOException error) {
+            return;
+        }
     }
 }

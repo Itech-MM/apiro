@@ -1,10 +1,14 @@
 package io.github.itech_mm.apiro.storage;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
+import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Variable;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class SecretSplitter {
 
@@ -15,7 +19,8 @@ public final class SecretSplitter {
     }
 
     public static Split split(Project project, LocalState state) {
-        LocalState next = new LocalState(state.activeEnvironmentId(), null);
+    	LocalState next = new LocalState(state.activeEnvironmentId(), null, keptRuns(project, state),
+    	        keptDrafts(project, state));
         List<Environment> environments = new ArrayList<>();
         for (Environment environment : project.environments()) {
             List<Variable> variables = new ArrayList<>();
@@ -53,5 +58,25 @@ public final class SecretSplitter {
         return new Project(project.format(), project.version(), project.id(), project.name(),
                 project.description(), project.settings(), project.auth(), project.headers(),
                 project.variables(), environments, project.items());
+    }
+    
+    private static Map<String, LastRun> keptRuns(Project project, LocalState state) {
+        Map<String, LastRun> kept = new LinkedHashMap<>();
+        state.lastRuns().forEach((requestId, run) -> {
+            if (project.findItem(requestId).isPresent()) {
+                kept.put(requestId, run);
+            }
+        });
+        return kept;
+    }
+    
+    private static Map<String, RequestItem> keptDrafts(Project project, LocalState state) {
+        Map<String, RequestItem> kept = new LinkedHashMap<>();
+        state.drafts().forEach((requestId, draft) -> {
+            if (project.findItem(requestId).filter(RequestItem.class::isInstance).isPresent()) {
+                kept.put(requestId, draft);
+            }
+        });
+        return kept;
     }
 }

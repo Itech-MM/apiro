@@ -15,6 +15,7 @@ import io.github.itech_framework.java_fx.utils.concurrent.BackgroundTaskService;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.storage.LastRun;
 import io.github.itech_mm.apiro.storage.ProjectStore;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
@@ -286,6 +287,11 @@ public class ProjectSession {
         });
     }
 
+    public Optional<LastRun> lastRun(String requestId) {
+        OpenProject current = active.get();
+        return current == null ? Optional.empty() : current.lastRun(requestId);
+    }
+    
     private void load(ProjectSlot slot, boolean userInitiated, Consumer<ProjectSlot> done) {
         Path target = slot.file();
         BackgroundTaskService.getInstance().executeTask(
