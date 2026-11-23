@@ -334,7 +334,7 @@ public class ProjectSession {
             return;
         }
         slot.ready(loaded);
-        projects.add(loaded);
+        addInSlotOrder(loaded);
         loaded.structureProperty().addListener(projectStructure);
         if (userInitiated) {
             activate(loaded);
@@ -349,6 +349,23 @@ public class ProjectSession {
         if (done != null) {
             done.accept(slot);
         }
+    }
+
+    /**
+     * Loads finish in any order, but the tree must show projects in the saved slot order. The slot of {@code loaded}
+     * is already marked ready, so its position is the number of earlier slots whose project is already loaded.
+     */
+    private void addInSlotOrder(OpenProject loaded) {
+        int index = 0;
+        for (ProjectSlot slot : slots) {
+            if (slot.open() == loaded) {
+                break;
+            }
+            if (slot.open() != null && projects.contains(slot.open())) {
+                index++;
+            }
+        }
+        projects.add(Math.min(index, projects.size()), loaded);
     }
 
     private void failLoad(ProjectSlot slot, String reason, Consumer<ProjectSlot> done) {
