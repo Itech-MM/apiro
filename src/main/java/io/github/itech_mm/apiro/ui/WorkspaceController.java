@@ -67,10 +67,13 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TabPane;
@@ -389,6 +392,7 @@ public class WorkspaceController implements Routable {
 		state.showProject(session.projects().size() > 1);
 		state.tab.setUserData(state);
 		state.tab.setOnCloseRequest(event -> onCloseRequest(event, state));
+		state.tab.setContextMenu(tabMenu(state));
 		open.put(item.id(), state);
 		if (index < 0 || index > requestTabs.getTabs().size()) {
 			requestTabs.getTabs().add(state.tab);
@@ -692,6 +696,108 @@ public class WorkspaceController implements Routable {
 						closeTab(state);
 					}
 				}).addButton("Discard", () -> closeTab(state)).addButton("Cancel", null).build().showAsync();
+	}
+
+	// ------------------------------------------------------- tab context menu
+
+	private ContextMenu tabMenu(OpenRequest state) {
+		MenuItem close = new MenuItem("Close");
+		MenuItem closeOthers = new MenuItem("Close Others");
+		MenuItem closeAll = new MenuItem("Close All");
+		MenuItem closeLeft = new MenuItem("Close Tabs to the Left");
+		MenuItem closeRight = new MenuItem("Close Tabs to the Right");
+		MenuItem closeUnmodified = new MenuItem("Close Unmodified");
+		MenuItem save = new MenuItem("Save");
+		MenuItem selectInTree = new MenuItem("Select in Requests");
+		close.setOnAction(event -> closeTabs(List.of(state)));
+		closeOthers.setOnAction(event -> {
+			requestTabs.getSelectionModel().select(state.tab);
+			closeTabs(states().stream().filter(other -> other != state).toList());
+		});
+		closeAll.setOnAction(event -> closeTabs(states()));
+		closeLeft.setOnAction(event -> {
+			List<OpenRequest> all = states();
+			requestTabs.getSelectionModel().select(state.tab);
+			closeTabs(all.subList(0, Math.max(0, all.indexOf(state))));
+		});
+		closeRight.setOnAction(event -> {
+			List<OpenRequest> all = states();
+			requestTabs.getSelectionModel().select(state.tab);
+			int index = all.indexOf(state);
+			closeTabs(index < 0 ? List.of() : all.subList(index + 1, all.size()));
+		});
+		closeUnmodified.setOnAction(event -> {
+			refreshEdits();
+			removeTabs(states().stream().filter(other -> !other.dirty).toList());
+		});
+		save.setOnAction(event -> saveRequest(state));
+		selectInTree.setOnAction(event -> selectInTree(state));
+		ContextMenu menu = new ContextMenu(close, closeOthers, closeAll, new SeparatorMenuItem(), closeLeft, closeRight,
+				closeUnmodified, new SeparatorMenuItem(), save, selectInTree);
+		menu.setOnShowing(event -> {
+			refreshEdits();
+			List<OpenRequest> all = states();
+			int index = all.indexOf(state);
+			closeOthers.setDisable(all.size() < 2);
+			closeLeft.setDisable(index <= 0);
+			closeRight.setDisable(index < 0 || index >= all.size() - 1);
+			closeUnmodified.setDisable(all.stream().allMatch(other -> other.dirty));
+			save.setDisable(!state.dirty);
+		});
+		return menu;
+	}
+
+	private List<OpenRequest> states() {
+		return requestTabs.getTabs().stream().map(WorkspaceController::stateOf).filter(state -> state != null).toList();
+	}
+
+	/** Closes the tabs, asking once about unsaved changes. Cancelling the question closes none of them. */
+	private void closeTabs(List<OpenRequest> targets) {
+		if (targets.isEmpty()) {
+			return;
+		}
+		refreshEdits();
+		List<OpenRequest> dirty = targets.stream().filter(state -> state.dirty).toList();
+		if (dirty.isEmpty()) {
+			removeTabs(targets);
+			return;
+		}
+		String message;
+		if (dirty.size() == 1) {
+			message = "\"" + dirty.get(0).title.getText() + "\" has unsaved changes. Save before closing?";
+		} else {
+			String names = dirty.stream().limit(5).map(state -> "\"" + state.title.getText() + "\"")
+					.collect(Collectors.joining(", "));
+			String more = dirty.size() > 5 ? " and " + (dirty.size() - 5) + " more" : "";
+			message = dirty.size() + " requests have unsaved changes: " + names + more + ". Save before closing?";
+		}
+		AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Unsaved changes").message(message)
+				.addOwner(owner()).addButton(dirty.size() == 1 ? "Save" : "Save All", () -> {
+					for (OpenRequest state : dirty) {
+						if (!saveRequest(state)) {
+							return;
+						}
+					}
+					removeTabs(targets);
+				}).addButton("Discard", () -> removeTabs(targets)).addButton("Cancel", null).build().showAsync();
+	}
+
+	private void removeTabs(List<OpenRequest> targets) {
+		List<Tab> tabs = targets.stream().map(state -> state.tab).toList();
+		if (!tabs.isEmpty()) {
+			Platform.runLater(() -> requestTabs.getTabs().removeAll(tabs));
+		}
+	}
+
+	private void selectInTree(OpenRequest state) {
+		if (session.activeProperty().get() != state.owner) {
+			session.activateProject(state.owner.id());
+		}
+		requestTabs.getSelectionModel().select(state.tab);
+		if (state.id.equals(session.selectedRequestIdProperty().get())) {
+			session.selectedRequestIdProperty().set("");
+		}
+		session.selectedRequestIdProperty().set(state.id);
 	}
 
 	private void closeTab(OpenRequest state) {
