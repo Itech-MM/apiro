@@ -3,11 +3,18 @@ package io.github.itech_mm.apiro.ui.scenario;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -21,15 +28,17 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Affine;
+import javafx.util.Duration;
 
 final class DiagramView extends StackPane {
 
-    private static final double NODE_WIDTH = 210;
-    private static final double NODE_HEIGHT = 64;
+    private static final double NODE_WIDTH = 230;
+    private static final double NODE_HEIGHT = 88;
     private static final double GAP = 80;
     private static final double MARGIN = 40;
     private static final double MIN_ZOOM = 0.25;
@@ -44,6 +53,7 @@ final class DiagramView extends StackPane {
     private final Group nodeLayer = new Group();
     private final Affine view = new Affine();
     private final Map<String, StepNode> nodes = new LinkedHashMap<>();
+    private final List<Link> links = new ArrayList<>();
     private final Label empty = new Label("Add steps to see them here");
     private final Label zoomLabel = new Label("100%");
     private List<Step> steps = List.of();
@@ -123,9 +133,12 @@ final class DiagramView extends StackPane {
     void show(List<Step> next, String selected, boolean refit) {
         steps = List.copyOf(next);
         selectedId = selected;
+        nodes.values().forEach(StepNode::dispose);
+        links.forEach(Link::dispose);
         nodeLayer.getChildren().clear();
         edgeLayer.getChildren().clear();
         nodes.clear();
+        links.clear();
         for (int i = 0; i < steps.size(); i++) {
             StepNode node = new StepNode(steps.get(i), i);
             node.setLayoutX(i * (NODE_WIDTH + GAP));
@@ -133,7 +146,9 @@ final class DiagramView extends StackPane {
             nodes.put(steps.get(i).id(), node);
             nodeLayer.getChildren().add(node);
             if (i > 0) {
-                edgeLayer.getChildren().add(edge(i - 1, i));
+                Link link = new Link(steps.get(i - 1).id(), steps.get(i).id(), i - 1, i);
+                links.add(link);
+                edgeLayer.getChildren().add(link.group);
             }
         }
         empty.setVisible(steps.isEmpty());
@@ -151,21 +166,12 @@ final class DiagramView extends StackPane {
 
     void refresh() {
         nodes.values().forEach(StepNode::refresh);
+        links.forEach(Link::refresh);
     }
 
-    private Group edge(int from, int to) {
-        double x1 = from * (NODE_WIDTH + GAP) + NODE_WIDTH;
-        double x2 = to * (NODE_WIDTH + GAP);
-        double y = NODE_HEIGHT / 2;
-        double handle = (x2 - x1) / 2;
-        CubicCurve curve = new CubicCurve(x1, y, x1 + handle, y, x2 - handle, y, x2, y);
-        curve.setFill(null);
-        curve.getStyleClass().add("diagram-edge");
-        Polygon arrow = new Polygon(x2, y, x2 - 9, y - 5, x2 - 9, y + 5);
-        arrow.getStyleClass().add("diagram-arrow");
-        Group group = new Group(curve, arrow);
-        group.setMouseTransparent(true);
-        return group;
+    void refit() {
+        fitPending = true;
+        tryFit();
     }
 
     private void tryFit() {
@@ -212,32 +218,133 @@ final class DiagramView extends StackPane {
         return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
     }
 
-    private final class StepNode extends VBox {
+    private final class Link {
+
+        final String fromId;
+        final String toId;
+        final CubicCurve curve;
+        final Polygon arrow;
+        final Group group;
+        private final Timeline flow;
+
+        Link(String fromId, String toId, int from, int to) {
+            this.fromId = fromId;
+            this.toId = toId;
+            double x1 = from * (NODE_WIDTH + GAP) + NODE_WIDTH;
+            double x2 = to * (NODE_WIDTH + GAP);
+            double y = NODE_HEIGHT / 2;
+            double handle = (x2 - x1) / 2;
+            curve = new CubicCurve(x1, y, x1 + handle, y, x2 - handle, y, x2, y);
+            curve.setFill(null);
+            curve.getStyleClass().add("diagram-edge");
+            arrow = new Polygon(x2, y, x2 - 10, y - 5.5, x2 - 10, y + 5.5);
+            arrow.getStyleClass().add("diagram-arrow");
+            group = new Group(curve, arrow);
+            group.setMouseTransparent(true);
+            flow = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(curve.strokeDashOffsetProperty(), 0)),
+                    new KeyFrame(Duration.millis(450),
+                            new KeyValue(curve.strokeDashOffsetProperty(), -14, Interpolator.LINEAR)));
+            flow.setCycleCount(Animation.INDEFINITE);
+            refresh();
+        }
+
+        void refresh() {
+            StepResult.State source = support.state(fromId);
+            StepResult.State target = support.state(toId);
+            String kind = "idle";
+            if (target == StepResult.State.RUNNING) {
+                kind = "active";
+            } else if (source == StepResult.State.FAILED) {
+                kind = "failed";
+            } else if (source == StepResult.State.PASSED
+                    && (target == StepResult.State.PASSED || target == StepResult.State.FAILED)) {
+                kind = "done";
+            } else if (source == StepResult.State.CANCELLED || source == StepResult.State.SKIPPED
+                    || target == StepResult.State.SKIPPED || target == StepResult.State.CANCELLED) {
+                kind = "dim";
+            }
+            curve.getStyleClass().removeIf(style -> style.startsWith("edge-"));
+            arrow.getStyleClass().removeIf(style -> style.startsWith("edge-"));
+            curve.getStyleClass().add("edge-" + kind);
+            arrow.getStyleClass().add("edge-" + kind);
+            if (kind.equals("active")) {
+                curve.getStrokeDashArray().setAll(8.0, 6.0);
+                flow.play();
+            } else {
+                flow.stop();
+                curve.setStrokeDashOffset(0);
+                if (kind.equals("dim")) {
+                    curve.getStrokeDashArray().setAll(3.0, 6.0);
+                } else {
+                    curve.getStrokeDashArray().clear();
+                }
+            }
+        }
+
+        void dispose() {
+            flow.stop();
+        }
+    }
+
+    private final class StepNode extends StackPane {
 
         private final Step step;
-        private final Label dot = new Label();
         private final Label number = new Label();
-        private final Label badge = new Label();
         private final Label name = new Label();
         private final Label time = new Label();
+        private final Label badge = new Label();
+        private final Label url = new Label();
+        private final Label pill = new Label();
+        private final Circle portIn = new Circle(5);
+        private final Circle portOut = new Circle(5);
+        private final FadeTransition pulse = new FadeTransition(Duration.millis(700), pill);
 
         StepNode(Step step, int index) {
-            super(6);
             this.step = step;
             getStyleClass().add("diagram-node");
             setMinSize(NODE_WIDTH, NODE_HEIGHT);
             setPrefSize(NODE_WIDTH, NODE_HEIGHT);
             setMaxSize(NODE_WIDTH, NODE_HEIGHT);
-            dot.getStyleClass().add("step-dot");
-            number.getStyleClass().add("muted");
-            number.setText((index + 1) + ".");
-            time.getStyleClass().add("muted");
+            number.setText((index + 1) + "");
+            number.getStyleClass().add("diagram-node-number");
+            name.getStyleClass().add("diagram-node-title");
             name.setMaxWidth(Double.MAX_VALUE);
+            time.getStyleClass().add("diagram-node-time");
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
-            HBox top = new HBox(8, dot, number, badge, spacer, time);
-            top.setAlignment(Pos.CENTER_LEFT);
-            getChildren().addAll(top, name);
+            HBox head = new HBox(8, number, name, spacer, time);
+            head.setAlignment(Pos.CENTER_LEFT);
+            head.getStyleClass().add("diagram-node-head");
+            HBox.setHgrow(name, Priority.SOMETIMES);
+
+            url.getStyleClass().add("diagram-node-url");
+            url.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(url, Priority.ALWAYS);
+            HBox line = new HBox(6, badge, url);
+            line.setAlignment(Pos.CENTER_LEFT);
+            pill.getStyleClass().add("diagram-pill");
+            VBox body = new VBox(6, line, pill);
+            body.getStyleClass().add("diagram-node-body");
+            VBox card = new VBox(head, body);
+            card.getStyleClass().add("diagram-card");
+            card.setMinSize(NODE_WIDTH, NODE_HEIGHT);
+            card.setMaxSize(NODE_WIDTH, NODE_HEIGHT);
+
+            portIn.getStyleClass().add("diagram-port");
+            portOut.getStyleClass().add("diagram-port");
+            StackPane.setAlignment(portIn, Pos.CENTER_LEFT);
+            StackPane.setAlignment(portOut, Pos.CENTER_RIGHT);
+            portIn.setTranslateX(-5);
+            portOut.setTranslateX(5);
+            portIn.setMouseTransparent(true);
+            portOut.setMouseTransparent(true);
+            getChildren().addAll(card, portIn, portOut);
+
+            pulse.setFromValue(1);
+            pulse.setToValue(0.35);
+            pulse.setAutoReverse(true);
+            pulse.setCycleCount(Animation.INDEFINITE);
+
             setOnMousePressed(event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
                     selectedId = step.id();
@@ -249,6 +356,10 @@ final class DiagramView extends StackPane {
             setOnMouseDragged(event -> event.consume());
         }
 
+        void dispose() {
+            pulse.stop();
+        }
+
         void syncSelected() {
             getStyleClass().remove("selected");
             if (step.id().equals(selectedId)) {
@@ -258,24 +369,52 @@ final class DiagramView extends StackPane {
 
         void refresh() {
             Optional<RequestItem> request = support.request(step.requestId());
+            getStyleClass().removeIf(style -> style.startsWith("method-"));
             badge.getStyleClass().removeIf(style -> style.startsWith("method-"));
             badge.getStyleClass().add("method-badge");
             name.getStyleClass().remove("step-missing");
             if (request.isPresent()) {
+                String method = request.get().method().name().toLowerCase();
                 badge.setText(request.get().method().name());
-                badge.getStyleClass().add("method-" + request.get().method().name().toLowerCase());
+                badge.getStyleClass().add("method-" + method);
+                getStyleClass().add("method-" + method);
                 name.setText(step.name().isBlank() ? request.get().name() : step.name());
+                url.setText(request.get().url() == null ? "" : request.get().url());
             } else {
                 badge.setText("?");
                 name.setText("Missing request");
                 name.getStyleClass().add("step-missing");
+                url.setText("");
             }
             getStyleClass().removeIf(style -> style.startsWith("state-"));
-            dot.getStyleClass().removeIf(style -> style.startsWith("state-"));
+            pill.getStyleClass().removeIf(style -> style.startsWith("pill-"));
+            portOut.getStyleClass().removeIf(style -> style.startsWith("state-"));
+            portIn.getStyleClass().removeIf(style -> style.startsWith("state-"));
             StepResult.State state = support.state(step.id());
+            int status = support.status(step.id());
+            String code = status > 0 ? "  " + status : "";
+            String text = "Not run";
             if (state != null) {
-                getStyleClass().add("state-" + state.name().toLowerCase());
-                dot.getStyleClass().add("state-" + state.name().toLowerCase());
+                String key = state.name().toLowerCase();
+                getStyleClass().add("state-" + key);
+                portOut.getStyleClass().add("state-" + key);
+                portIn.getStyleClass().add("state-" + key);
+                pill.getStyleClass().add("pill-" + key);
+                text = switch (state) {
+                    case PENDING -> "Waiting";
+                    case RUNNING -> "Running…";
+                    case PASSED -> "✓ Passed" + code;
+                    case FAILED -> "✕ Failed" + code;
+                    case SKIPPED -> "– Skipped";
+                    case CANCELLED -> "■ Cancelled";
+                };
+            }
+            pill.setText(text);
+            if (state == StepResult.State.RUNNING) {
+                pulse.play();
+            } else {
+                pulse.stop();
+                pill.setOpacity(1);
             }
             long millis = support.millis(step.id());
             time.setText(millis <= 0 ? "" : millis < 1000 ? millis + " ms" : String.format("%.1f s", millis / 1000.0));

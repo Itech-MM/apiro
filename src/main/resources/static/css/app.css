@@ -974,33 +974,150 @@
 }
 
 .diagram-node {
-    -fx-background-color: -app-layer;
-    -fx-background-radius: 8;
-    -fx-border-color: -fx-border-base;
-    -fx-border-radius: 8;
-    -fx-border-width: 1.5;
-    -fx-padding: 8 10 8 10;
+    -dg-accent: #64748B;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 6, 0, 0, 1);
 }
 
-.diagram-node.selected {
+.diagram-node.method-get { -dg-accent: #22A06B; }
+.diagram-node.method-post { -dg-accent: #E8912D; }
+.diagram-node.method-put { -dg-accent: #3B82F6; }
+.diagram-node.method-patch { -dg-accent: #8B5CF6; }
+.diagram-node.method-delete { -dg-accent: #E5484D; }
+.diagram-node.method-head,
+.diagram-node.method-options { -dg-accent: #0EA5B7; }
+
+.diagram-card {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 10;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 10;
+    -fx-border-width: 1.5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 8, 0, 0, 2);
+}
+
+.diagram-node.state-passed .diagram-card { -fx-border-color: -fx-success; }
+.diagram-node.state-failed .diagram-card { -fx-border-color: -fx-danger; }
+.diagram-node.state-running .diagram-card,
+.diagram-node.state-cancelled .diagram-card { -fx-border-color: -fx-warning; }
+.diagram-node.state-skipped .diagram-card { -fx-opacity: 0.6; }
+
+.diagram-node.selected .diagram-card {
     -fx-border-color: -fx-primary;
-    -fx-effect: dropshadow(gaussian, -fx-primary, 12, 0.3, 0, 0);
+    -fx-effect: dropshadow(gaussian, -fx-primary, 14, 0.25, 0, 0);
 }
 
-.diagram-node.state-passed { -fx-border-color: -fx-success; }
-.diagram-node.state-failed { -fx-border-color: -fx-danger; }
-.diagram-node.state-running,
-.diagram-node.state-cancelled { -fx-border-color: -fx-warning; }
+.diagram-node-head {
+    -fx-background-color: -dg-accent;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 6 10 6 8;
+}
 
-.diagram-edge {
+.diagram-node-number {
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-background-radius: 9;
+    -fx-min-width: 18;
+    -fx-min-height: 18;
+    -fx-alignment: center;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.diagram-node-title {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-text-overrun: ellipsis;
+}
+
+.diagram-node-time {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-font-size: 11px;
+}
+
+.diagram-node-body {
+    -fx-padding: 8 10 8 10;
+}
+
+.diagram-node-url {
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-muted;
+    -fx-text-overrun: leading-ellipsis;
+}
+
+.diagram-pill {
+    -fx-font-size: 11px;
+    -fx-padding: 2 8 2 8;
+    -fx-background-radius: 10;
+    -fx-background-color: rgba(128, 128, 128, 0.16);
+    -fx-text-fill: -app-muted;
+}
+
+.diagram-pill.pill-running { -fx-background-color: rgba(245, 166, 35, 0.20); -fx-text-fill: -fx-warning; }
+.diagram-pill.pill-passed { -fx-background-color: rgba(34, 160, 107, 0.20); -fx-text-fill: -fx-success; }
+.diagram-pill.pill-failed { -fx-background-color: rgba(229, 72, 77, 0.20); -fx-text-fill: -fx-danger; }
+.diagram-pill.pill-cancelled { -fx-background-color: rgba(245, 166, 35, 0.20); -fx-text-fill: -fx-warning; }
+
+.diagram-port {
+    -fx-fill: -app-layer;
     -fx-stroke: -app-muted;
     -fx-stroke-width: 2;
 }
 
-.diagram-arrow {
-    -fx-fill: -app-muted;
+.diagram-port.state-passed { -fx-stroke: -fx-success; }
+.diagram-port.state-failed { -fx-stroke: -fx-danger; }
+.diagram-port.state-running { -fx-stroke: -fx-warning; }
+
+.diagram-edge {
+    -fx-stroke: -app-muted;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+}
+
+.diagram-arrow { -fx-fill: -app-muted; }
+
+.diagram-edge.edge-done { -fx-stroke: -fx-success; }
+.diagram-arrow.edge-done { -fx-fill: -fx-success; }
+.diagram-edge.edge-active { -fx-stroke: -fx-primary; -fx-stroke-width: 2.5; }
+.diagram-arrow.edge-active { -fx-fill: -fx-primary; }
+.diagram-edge.edge-failed { -fx-stroke: -fx-danger; }
+.diagram-arrow.edge-failed { -fx-fill: -fx-danger; }
+.diagram-edge.edge-dim,
+.diagram-arrow.edge-dim { -fx-opacity: 0.45; }
+
+.view-header {
+    -fx-padding: 8 10 8 10;
+    -fx-border-color: transparent transparent -fx-grid-line transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.view-switch {
+    -fx-background-color: -app-gutter;
+    -fx-background-radius: 7;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 7;
+    -fx-padding: 2;
+    -fx-spacing: 2;
+}
+
+.view-switch .toggle-button,
+.view-switch .toggle-button:focused {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 3 14 3 14;
+    -fx-text-fill: -app-muted;
+    -fx-cursor: hand;
+}
+
+.view-switch .toggle-button:hover { -fx-background-color: -fx-row-hover; }
+
+.view-switch .toggle-button:selected,
+.view-switch .toggle-button:selected:hover {
+    -fx-background-color: -fx-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
 }
 
 .diagram-tools {

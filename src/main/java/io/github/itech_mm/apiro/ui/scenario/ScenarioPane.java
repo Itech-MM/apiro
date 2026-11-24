@@ -37,8 +37,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -46,6 +46,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 public final class ScenarioPane extends BorderPane {
 
@@ -60,6 +62,8 @@ public final class ScenarioPane extends BorderPane {
         void save(ScenarioItem scenario);
     }
 
+    private static final double DIAGRAM_SPLIT = 0.68;
+    private static final double LIST_SPLIT = 0.5;
     private static final String STOP = "Stop";
     private static final String CONTINUE = "Continue";
 
@@ -147,14 +151,40 @@ public final class ScenarioPane extends BorderPane {
         log.getStyleClass().add("scenario-log");
 
         list.getStyleClass().add("scenario-list");
-        Tab listTab = new Tab("List", list);
-        Tab diagramTab = new Tab("Diagram", diagram);
-        TabPane views = new TabPane(listTab, diagramTab);
-        views.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        views.getStyleClass().addAll("request-tabs", "scenario-views");
+        ToggleButton diagramToggle = new ToggleButton("Diagram");
+        ToggleButton listToggle = new ToggleButton("List");
+        ToggleGroup group = new ToggleGroup();
+        diagramToggle.setToggleGroup(group);
+        listToggle.setToggleGroup(group);
+        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null) {
+                oldValue.setSelected(true);
+            }
+        });
+        HBox switcher = new HBox(diagramToggle, listToggle);
+        switcher.getStyleClass().add("view-switch");
+        switcher.setMaxWidth(Region.USE_PREF_SIZE);
+        HBox viewHeader = new HBox(switcher);
+        viewHeader.getStyleClass().add("view-header");
+        viewHeader.setAlignment(Pos.CENTER_LEFT);
+        StackPane stack = new StackPane(list, diagram);
+        VBox.setVgrow(stack, Priority.ALWAYS);
+        VBox views = new VBox(viewHeader, stack);
+        views.setMinWidth(0);
         SplitPane horizontal = new SplitPane(views, inspector);
         horizontal.getStyleClass().add("main-split");
-        horizontal.setDividerPositions(0.5);
+        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
+            boolean showDiagram = newValue == diagramToggle;
+            diagram.setVisible(showDiagram);
+            diagram.setManaged(showDiagram);
+            list.setVisible(!showDiagram);
+            list.setManaged(!showDiagram);
+            horizontal.setDividerPositions(showDiagram ? DIAGRAM_SPLIT : LIST_SPLIT);
+            if (showDiagram) {
+                diagram.refit();
+            }
+        });
+        diagramToggle.setSelected(true);
         SplitPane vertical = new SplitPane(horizontal, log);
         vertical.setOrientation(Orientation.VERTICAL);
         vertical.getStyleClass().add("editor-split");
@@ -358,6 +388,12 @@ public final class ScenarioPane extends BorderPane {
             public StepResult.State state(String stepId) {
                 RunView view = viewOf(current);
                 return view == null ? null : view.states.get(stepId);
+            }
+
+            @Override
+            public int status(String stepId) {
+                StepResult result = resultOf(stepId);
+                return result == null ? 0 : result.status();
             }
 
             @Override
