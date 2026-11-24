@@ -38,7 +38,7 @@ import javafx.util.Duration;
 final class DiagramView extends StackPane {
 
     private static final double NODE_WIDTH = 230;
-    private static final double NODE_HEIGHT = 88;
+    private static final double NODE_HEIGHT = 100;
     private static final double GAP = 80;
     private static final double MARGIN = 40;
     private static final double MIN_ZOOM = 0.25;
@@ -323,7 +323,7 @@ final class DiagramView extends StackPane {
             HBox line = new HBox(6, badge, url);
             line.setAlignment(Pos.CENTER_LEFT);
             pill.getStyleClass().add("diagram-pill");
-            VBox body = new VBox(6, line, pill);
+            VBox body = new VBox(8, line, pill);
             body.getStyleClass().add("diagram-node-body");
             VBox card = new VBox(head, body);
             card.getStyleClass().add("diagram-card");

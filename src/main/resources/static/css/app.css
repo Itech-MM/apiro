@@ -67,6 +67,23 @@
     -app-tooltip-text: #DFE1E5;
     -app-scrim: rgba(255, 255, 255, 0.7);
     -app-var-ref: #7C3AED;
+
+    -dg-accent-other: #64748B;
+    -dg-accent-get: #22A06B;
+    -dg-accent-post: #E8912D;
+    -dg-accent-put: #3B82F6;
+    -dg-accent-patch: #8B5CF6;
+    -dg-accent-delete: #E5484D;
+    -dg-accent-info: #0EA5B7;
+    -dg-head-text: #FFFFFF;
+    -dg-head-text-soft: rgba(255, 255, 255, 0.85);
+    -dg-head-chip: rgba(255, 255, 255, 0.25);
+    -dg-shadow: rgba(0, 0, 0, 0.10);
+    -dg-select-glow: rgba(37, 99, 235, 0.28);
+    -dg-pill-bg: rgba(128, 128, 128, 0.16);
+    -dg-pill-running: rgba(217, 119, 6, 0.18);
+    -dg-pill-passed: rgba(22, 163, 74, 0.18);
+    -dg-pill-failed: rgba(220, 38, 38, 0.16);
 }
 
 .root.dark-mode {
@@ -132,6 +149,23 @@
     -app-tooltip-text: #F8F8F2;
     -app-scrim: rgba(30, 31, 28, 0.7);
     -app-var-ref: #AE81FF;
+
+    -dg-accent-other: #4F5668;
+    -dg-accent-get: #3F8F5C;
+    -dg-accent-post: #C2822F;
+    -dg-accent-put: #3E8CA0;
+    -dg-accent-patch: #7B62C0;
+    -dg-accent-delete: #BE3E6A;
+    -dg-accent-info: #2F8D99;
+    -dg-head-text: #F8F8F2;
+    -dg-head-text-soft: rgba(248, 248, 242, 0.75);
+    -dg-head-chip: rgba(255, 255, 255, 0.16);
+    -dg-shadow: rgba(0, 0, 0, 0.22);
+    -dg-select-glow: rgba(102, 217, 239, 0.26);
+    -dg-pill-bg: rgba(144, 140, 122, 0.20);
+    -dg-pill-running: rgba(253, 151, 31, 0.16);
+    -dg-pill-passed: rgba(166, 226, 46, 0.14);
+    -dg-pill-failed: rgba(249, 38, 114, 0.16);
 }
 
 .label {
@@ -822,11 +856,6 @@
 .method-badge.method-patch { -fx-background-color: -method-patch-tint; }
 .method-badge.method-delete { -fx-background-color: -method-delete-tint; }
 
-.method-badge.scenario-badge {
-    -fx-text-fill: -method-patch;
-    -fx-background-color: -method-patch-tint;
-}
-
 .method-text.scenario-text { -fx-text-fill: -method-patch; }
 
 .scenario-title {
@@ -974,17 +1003,17 @@
 }
 
 .diagram-node {
-    -dg-accent: #64748B;
+    -dg-accent: -dg-accent-other;
     -fx-cursor: hand;
 }
 
-.diagram-node.method-get { -dg-accent: #22A06B; }
-.diagram-node.method-post { -dg-accent: #E8912D; }
-.diagram-node.method-put { -dg-accent: #3B82F6; }
-.diagram-node.method-patch { -dg-accent: #8B5CF6; }
-.diagram-node.method-delete { -dg-accent: #E5484D; }
+.diagram-node.method-get { -dg-accent: -dg-accent-get; }
+.diagram-node.method-post { -dg-accent: -dg-accent-post; }
+.diagram-node.method-put { -dg-accent: -dg-accent-put; }
+.diagram-node.method-patch { -dg-accent: -dg-accent-patch; }
+.diagram-node.method-delete { -dg-accent: -dg-accent-delete; }
 .diagram-node.method-head,
-.diagram-node.method-options { -dg-accent: #0EA5B7; }
+.diagram-node.method-options { -dg-accent: -dg-accent-info; }
 
 .diagram-card {
     -fx-background-color: -app-layer;
@@ -992,7 +1021,7 @@
     -fx-border-color: -fx-border-base;
     -fx-border-radius: 10;
     -fx-border-width: 1.5;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, -dg-shadow, 6, 0, 0, 1);
 }
 
 .diagram-node.state-passed .diagram-card { -fx-border-color: -fx-success; }
@@ -1003,7 +1032,7 @@
 
 .diagram-node.selected .diagram-card {
     -fx-border-color: -fx-primary;
-    -fx-effect: dropshadow(gaussian, -fx-primary, 14, 0.25, 0, 0);
+    -fx-effect: dropshadow(gaussian, -dg-select-glow, 8, 0.1, 0, 0);
 }
 
 .diagram-node-head {
@@ -1013,29 +1042,29 @@
 }
 
 .diagram-node-number {
-    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-background-color: -dg-head-chip;
     -fx-background-radius: 9;
     -fx-min-width: 18;
     -fx-min-height: 18;
     -fx-alignment: center;
-    -fx-text-fill: white;
+    -fx-text-fill: -dg-head-text;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
 
 .diagram-node-title {
-    -fx-text-fill: white;
+    -fx-text-fill: -dg-head-text;
     -fx-font-weight: bold;
     -fx-text-overrun: ellipsis;
 }
 
 .diagram-node-time {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-text-fill: -dg-head-text-soft;
     -fx-font-size: 11px;
 }
 
 .diagram-node-body {
-    -fx-padding: 8 10 8 10;
+    -fx-padding: 10 14 12 14;
 }
 
 .diagram-node-url {
@@ -1049,14 +1078,14 @@
     -fx-font-size: 11px;
     -fx-padding: 2 8 2 8;
     -fx-background-radius: 10;
-    -fx-background-color: rgba(128, 128, 128, 0.16);
+    -fx-background-color: -dg-pill-bg;
     -fx-text-fill: -app-muted;
 }
 
-.diagram-pill.pill-running { -fx-background-color: rgba(245, 166, 35, 0.20); -fx-text-fill: -fx-warning; }
-.diagram-pill.pill-passed { -fx-background-color: rgba(34, 160, 107, 0.20); -fx-text-fill: -fx-success; }
-.diagram-pill.pill-failed { -fx-background-color: rgba(229, 72, 77, 0.20); -fx-text-fill: -fx-danger; }
-.diagram-pill.pill-cancelled { -fx-background-color: rgba(245, 166, 35, 0.20); -fx-text-fill: -fx-warning; }
+.diagram-pill.pill-running { -fx-background-color: -dg-pill-running; -fx-text-fill: -fx-warning; }
+.diagram-pill.pill-passed { -fx-background-color: -dg-pill-passed; -fx-text-fill: -fx-success; }
+.diagram-pill.pill-failed { -fx-background-color: -dg-pill-failed; -fx-text-fill: -fx-danger; }
+.diagram-pill.pill-cancelled { -fx-background-color: -dg-pill-running; -fx-text-fill: -fx-warning; }
 
 .diagram-port {
     -fx-fill: -app-layer;
@@ -1115,8 +1144,8 @@
 
 .view-switch .toggle-button:selected,
 .view-switch .toggle-button:selected:hover {
-    -fx-background-color: -fx-primary;
-    -fx-text-fill: white;
+    -fx-background-color: -app-success-tint;
+    -fx-text-fill: -app-muted;
     -fx-font-weight: bold;
 }
 

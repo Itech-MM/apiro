@@ -1339,7 +1339,7 @@ public class WorkspaceController implements Routable {
 			project.getStyleClass().add("muted");
 			project.setVisible(false);
 			project.setManaged(false);
-			badge.getStyleClass().addAll("method-badge", "scenario-badge");
+			badge.getStyleClass().add("method-badge");
 			title.setText(item.name());
 			title.setMaxWidth(180);
 			HBox header = new HBox(6, badge, title, project);

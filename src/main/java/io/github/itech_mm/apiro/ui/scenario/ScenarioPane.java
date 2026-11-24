@@ -62,7 +62,7 @@ public final class ScenarioPane extends BorderPane {
         void save(ScenarioItem scenario);
     }
 
-    private static final double DIAGRAM_SPLIT = 0.68;
+    private static final double DIAGRAM_SPLIT = 0.70;
     private static final double LIST_SPLIT = 0.5;
     private static final String STOP = "Stop";
     private static final String CONTINUE = "Continue";
