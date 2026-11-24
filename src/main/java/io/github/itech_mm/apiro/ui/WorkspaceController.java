@@ -35,11 +35,13 @@ import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.repository.LastRun;
 import io.github.itech_mm.apiro.repository.OpenProjectsStore;
 import io.github.itech_mm.apiro.service.http.FailureKind;
+import io.github.itech_mm.apiro.service.http.RequestExecutor;
 import io.github.itech_mm.apiro.service.http.RequestPreparer;
 import io.github.itech_mm.apiro.service.http.RequestPreparer.PreparedRequest;
 import io.github.itech_mm.apiro.service.http.RequestRunService;
 import io.github.itech_mm.apiro.service.http.SendOutcome;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
+import io.github.itech_mm.apiro.service.scenario.StepSender;
 import io.github.itech_mm.apiro.service.variables.VariableResolver;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 import io.github.itech_mm.apiro.session.OpenProject;
@@ -167,6 +169,9 @@ public class WorkspaceController implements Routable {
 	private RequestRunService runService;
 
 	@Use
+	private RequestExecutor executor;
+
+	@Use
 	private RunCommand runCommand;
 
 	@Use
@@ -211,7 +216,29 @@ public class WorkspaceController implements Routable {
 
 		welcome = new WelcomePane(commands);
 		welcomeHost.getChildren().setAll(welcome);
-		scenarioPane = new ScenarioPane();
+		scenarioPane = new ScenarioPane(new ScenarioPane.Host() {
+			@Override
+			public Project project() {
+				return activeScenario == null ? session.project() : activeScenario.owner.project();
+			}
+
+			@Override
+			public String environmentId() {
+				return activeScenario == null ? "" : activeScenario.owner.environmentIdProperty().get();
+			}
+
+			@Override
+			public StepSender sender() {
+				return executor::send;
+			}
+
+			@Override
+			public void save(ScenarioItem scenario) {
+				if (activeScenario != null) {
+					activeScenario.owner.updateProject(project -> ProjectTree.withScenario(project, scenario));
+				}
+			}
+		});
 		scenarioHost.getChildren().setAll(scenarioPane);
 		requestTabs.getTabs().addListener((ListChangeListener<Tab>) change -> refreshWelcome());
 		session.projectProperty().addListener((obs, oldValue, newValue) -> {

@@ -71,6 +71,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
@@ -388,8 +389,10 @@ public class MainLayoutController extends LayoutController implements Routable {
 			try {
 				if (projectId.isEmpty()) {
 					session.selectedRequestIdProperty().set("");
+				} else if (request) {
+					session.selectRequest(projectId, openedIdOf(projectId));
 				} else {
-					session.selectRequest(projectId, request ? newValue.getValue().id() : "");
+					session.selectRequest(projectId, "");
 				}
 			} finally {
 				syncingSelection = false;
@@ -405,9 +408,17 @@ public class MainLayoutController extends LayoutController implements Routable {
 				select(newId);
 			}
 		});
+		requestTree.setOnMouseClicked(event -> {
+			if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+				openItem(requestTree.getSelectionModel().getSelectedItem());
+			}
+		});
 		requestTree.setOnKeyPressed(event -> {
 			TreeItem<ProjectItem> node = requestTree.getSelectionModel().getSelectedItem();
-			if (event.getCode() == KeyCode.F2) {
+			if (event.getCode() == KeyCode.ENTER) {
+				openItem(node);
+				event.consume();
+			} else if (event.getCode() == KeyCode.F2) {
 				renameItem(node);
 				event.consume();
 			} else if (event.getCode() == KeyCode.DELETE) {
@@ -418,6 +429,25 @@ public class MainLayoutController extends LayoutController implements Routable {
 				event.consume();
 			}
 		});
+	}
+
+	private String openedIdOf(String projectId) {
+		for (OpenProject open : session.projects()) {
+			if (open.id().equals(projectId)) {
+				return open.selectedRequestIdProperty().get();
+			}
+		}
+		return "";
+	}
+
+	private void openItem(TreeItem<ProjectItem> node) {
+		if (node == null || !(node.getValue() instanceof RequestItem || node.getValue() instanceof ScenarioItem)) {
+			return;
+		}
+		String projectId = projectIdOf(node);
+		if (!projectId.isEmpty()) {
+			session.selectRequest(projectId, node.getValue().id());
+		}
 	}
 
 	private void rebuild() {

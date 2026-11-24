@@ -834,6 +834,61 @@
     -fx-font-weight: bold;
 }
 
+.scenario-bar { -fx-border-color: transparent transparent -app-gutter-border transparent; }
+.scenario-run { -fx-text-fill: -fx-success; -fx-font-weight: bold; }
+.scenario-stop { -fx-text-fill: -fx-danger; -fx-font-weight: bold; }
+.scenario-log { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }
+.step-inspector, .step-inspector > .viewport { -fx-background-color: transparent; }
+.step-response-body { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }
+.assertion-row { -fx-padding: 0 0 6 0; }
+.step-missing { -fx-text-fill: -fx-danger; }
+.step-dot {
+    -fx-min-width: 10px;
+    -fx-min-height: 10px;
+    -fx-pref-width: 10px;
+    -fx-pref-height: 10px;
+    -fx-max-width: 10px;
+    -fx-max-height: 10px;
+    -fx-background-radius: 5px;
+    -fx-background-color: -app-muted;
+    -fx-opacity: 0.45;
+}
+.step-dot.state-running { -fx-background-color: -fx-warning; -fx-opacity: 1; }
+.step-dot.state-passed { -fx-background-color: -fx-success; -fx-opacity: 1; }
+.step-dot.state-failed { -fx-background-color: -fx-danger; -fx-opacity: 1; }
+.step-dot.state-cancelled { -fx-background-color: -fx-warning; -fx-opacity: 1; }
+.step-dot.state-skipped, .step-dot.state-pending { -fx-background-color: -app-muted; -fx-opacity: 0.6; }
+
+.scenario-list {
+    -fx-background-color: -app-layer;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.scenario-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 3 4 3 4;
+    -fx-text-fill: -fx-text-base-color;
+}
+
+.scenario-list .list-cell:filled:hover { -fx-background-color: -fx-row-hover; }
+.scenario-list .list-cell:filled:selected { -fx-background-color: -app-tree-selected; }
+
+.text-area.scenario-log,
+.text-area.step-response-body {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.text-area.scenario-log .content,
+.text-area.step-response-body .content {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 6;
+}
+
+.scenario-pane .scroll-pane > .viewport { -fx-background-color: transparent; }
+
 .main-split {
     -fx-background-color: transparent;
     -fx-padding: 0;
