@@ -11,7 +11,9 @@ public record Project(String format, int version, String id, String name, String
 
     public static final String FORMAT = "apiro-project";
     public static final int BASE_VERSION = 1;
-    public static final int CURRENT_VERSION = 2;
+    public static final int SCENARIO_VERSION = 2;
+    public static final int HEADERS_VERSION = 3;
+    public static final int CURRENT_VERSION = HEADERS_VERSION;
 
     public Project {
         format = format == null || format.isBlank() ? FORMAT : format;

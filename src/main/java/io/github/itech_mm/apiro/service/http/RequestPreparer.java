@@ -40,6 +40,12 @@ public final class RequestPreparer {
 
     public static PreparedRequest prepare(Project project, String environmentId, String requestId,
                                           List<Variable> runtime, List<Variable> literal) {
+        return prepare(project, environmentId, requestId, runtime, literal, List.of());
+    }
+
+    public static PreparedRequest prepare(Project project, String environmentId, String requestId,
+                                          List<Variable> runtime, List<Variable> literal,
+                                          List<KeyValue> headerOverrides) {
         RequestItem request = project.findItem(requestId)
                 .filter(RequestItem.class::isInstance)
                 .map(RequestItem.class::cast)
@@ -52,6 +58,7 @@ public final class RequestPreparer {
         for (KeyValue header : effective.headers()) {
             headers.add(new KeyValue(resolver.resolve(header.key()), resolver.resolve(header.value()), true));
         }
+        applyOverrides(headers, headerOverrides, resolver);
         applyAuth(headers, effective.auth(), resolver);
         RequestBody body = resolveBody(request.body(), resolver);
         addContentType(headers, body);
@@ -81,6 +88,36 @@ public final class RequestPreparer {
 
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static void applyOverrides(List<KeyValue> headers, List<KeyValue> overrides, VariableResolver resolver) {
+        for (KeyValue override : overrides) {
+            String name = resolver.resolve(override.key()).trim();
+            if (!override.enabled() || name.isEmpty()) {
+                continue;
+            }
+            KeyValue entry = new KeyValue(name, resolver.resolve(override.value()), true);
+            int first = indexOfHeader(headers, name);
+            if (first < 0) {
+                headers.add(entry);
+                continue;
+            }
+            headers.set(first, entry);
+            for (int i = headers.size() - 1; i > first; i--) {
+                if (headers.get(i).key().equalsIgnoreCase(name)) {
+                    headers.remove(i);
+                }
+            }
+        }
+    }
+
+    private static int indexOfHeader(List<KeyValue> headers, String name) {
+        for (int i = 0; i < headers.size(); i++) {
+            if (headers.get(i).key().equalsIgnoreCase(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static void applyAuth(List<KeyValue> headers, AuthConfig auth, VariableResolver resolver) {

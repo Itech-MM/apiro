@@ -7,6 +7,7 @@ import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.ScenarioItem;
+import io.github.itech_mm.apiro.model.Step;
 import java.util.List;
 
 public final class ProjectJson {
@@ -39,7 +40,7 @@ public final class ProjectJson {
     }
 
     private static Project stamped(Project project) {
-        int version = hasScenario(project.items()) ? Project.CURRENT_VERSION : Project.BASE_VERSION;
+        int version = requiredVersion(project.items(), Project.BASE_VERSION);
         if (version == project.version()) {
             return project;
         }
@@ -48,15 +49,20 @@ public final class ProjectJson {
                 project.environments(), project.items());
     }
 
-    private static boolean hasScenario(List<ProjectItem> items) {
+    private static int requiredVersion(List<ProjectItem> items, int found) {
+        int version = found;
         for (ProjectItem item : items) {
-            if (item instanceof ScenarioItem) {
-                return true;
-            }
-            if (item instanceof Folder folder && hasScenario(folder.items())) {
-                return true;
+            if (item instanceof ScenarioItem scenario) {
+                version = Math.max(version, Project.SCENARIO_VERSION);
+                for (Step step : scenario.steps()) {
+                    if (!step.headers().isEmpty()) {
+                        version = Math.max(version, Project.HEADERS_VERSION);
+                    }
+                }
+            } else if (item instanceof Folder folder) {
+                version = requiredVersion(folder.items(), version);
             }
         }
-        return false;
+        return version;
     }
 }

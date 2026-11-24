@@ -130,6 +130,27 @@ class ScenarioRunnerTest {
     }
 
     @Test
+    void stepHeadersCarryExtractedValuesWithoutTouchingTheRequest() {
+        Project project = project(
+                request("login", HttpMethod.POST, "/login", null),
+                request("home", HttpMethod.GET, "/home", List.of(KeyValue.of("X-Client", "web"))));
+        Fake fake = new Fake(reply(200, "{\"data\":{\"token\":\"abc\"}}"), reply(200, "{}"));
+        Step home = new Step("s2", "home", "home", null, null, List.of(KeyValue.of("Authorization", "Bearer ${token}")),
+                0, null, 0, 0);
+        ScenarioItem flow = scenario(OnFailure.STOP,
+                step("s1", "login", List.of(json("token", "$.data.token")), null), home);
+
+        ScenarioResult result = run(fake, project, flow);
+
+        assertEquals(ScenarioResult.State.PASSED, result.state(), result.message());
+        assertEquals("Bearer abc", header(fake.sent.get(1), "Authorization"));
+        assertEquals("web", header(fake.sent.get(1), "X-Client"));
+        assertNull(header(fake.sent.get(0), "Authorization"));
+        assertEquals(List.of(KeyValue.of("X-Client", "web")),
+                ((RequestItem) project.findItem("home").orElseThrow()).headers());
+    }
+
+    @Test
     void assertionFailureFailsTheStepAndSkipsTheRestWhenStopping() {
         Project project = project(get("a", "/a"), get("b", "/b"), get("c", "/c"));
         Fake fake = new Fake(reply(500, "{}"));

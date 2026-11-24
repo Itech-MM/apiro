@@ -15,6 +15,7 @@ import io.github.itech_mm.apiro.model.Edge;
 import io.github.itech_mm.apiro.model.Extractor;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.HttpMethod;
+import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestItem;
@@ -42,6 +43,13 @@ class ScenarioPersistenceTest {
                 0, null, 320, 80);
         return new ScenarioItem("sc1", "Checkout", List.of(Variable.of("email", "a@b.c")),
                 List.of(login, order), List.of(new Edge("s1", "s2")), OnFailure.STOP);
+    }
+
+    private static ScenarioItem flowWithHeaders() {
+        Step home = new Step("s1", "r1", "Home", null, null,
+                List.of(KeyValue.of("Authorization", "Bearer ${token}"), new KeyValue("X-Off", "1", false)),
+                0, null, 0, 0);
+        return new ScenarioItem("sc1", "Flow", null, List.of(home), null, OnFailure.STOP);
     }
 
     private static Project projectWith(ScenarioItem scenario) {
@@ -117,8 +125,42 @@ class ScenarioPersistenceTest {
     @Test
     void fileWithScenarioIsWrittenAsVersionTwo() {
         int version = writtenVersion(ProjectJson.toJson(projectWith(checkout())));
-        assertEquals(Project.CURRENT_VERSION, version);
+        assertEquals(Project.SCENARIO_VERSION, version);
         assertTrue(version > Project.BASE_VERSION);
+    }
+
+    @Test
+    void stepHeadersRoundTripWithTheirEnabledFlag() {
+        ScenarioItem original = flowWithHeaders();
+        Project loaded = ProjectJson.fromJson(ProjectJson.toJson(projectWith(original)));
+        ScenarioItem scenario = (ScenarioItem) loaded.findItem("sc1").orElseThrow();
+        assertEquals(original, scenario);
+        assertEquals(2, scenario.steps().get(0).headers().size());
+        assertFalse(scenario.steps().get(0).headers().get(1).enabled());
+    }
+
+    @Test
+    void fileWithStepHeadersIsWrittenAsVersionThree() {
+        int version = writtenVersion(ProjectJson.toJson(projectWith(flowWithHeaders())));
+        assertEquals(Project.HEADERS_VERSION, version);
+        assertEquals(Project.CURRENT_VERSION, version);
+    }
+
+    @Test
+    void versionTwoFileWithoutStepHeadersLoadsAndStaysVersionTwo() {
+        String json = "{\"format\":\"apiro-project\",\"version\":2,\"items\":[{\"type\":\"scenario\",\"id\":\"sc\","
+                + "\"steps\":[{\"id\":\"s1\",\"requestId\":\"r1\"}]}]}";
+        Project loaded = ProjectJson.fromJson(json);
+        ScenarioItem scenario = (ScenarioItem) loaded.findItem("sc").orElseThrow();
+        assertTrue(scenario.steps().get(0).headers().isEmpty());
+        assertEquals(Project.SCENARIO_VERSION, writtenVersion(ProjectJson.toJson(loaded)));
+    }
+
+    @Test
+    void stepWithoutHeadersGetsAnEmptyList() {
+        Step step = new Step("s", "r", "n", null, null, null, 0, null, 0, 0);
+        assertTrue(step.headers().isEmpty());
+        assertEquals(step, new Step("s", "r", "n", null, null, 0, null, 0, 0));
     }
 
     @Test
@@ -131,7 +173,7 @@ class ScenarioPersistenceTest {
     @Test
     void removingTheLastScenarioGoesBackToVersionOne() {
         Project loaded = ProjectJson.fromJson(ProjectJson.toJson(projectWith(checkout())));
-        assertEquals(Project.CURRENT_VERSION, loaded.version());
+        assertEquals(Project.SCENARIO_VERSION, loaded.version());
         Project without = ProjectTree.without(loaded, "sc1");
         assertEquals(Project.BASE_VERSION, writtenVersion(ProjectJson.toJson(without)));
     }

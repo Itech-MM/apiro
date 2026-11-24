@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_mm.apiro.model.Assertion;
 import io.github.itech_mm.apiro.model.Extractor;
+import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
@@ -24,6 +25,7 @@ final class StepInspector extends ScrollPane {
 
     private List<Extractor> extractorValues = List.of();
     private List<Assertion> assertionValues = List.of();
+    private List<KeyValue> headerValues = List.of();
     private final Consumer<Step> onChange;
     private final Label placeholder = new Label("Select a step to edit it");
     private final Label request = new Label();
@@ -31,6 +33,10 @@ final class StepInspector extends ScrollPane {
     private final TextField delay = new TextField();
     private final ComboBox<String> policy = new ComboBox<>(
             FXCollections.observableArrayList(DEFAULT_POLICY, "Stop", "Continue"));
+    private final HeaderEditor headers = new HeaderEditor(list -> {
+        headerValues = list;
+        emit();
+    });
     private final ExtractorEditor extractors = new ExtractorEditor(list -> {
         extractorValues = list;
         emit();
@@ -67,11 +73,12 @@ final class StepInspector extends ScrollPane {
         VBox general = new VBox(10, request, labeled("Name", name), labeled("Delay (ms)", delay),
                 labeled("On failure", policy));
         general.getStyleClass().add("section-body");
+        headers.getStyleClass().add("section-body");
         extractors.getStyleClass().add("section-body");
         assertions.getStyleClass().add("section-body");
         VBox response = new VBox(8, responseTitle, status, body);
         response.getStyleClass().add("section-body");
-        content.getChildren().addAll(general, extractors, assertions, response);
+        content.getChildren().addAll(general, headers, extractors, assertions, response);
         content.setPadding(Insets.EMPTY);
         placeholder.getStyleClass().add("muted");
         placeholder.setPadding(new Insets(16));
@@ -111,8 +118,10 @@ final class StepInspector extends ScrollPane {
         delay.setText(next.delayMillis() == 0 ? "" : String.valueOf(next.delayMillis()));
         policy.setValue(next.onFailure() == null ? DEFAULT_POLICY
                 : next.onFailure() == OnFailure.STOP ? "Stop" : "Continue");
+        headerValues = next.headers();
         extractorValues = next.extractors();
         assertionValues = next.assertions();
+        headers.set(next.headers());
         extractors.set(next.extractors());
         assertions.set(next.assertions());
         setContent(content);
@@ -152,7 +161,7 @@ final class StepInspector extends ScrollPane {
         OnFailure onFailure = DEFAULT_POLICY.equals(chosen) || chosen == null ? null
                 : "Stop".equals(chosen) ? OnFailure.STOP : OnFailure.CONTINUE;
         Step next = new Step(step.id(), step.requestId(), name.getText(), extractorValues, assertionValues,
-                delayValue, onFailure, step.x(), step.y());
+                headerValues, delayValue, onFailure, step.x(), step.y());
         step = next;
         onChange.accept(next);
     }
