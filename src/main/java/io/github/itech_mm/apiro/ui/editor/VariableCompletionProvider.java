@@ -2,7 +2,7 @@ package io.github.itech_mm.apiro.ui.editor;
 
 import io.github.itech_framework.code_editor.completion.CompletionItem;
 import io.github.itech_framework.code_editor.completion.CompletionProvider;
-import io.github.itech_mm.apiro.variables.VariableScope;
+import io.github.itech_mm.apiro.service.variables.VariableScope;
 
 import java.util.ArrayList;
 import java.util.List;

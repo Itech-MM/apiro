@@ -3,7 +3,7 @@ package io.github.itech_mm.apiro.ui.editor;
 import io.github.itech_framework.code_editor.diagnostics.Diagnostic;
 import io.github.itech_framework.code_editor.diagnostics.DiagnosticSeverity;
 import io.github.itech_framework.code_editor.diagnostics.DiagnosticsProvider;
-import io.github.itech_mm.apiro.variables.VariableScope;
+import io.github.itech_mm.apiro.service.variables.VariableScope;
 
 import java.util.ArrayList;
 import java.util.List;

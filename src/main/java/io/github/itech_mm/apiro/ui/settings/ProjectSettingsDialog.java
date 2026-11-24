@@ -1,15 +1,14 @@
 package io.github.itech_mm.apiro.ui.settings;
 
+import java.io.IOException;
+import java.util.List;
+
 import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_framework.java_fx.ui.dialog.AlertDialog;
 import io.github.itech_mm.apiro.model.Project;
-import io.github.itech_mm.apiro.project.ProjectSession;
+import io.github.itech_mm.apiro.session.ProjectSession;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
-import java.io.IOException;
-import java.util.List;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
