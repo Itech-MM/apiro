@@ -27,6 +27,7 @@ import io.github.itech_mm.apiro.model.HttpMethod;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.repository.RecentProjects;
 import io.github.itech_mm.apiro.service.http.RequestRunService;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
@@ -380,7 +381,8 @@ public class MainLayoutController extends LayoutController implements Routable {
 			if (rebuilding) {
 				return;
 			}
-			boolean request = newValue != null && newValue.getValue() instanceof RequestItem;
+			boolean request = newValue != null
+					&& (newValue.getValue() instanceof RequestItem || newValue.getValue() instanceof ScenarioItem);
 			String projectId = projectIdOf(newValue);
 			syncingSelection = true;
 			try {
@@ -646,6 +648,23 @@ public class MainLayoutController extends LayoutController implements Routable {
 		});
 	}
 
+	private void addScenario(TreeItem<ProjectItem> target) {
+		if (placeholderOf(target) != null) {
+			statusLabel.setText("That project is not loaded");
+			return;
+		}
+		if (!session.isOpen()) {
+			statusLabel.setText("Open or create a project first");
+			return;
+		}
+		ask("New scenario", "Name", "new-scenario").ifPresent(name -> {
+			ScenarioItem created = ScenarioItem.of(name);
+			activateOwner(target);
+			session.addItem(folderFor(target), created);
+			select(created.id());
+		});
+	}
+
 	private void addFolder(TreeItem<ProjectItem> target) {
 		if (!session.isOpen()) {
 			statusLabel.setText("Open or create a project first");
@@ -692,7 +711,8 @@ public class MainLayoutController extends LayoutController implements Routable {
 		String message = item instanceof Folder
 				? "Delete folder \"" + item.name() + "\" and " + count + (count == 1 ? " request" : " requests")
 						+ " inside it?"
-				: "Delete request \"" + item.name() + "\"?";
+				: item instanceof ScenarioItem ? "Delete scenario \"" + item.name() + "\"?"
+						: "Delete request \"" + item.name() + "\"?";
 		AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Delete").message(message).addOwner(owner())
 				.addButton("Delete", () -> {
 					activateOwner(node);
@@ -1018,6 +1038,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 		private final ContextMenu menu = new ContextMenu();
 		private final MenuItem newRequest = new MenuItem("New request");
+		private final MenuItem newScenario = new MenuItem("New scenario");
 		private final MenuItem newFolder = new MenuItem("New folder");
 		private final SeparatorMenuItem separator = new SeparatorMenuItem();
 		private final MenuItem rename = new MenuItem("Rename");
@@ -1032,6 +1053,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 		RequestTreeCell() {
 			newRequest.setOnAction(event -> addRequest(getTreeItem()));
+			newScenario.setOnAction(event -> addScenario(getTreeItem()));
 			newFolder.setOnAction(event -> addFolder(getTreeItem()));
 			rename.setOnAction(event -> renameItem(getTreeItem()));
 			duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
@@ -1040,6 +1062,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			deleteProject.setOnAction(event -> deleteProject(getTreeItem()));
 			removeFromWorkspace.setOnAction(event -> removePlaceholder(getTreeItem()));
 			newRequest.setGraphic(menuIcon("icon-plus"));
+			newScenario.setGraphic(menuIcon("icon-plus"));
 			newFolder.setGraphic(menuIcon("icon-folder-plus"));
 			rename.setGraphic(menuIcon("icon-edit"));
 			duplicate.setGraphic(menuIcon("icon-copy"));
@@ -1050,7 +1073,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			rename.setAccelerator(new KeyCodeCombination(KeyCode.F2));
 			duplicate.setAccelerator(DUPLICATE_KEYS);
 			delete.setAccelerator(new KeyCodeCombination(KeyCode.DELETE));
-			menu.getItems().addAll(newRequest, newFolder, separator, rename, duplicate, delete, settingsSeparator,
+			menu.getItems().addAll(newRequest, newScenario, newFolder, separator, rename, duplicate, delete, settingsSeparator,
 					projectSettings, deleteSeparator, deleteProject, removeFromWorkspace);
 			setOnDragDetected(this::onDragDetected);
 			setOnDragOver(this::onDragOver);
@@ -1081,6 +1104,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			}
 			boolean root = isRoot(getTreeItem());
 			newRequest.setVisible(true);
+			newScenario.setVisible(true);
 			newFolder.setVisible(true);
 			removeFromWorkspace.setVisible(false);
 			separator.setVisible(!root);
@@ -1096,6 +1120,10 @@ public class MainLayoutController extends LayoutController implements Routable {
 			if (item instanceof RequestItem request) {
 				Label tag = new Label(request.method().shortLabel());
 				tag.getStyleClass().addAll("method-text", "method-" + request.method().name().toLowerCase());
+				setGraphic(tag);
+			} else if (item instanceof ScenarioItem) {
+				Label tag = new Label("SCN");
+				tag.getStyleClass().addAll("method-text", "scenario-text");
 				setGraphic(tag);
 			} else {
 				Region icon = new Region();

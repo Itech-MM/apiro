@@ -8,6 +8,7 @@
       fx:controller="io.github.itech_mm.apiro.ui.WorkspaceController" styleClass="page">
     <TabPane fx:id="requestTabs" styleClass="request-tabs" tabClosingPolicy="SELECTED_TAB" />
     <StackPane fx:id="welcomeHost" styleClass="page" VBox.vgrow="ALWAYS" />
+    <StackPane fx:id="scenarioHost" styleClass="page" VBox.vgrow="ALWAYS" visible="false" managed="false" />
     <VBox fx:id="editorArea" VBox.vgrow="ALWAYS">
         <HBox styleClass="breadcrumb-bar" alignment="CENTER_LEFT" spacing="2">
 		    <HBox fx:id="crumbBox" alignment="CENTER_LEFT" spacing="2" />

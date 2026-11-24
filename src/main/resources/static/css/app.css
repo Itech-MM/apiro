@@ -822,6 +822,18 @@
 .method-badge.method-patch { -fx-background-color: -method-patch-tint; }
 .method-badge.method-delete { -fx-background-color: -method-delete-tint; }
 
+.method-badge.scenario-badge {
+    -fx-text-fill: -method-patch;
+    -fx-background-color: -method-patch-tint;
+}
+
+.method-text.scenario-text { -fx-text-fill: -method-patch; }
+
+.scenario-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
 .main-split {
     -fx-background-color: transparent;
     -fx-padding: 0;

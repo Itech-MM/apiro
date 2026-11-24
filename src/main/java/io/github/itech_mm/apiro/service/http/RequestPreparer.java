@@ -35,12 +35,17 @@ public final class RequestPreparer {
 
     public static PreparedRequest prepare(Project project, String environmentId, String requestId,
                                           List<Variable> runtime) {
+        return prepare(project, environmentId, requestId, runtime, List.of());
+    }
+
+    public static PreparedRequest prepare(Project project, String environmentId, String requestId,
+                                          List<Variable> runtime, List<Variable> literal) {
         RequestItem request = project.findItem(requestId)
                 .filter(RequestItem.class::isInstance)
                 .map(RequestItem.class::cast)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown request: " + requestId));
         Inheritance.Effective effective = Inheritance.forItem(project, requestId).orElseThrow();
-        VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId, runtime);
+        VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId, runtime, literal);
 
         String url = withQuery(resolver.resolve(request.url()), request.query(), resolver);
         List<KeyValue> headers = new ArrayList<>();

@@ -31,6 +31,7 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.ResponseData;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.repository.LastRun;
 import io.github.itech_mm.apiro.repository.OpenProjectsStore;
 import io.github.itech_mm.apiro.service.http.FailureKind;
@@ -53,6 +54,7 @@ import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
 import io.github.itech_mm.apiro.ui.component.ResponsePanelView;
 import io.github.itech_mm.apiro.ui.component.WelcomePane;
 import io.github.itech_mm.apiro.ui.editor.VariableField;
+import io.github.itech_mm.apiro.ui.scenario.ScenarioPane;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -124,6 +126,9 @@ public class WorkspaceController implements Routable {
 	private StackPane welcomeHost;
 
 	@FXML
+	private StackPane scenarioHost;
+
+	@FXML
 	private HBox crumbBox;
 
 	@FXML
@@ -179,6 +184,9 @@ public class WorkspaceController implements Routable {
 
 	private final Map<String, OpenRequest> open = new LinkedHashMap<>();
 	private OpenRequest active;
+	private final Map<String, OpenScenario> scenarios = new LinkedHashMap<>();
+	private OpenScenario activeScenario;
+	private ScenarioPane scenarioPane;
 	private boolean loading;
 	private boolean checkQueued;
 	private String saveOnly = "";
@@ -203,6 +211,8 @@ public class WorkspaceController implements Routable {
 
 		welcome = new WelcomePane(commands);
 		welcomeHost.getChildren().setAll(welcome);
+		scenarioPane = new ScenarioPane();
+		scenarioHost.getChildren().setAll(scenarioPane);
 		requestTabs.getTabs().addListener((ListChangeListener<Tab>) change -> refreshWelcome());
 		session.projectProperty().addListener((obs, oldValue, newValue) -> {
 			refreshWelcome();
@@ -215,6 +225,7 @@ public class WorkspaceController implements Routable {
 		requestTabs.getTabs().addListener((ListChangeListener<Tab>) this::onTabsChanged);
 		requestTabs.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
 			activate(stateOf(newTab));
+			showScenario(scenarioOf(newTab));
 			refreshScope();
 			refreshCrumbs();
 		});
@@ -284,8 +295,11 @@ public class WorkspaceController implements Routable {
 
 	private void refreshWelcome() {
 		boolean empty = requestTabs.getTabs().isEmpty();
-		editorArea.setVisible(!empty);
-		editorArea.setManaged(!empty);
+		boolean scenario = !empty && activeScenario != null;
+		editorArea.setVisible(!empty && !scenario);
+		editorArea.setManaged(!empty && !scenario);
+		scenarioHost.setVisible(scenario);
+		scenarioHost.setManaged(scenario);
 		welcomeHost.setVisible(empty);
 		welcomeHost.setManaged(empty);
 		if (empty) {
@@ -371,6 +385,20 @@ public class WorkspaceController implements Routable {
 		if (active != null && active.id.equals(id)) {
 			return;
 		}
+		if (activeScenario != null && activeScenario.id.equals(id)) {
+			return;
+		}
+		OpenScenario existing = scenarios.get(id);
+		if (existing != null) {
+			requestTabs.getSelectionModel().select(existing.tab);
+			return;
+		}
+		OpenProject scenarioOwner = session.activeProperty().get();
+		Optional<ScenarioItem> scenarioItem = findScenario(id);
+		if (scenarioOwner != null && scenarioItem.isPresent()) {
+			requestTabs.getSelectionModel().select(addScenarioTab(scenarioOwner, scenarioItem.get(), -1).tab);
+			return;
+		}
 		OpenRequest state = open.get(id);
 		if (state == null) {
 			OpenProject owner = session.activeProperty().get();
@@ -404,10 +432,56 @@ public class WorkspaceController implements Routable {
 		return state;
 	}
 
+	private OpenScenario addScenarioTab(OpenProject owner, ScenarioItem item, int index) {
+		OpenScenario state = new OpenScenario(owner, item);
+		state.showProject(session.projects().size() > 1);
+		state.tab.setUserData(state);
+		scenarios.put(item.id(), state);
+		if (index < 0 || index > requestTabs.getTabs().size()) {
+			requestTabs.getTabs().add(state.tab);
+		} else {
+			requestTabs.getTabs().add(index, state.tab);
+		}
+		return state;
+	}
+
+	private void showScenario(OpenScenario next) {
+		activeScenario = next;
+		if (next != null) {
+			findScenario(next).ifPresent(scenarioPane::show);
+			if (session.activeProperty().get() == next.owner) {
+				session.selectedRequestIdProperty().set(next.id);
+			} else {
+				session.selectRequest(next.owner.id(), next.id);
+			}
+		}
+		refreshWelcome();
+	}
+
+	private Optional<ScenarioItem> findScenario(String id) {
+		Project project = session.project();
+		if (project == null) {
+			return Optional.empty();
+		}
+		return project.findItem(id).filter(ScenarioItem.class::isInstance).map(ScenarioItem.class::cast);
+	}
+
+	private Optional<ScenarioItem> findScenario(OpenScenario state) {
+		if (!session.projects().contains(state.owner)) {
+			return Optional.empty();
+		}
+		return state.owner.project().findItem(state.id).filter(ScenarioItem.class::isInstance)
+				.map(ScenarioItem.class::cast);
+	}
+
 	private void onTabsChanged(ListChangeListener.Change<? extends Tab> change) {
 		while (change.next()) {
 			if (change.wasRemoved()) {
 				for (Tab tab : change.getRemoved()) {
+					OpenScenario removedScenario = scenarioOf(tab);
+					if (removedScenario != null) {
+						scenarios.remove(removedScenario.id);
+					}
 					OpenRequest state = stateOf(tab);
 					if (state != null) {
 						runService.cancel(state.id);
@@ -423,6 +497,11 @@ public class WorkspaceController implements Routable {
 			if (change.wasRemoved()) {
 				for (OpenProject removed : change.getRemoved()) {
 					for (OpenRequest state : List.copyOf(open.values())) {
+						if (state.owner == removed) {
+							requestTabs.getTabs().remove(state.tab);
+						}
+					}
+					for (OpenScenario state : List.copyOf(scenarios.values())) {
 						if (state.owner == removed) {
 							requestTabs.getTabs().remove(state.tab);
 						}
@@ -453,7 +532,14 @@ public class WorkspaceController implements Routable {
 					continue;
 				}
 				String requestId = key.substring(prefix.length());
-				if (open.containsKey(requestId)) {
+				if (open.containsKey(requestId) || scenarios.containsKey(requestId)) {
+					continue;
+				}
+				Optional<ScenarioItem> savedScenario = project.project().findItem(requestId)
+						.filter(ScenarioItem.class::isInstance).map(ScenarioItem.class::cast);
+				if (savedScenario.isPresent()) {
+					addScenarioTab(project, savedScenario.get(), insertIndex(key));
+					any = true;
 					continue;
 				}
 				Optional<RequestItem> item = project.project().findItem(requestId)
@@ -472,10 +558,14 @@ public class WorkspaceController implements Routable {
 			return;
 		}
 		if (savedSelected.startsWith(prefix)) {
-			OpenRequest target = open.get(savedSelected.substring(prefix.length()));
+			String savedId = savedSelected.substring(prefix.length());
+			OpenRequest target = open.get(savedId);
+			OpenScenario savedTarget = scenarios.get(savedId);
 			savedSelected = "";
 			if (target != null) {
 				requestTabs.getSelectionModel().select(target.tab);
+			} else if (savedTarget != null) {
+				requestTabs.getSelectionModel().select(savedTarget.tab);
 			}
 		} else if (before != null) {
 			requestTabs.getSelectionModel().select(before);
@@ -487,8 +577,8 @@ public class WorkspaceController implements Routable {
 		int rank = savedOrder.indexOf(key);
 		int position = requestTabs.getTabs().size();
 		for (int i = requestTabs.getTabs().size() - 1; i >= 0; i--) {
-			OpenRequest state = stateOf(requestTabs.getTabs().get(i));
-			int other = state == null ? -1 : savedOrder.indexOf(state.owner.id() + "/" + state.id);
+			String existing = keyOf(requestTabs.getTabs().get(i));
+			int other = existing == null ? -1 : savedOrder.indexOf(existing);
 			if (other >= 0 && other < rank) {
 				return i + 1;
 			}
@@ -505,12 +595,13 @@ public class WorkspaceController implements Routable {
 		}
 		List<String> keys = new ArrayList<>();
 		for (Tab tab : requestTabs.getTabs()) {
-			OpenRequest state = stateOf(tab);
-			if (state != null) {
-				keys.add(state.owner.id() + "/" + state.id);
+			String key = keyOf(tab);
+			if (key != null) {
+				keys.add(key);
 			}
 		}
-		String selected = active == null ? "" : active.owner.id() + "/" + active.id;
+		String selected = active != null ? active.owner.id() + "/" + active.id
+				: activeScenario != null ? activeScenario.owner.id() + "/" + activeScenario.id : "";
 		tabStore.saveTabs(keys, selected);
 		persistDrafts();
 	}
@@ -556,6 +647,7 @@ public class WorkspaceController implements Routable {
 	private void refreshProjectLabels() {
 		boolean many = session.projects().size() > 1;
 		open.values().forEach(state -> state.showProject(many));
+		scenarios.values().forEach(state -> state.showProject(many));
 	}
 
 	private void activate(OpenRequest next) {
@@ -631,10 +723,35 @@ public class WorkspaceController implements Routable {
 				state.showProject(many);
 			}
 		}
+		for (OpenScenario state : List.copyOf(scenarios.values())) {
+			Optional<ScenarioItem> item = findScenario(state);
+			if (item.isEmpty()) {
+				requestTabs.getTabs().remove(state.tab);
+			} else {
+				state.rename(item.get().name());
+				state.showProject(many);
+				if (state == activeScenario) {
+					scenarioPane.show(item.get());
+				}
+			}
+		}
 	}
 
 	private static OpenRequest stateOf(Tab tab) {
-		return tab == null ? null : (OpenRequest) tab.getUserData();
+		return tab != null && tab.getUserData() instanceof OpenRequest state ? state : null;
+	}
+
+	private static OpenScenario scenarioOf(Tab tab) {
+		return tab != null && tab.getUserData() instanceof OpenScenario state ? state : null;
+	}
+
+	private static String keyOf(Tab tab) {
+		OpenRequest request = stateOf(tab);
+		if (request != null) {
+			return request.owner.id() + "/" + request.id;
+		}
+		OpenScenario scenario = scenarioOf(tab);
+		return scenario == null ? null : scenario.owner.id() + "/" + scenario.id;
 	}
 
 	// -------------------------------------------------- dirty and closing
@@ -1168,6 +1285,50 @@ public class WorkspaceController implements Routable {
 			String where = project.isVisible() ? " · " + owner.project().name() : "";
 			tab.setText(badge.getText() + " " + title.getText() + ".req" + where);
 			tab.setTooltip(new Tooltip(owner.project().name() + "  ›  " + title.getText() + ".req"));
+		}
+
+		void rename(String name) {
+			title.setText(name);
+			refreshText();
+		}
+	}
+
+	private static final class OpenScenario {
+
+		final String id;
+		final OpenProject owner;
+		final Tab tab = new Tab();
+		final Label badge = new Label("SCN");
+		final Label title = new Label();
+		final Label project = new Label();
+
+		OpenScenario(OpenProject owner, ScenarioItem item) {
+			this.owner = owner;
+			this.id = item.id();
+			project.getStyleClass().add("muted");
+			project.setVisible(false);
+			project.setManaged(false);
+			badge.getStyleClass().addAll("method-badge", "scenario-badge");
+			title.setText(item.name());
+			title.setMaxWidth(180);
+			HBox header = new HBox(6, badge, title, project);
+			header.setAlignment(Pos.CENTER_LEFT);
+			tab.setGraphic(header);
+			tab.setClosable(true);
+			refreshText();
+		}
+
+		void showProject(boolean on) {
+			project.setText("· " + owner.project().name());
+			project.setVisible(on);
+			project.setManaged(on);
+			refreshText();
+		}
+
+		void refreshText() {
+			String where = project.isVisible() ? " · " + owner.project().name() : "";
+			tab.setText(badge.getText() + " " + title.getText() + ".scn" + where);
+			tab.setTooltip(new Tooltip(owner.project().name() + "  ›  " + title.getText() + ".scn"));
 		}
 
 		void rename(String name) {

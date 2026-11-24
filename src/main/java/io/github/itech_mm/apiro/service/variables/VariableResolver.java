@@ -6,10 +6,12 @@ import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.Variable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,10 +24,12 @@ public final class VariableResolver {
 	private static final int MAX_DEPTH = 8;
 
 	private final Map<String, String> values;
+	private final Set<String> literal;
 	private final DynamicVariables dynamic;
 
-	private VariableResolver(Map<String, String> values, DynamicVariables dynamic) {
+	private VariableResolver(Map<String, String> values, Set<String> literal, DynamicVariables dynamic) {
 		this.values = values;
+		this.literal = literal;
 		this.dynamic = dynamic;
 	}
 
@@ -34,6 +38,11 @@ public final class VariableResolver {
 	}
 
 	public static VariableResolver of(List<List<Variable>> layersHighestFirst, DynamicVariables dynamic) {
+		return of(layersHighestFirst, Set.of(), dynamic);
+	}
+
+	private static VariableResolver of(List<List<Variable>> layersHighestFirst, Set<String> literal,
+			DynamicVariables dynamic) {
 		Map<String, String> values = new LinkedHashMap<>();
 		for (List<Variable> layer : layersHighestFirst) {
 			for (Variable variable : layer) {
@@ -42,7 +51,7 @@ public final class VariableResolver {
 				}
 			}
 		}
-		return new VariableResolver(Collections.unmodifiableMap(values), dynamic);
+		return new VariableResolver(Collections.unmodifiableMap(values), Set.copyOf(literal), dynamic);
 	}
 
 	public static VariableResolver forItem(Project project, String environmentId, String itemId) {
@@ -51,7 +60,13 @@ public final class VariableResolver {
 
 	public static VariableResolver forItem(Project project, String environmentId, String itemId,
 			List<Variable> runtime) {
+		return forItem(project, environmentId, itemId, runtime, List.of());
+	}
+
+	public static VariableResolver forItem(Project project, String environmentId, String itemId,
+			List<Variable> runtime, List<Variable> literal) {
 		List<List<Variable>> layers = new ArrayList<>();
+		layers.add(literal);
 		layers.add(runtime);
 		List<Folder> path = folderPath(project.items(), itemId).orElse(List.of());
 		for (int i = path.size() - 1; i >= 0; i--) {
@@ -59,7 +74,13 @@ public final class VariableResolver {
 		}
 		project.findEnvironment(environmentId).ifPresent(environment -> layers.add(environment.variables()));
 		layers.add(project.variables());
-		return of(layers);
+		Set<String> literalNames = new HashSet<>();
+		for (Variable variable : literal) {
+			if (variable.enabled() && !variable.key().isBlank()) {
+				literalNames.add(variable.key());
+			}
+		}
+		return of(layers, literalNames, DynamicVariables.system());
 	}
 
 	public Optional<String> value(String name) {
@@ -106,21 +127,21 @@ public final class VariableResolver {
 		Matcher matcher = REFERENCE.matcher(text);
 		StringBuilder out = new StringBuilder();
 		int last = 0;
-		boolean replaced = false;
 		while (matcher.find()) {
-			String value = lookup(matcher.group(1));
+			String name = matcher.group(1);
+			String value = lookup(name);
 			out.append(text, last, matcher.start());
 			if (value == null) {
 				out.append(matcher.group());
-			} else {
+			} else if (literal.contains(name)) {
 				out.append(value);
-				replaced = true;
+			} else {
+				out.append(resolve(value, depth + 1));
 			}
 			last = matcher.end();
 		}
 		out.append(text, last, text.length());
-		String result = out.toString();
-		return replaced ? resolve(result, depth + 1) : result;
+		return out.toString();
 	}
 
 	private static Optional<List<Folder>> folderPath(List<ProjectItem> items, String itemId) {

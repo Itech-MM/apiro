@@ -104,7 +104,7 @@ public final class ScenarioRunner {
         PreparedRequest prepared;
         try {
             prepared = RequestPreparer.prepare(project, environmentId, step.requestId(),
-                    runtime(scenario, extracted));
+                    scenario.variables(), literal(extracted));
         } catch (RuntimeException error) {
             return failed(step, messageOf(error), started);
         }
@@ -136,7 +136,7 @@ public final class ScenarioRunner {
             extracted.put(variable.key(), variable.value());
         }
         VariableResolver resolver = VariableResolver.forItem(project, environmentId, step.requestId(),
-                runtime(scenario, extracted));
+                scenario.variables(), literal(extracted));
         List<Assertions.Result> assertions = Assertions.checkAll(step.assertions(), context, resolver::resolve);
         List<String> problems = new ArrayList<>();
         for (Extractors.Result extraction : extractions) {
@@ -154,10 +154,9 @@ public final class ScenarioRunner {
                 assertions);
     }
 
-    private static List<Variable> runtime(ScenarioItem scenario, Map<String, String> extracted) {
+    private static List<Variable> literal(Map<String, String> extracted) {
         List<Variable> layer = new ArrayList<>();
         extracted.forEach((name, value) -> layer.add(Variable.of(name, value)));
-        layer.addAll(scenario.variables());
         return layer;
     }
 
