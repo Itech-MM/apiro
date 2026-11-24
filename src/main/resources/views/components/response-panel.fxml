@@ -7,25 +7,48 @@
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:id="root" minHeight="0" maxHeight="Infinity">
     <HBox alignment="CENTER_LEFT" spacing="4" styleClass="response-header">
-        <Label text="Response" styleClass="response-title" />
         <HBox fx:id="tabBox" alignment="CENTER_LEFT" spacing="2" />
         <Region HBox.hgrow="ALWAYS" />
-        <ToggleButton fx:id="prettyToggle" text="Pretty" selected="true" styleClass="resp-tab" />
-        <Hyperlink fx:id="fullBodyButton" text="Show full body" onAction="#onShowFullBody"
+        <ToggleButton fx:id="prettyToggle" text="Pretty" selected="true" styleClass="resp-tab" minWidth="-Infinity" />
+        <Hyperlink fx:id="fullBodyButton" text="Show full body" minWidth="-Infinity" onAction="#onShowFullBody"
                    visible="false" managed="false" />
-        <HBox fx:id="statusBox" alignment="CENTER_LEFT" spacing="8">
+        <HBox fx:id="statusBox" alignment="CENTER_LEFT" spacing="8" minWidth="0">
             <ProgressIndicator fx:id="sendingSpinner" styleClass="sending-spinner"
                    minWidth="14" minHeight="14" prefWidth="14" prefHeight="14"
                    maxWidth="14" maxHeight="14" visible="false" managed="false" />
             <Region fx:id="statusDot" styleClass="status-dot" />
-            <Label fx:id="statusLabel" styleClass="status-text" />
-            <Label fx:id="metaLabel" styleClass="muted" />
-            <HBox alignment="CENTER_LEFT" styleClass="timing-bar" minWidth="120" prefWidth="120" maxWidth="120">
+            <Label fx:id="statusLabel" styleClass="status-text" minWidth="-Infinity" />
+            <Label fx:id="metaLabel" styleClass="muted" minWidth="-Infinity" />
+            <HBox fx:id="timingBar" alignment="CENTER_LEFT" styleClass="timing-bar" minWidth="120" prefWidth="120" maxWidth="120">
                 <Region fx:id="timingHeaders" styleClass="timing-headers" />
                 <Region fx:id="timingBody" styleClass="timing-body" />
             </HBox>
-            <Label fx:id="headersTimeLabel" styleClass="muted" />
+            <Label fx:id="headersTimeLabel" styleClass="muted" minWidth="-Infinity" />
         </HBox>
     </HBox>
-    <CodeEditor fx:id="viewer" minHeight="0" VBox.vgrow="ALWAYS" />
+    <HBox VBox.vgrow="ALWAYS" minHeight="0">
+        <VBox fx:id="actionBox" styleClass="response-actions" alignment="TOP_CENTER" spacing="2" minWidth="-Infinity">
+            <ToggleButton fx:id="wrapToggle" styleClass="icon-toggle">
+                <graphic>
+                    <Region styleClass="icon, icon-wrap" />
+                </graphic>
+            </ToggleButton>
+            <Button fx:id="copyButton" styleClass="icon-button, icon-button-sm" onAction="#onCopy">
+                <graphic>
+                    <Region styleClass="icon, icon-copy" />
+                </graphic>
+            </Button>
+            <Button fx:id="saveButton" styleClass="icon-button, icon-button-sm" onAction="#onSave">
+                <graphic>
+                    <Region styleClass="icon, icon-save" />
+                </graphic>
+            </Button>
+            <Button fx:id="clearButton" styleClass="icon-button, icon-button-sm" onAction="#onClear">
+                <graphic>
+                    <Region styleClass="icon, icon-trash" />
+                </graphic>
+            </Button>
+        </VBox>
+        <CodeEditor fx:id="viewer" minHeight="0" HBox.hgrow="ALWAYS" />
+    </HBox>
 </VBox>

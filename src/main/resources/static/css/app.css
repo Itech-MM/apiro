@@ -300,6 +300,69 @@
     -fx-max-height: 14;
 }
 
+.icon-save {
+    -fx-shape: "M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z";
+    -fx-min-width: 14;
+    -fx-pref-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 14;
+    -fx-pref-height: 14;
+    -fx-max-height: 14;
+}
+
+.response-actions {
+    -fx-padding: 6 3 6 3;
+    -fx-background-color: -app-layer;
+    -fx-border-color: transparent -fx-grid-line transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.icon-wrap {
+    -fx-shape: "M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3 3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z";
+    -fx-min-width: 14;
+    -fx-pref-width: 14;
+    -fx-max-width: 14;
+    -fx-min-height: 13.2;
+    -fx-pref-height: 13.2;
+    -fx-max-height: 13.2;
+}
+
+.toggle-button.icon-toggle,
+.toggle-button.icon-toggle:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-min-width: 26;
+    -fx-pref-width: 26;
+    -fx-max-width: 26;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+}
+
+.toggle-button.icon-toggle:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
+.toggle-button.icon-toggle:selected,
+.toggle-button.icon-toggle:selected:hover {
+    -fx-background-color: -app-accent-wash-strong;
+}
+
+.toggle-button.icon-toggle .icon {
+    -fx-background-color: -app-muted;
+}
+
+.toggle-button.icon-toggle:hover .icon {
+    -fx-background-color: -app-icon;
+}
+
+.toggle-button.icon-toggle:selected .icon {
+    -fx-background-color: -fx-primary;
+}
+
 .menu-icon {
     -fx-min-width: 16;
     -fx-pref-width: 16;

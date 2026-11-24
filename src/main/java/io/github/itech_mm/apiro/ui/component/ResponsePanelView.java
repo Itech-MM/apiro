@@ -1,5 +1,9 @@
 package io.github.itech_mm.apiro.ui.component;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
@@ -13,6 +17,7 @@ import io.github.itech_framework.code_editor.CodeEditor;
 import io.github.itech_framework.core.annotations.methods.OnInit;
 import io.github.itech_framework.java_fx.annotations.components.FxComponent;
 import io.github.itech_framework.java_fx.annotations.components.Root;
+import io.github.itech_framework.java_fx.ui.dialog.AlertDialog;
 import io.github.itech_mm.apiro.http.ExchangeResult;
 import io.github.itech_mm.apiro.http.FailureKind;
 import io.github.itech_mm.apiro.model.KeyValue;
@@ -20,19 +25,29 @@ import io.github.itech_mm.apiro.model.ResponseData;
 import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.JsonPretty;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.fxmisc.richtext.CodeArea;
 
 @FxComponent("/views/components/response-panel.fxml")
 public class ResponsePanelView {
@@ -67,6 +82,9 @@ public class ResponsePanelView {
     private Label headersTimeLabel;
 
     @FXML
+    private HBox timingBar;
+
+    @FXML
     private Region timingHeaders;
 
     @FXML
@@ -86,7 +104,26 @@ public class ResponsePanelView {
     @FXML
     private ToggleButton prettyToggle;
 
+    @FXML
+    private ToggleButton wrapToggle;
+
+    @FXML
+    private Button copyButton;
+
+    @FXML
+    private Button saveButton;
+
+    @FXML
+    private Button clearButton;
+
     private boolean fullBody;
+
+    private boolean sending;
+
+    private static final double FULL_WIDTH = 1060;
+    private static final double MEDIUM_WIDTH = 820;
+
+    private final Tooltip statusTip = new Tooltip();
 
     private Timeline ticker;
 
@@ -105,6 +142,7 @@ public class ResponsePanelView {
         for (ResponseTab tab : ResponseTab.values()) {
             ToggleButton button = new ToggleButton();
             button.getStyleClass().add("resp-tab");
+            button.setMinWidth(Region.USE_PREF_SIZE);
             button.setToggleGroup(group);
             button.setUserData(tab);
             tabs.put(tab, button);
@@ -113,6 +151,13 @@ public class ResponsePanelView {
         group.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> onSelectionChanged(oldToggle, newToggle));
         group.selectToggle(tabs.get(ResponseTab.BODY));
         prettyToggle.selectedProperty().addListener((observable, oldValue, newValue) -> renderContent());
+        wrapToggle.selectedProperty().addListener((observable, oldValue, newValue) -> applyWrap());
+        viewer.skinProperty().addListener((observable, oldValue, newValue) -> Platform.runLater(this::applyWrap));
+        root.widthProperty().addListener((observable, oldValue, newValue) -> applyCompact(newValue.doubleValue()));
+        wrapToggle.setTooltip(new Tooltip("Soft-wrap long lines"));
+        copyButton.setTooltip(new Tooltip("Copy response"));
+        saveButton.setTooltip(new Tooltip("Save response to a file"));
+        clearButton.setTooltip(new Tooltip("Clear response"));
         clear();
     }
 
@@ -148,6 +193,7 @@ public class ResponsePanelView {
         unresolved = List.of();
         notice = "";
         show(statusBox, false);
+        setStatusTip(null);
         updateTabLabels();
         renderContent();
     }
@@ -177,7 +223,27 @@ public class ResponsePanelView {
         metaLabel.setText(String.format(Locale.ROOT, "%.1f s", seconds));
     }
 
+    private void setStatusTip(String text) {
+        Tooltip.uninstall(statusBox, statusTip);
+        if (text != null && !text.isBlank()) {
+            statusTip.setText(text);
+            Tooltip.install(statusBox, statusTip);
+        }
+    }
+
+    private void applyCompact(double width) {
+        boolean full = width >= FULL_WIDTH;
+        boolean medium = width >= MEDIUM_WIDTH;
+        show(timingBar, full);
+        show(headersTimeLabel, full);
+        show(metaLabel, medium);
+    }
+
     private void setSending(boolean on) {
+        sending = on;
+        if (on) {
+            setStatusTip(null);
+        }
         if (ticker != null) {
             ticker.stop();
             ticker = null;
@@ -197,6 +263,7 @@ public class ResponsePanelView {
         applyStyle(statusLabel, style);
         statusLabel.setText(title);
         metaLabel.setText(meta);
+        setStatusTip(null);
         setWidth(timingHeaders, 0);
         setWidth(timingBody, 0);
         headersTimeLabel.setText("");
@@ -222,7 +289,13 @@ public class ResponsePanelView {
         applyStyle(statusDot, style);
         applyStyle(statusLabel, style);
         statusLabel.setText((response.status() + " " + response.statusText()).trim());
-        metaLabel.setText(response.totalMillis() + " ms \u00b7 " + formatSize(response.sizeBytes()) + " \u00b7 "
+        String meta = response.totalMillis() + " ms \u00b7 " + formatSize(response.sizeBytes());
+        if (response.attempts() > 1) {
+            meta += " \u00b7 " + response.attempts() + " attempts";
+        }
+        metaLabel.setText(meta);
+        setStatusTip(statusLabel.getText() + "\n" + meta + "\nHeaders received in " + response.headersMillis()
+                + " ms, "
                 + response.attempts() + (response.attempts() == 1 ? " attempt" : " attempts"));
 
         long total = Math.max(1, response.totalMillis());
@@ -254,6 +327,60 @@ public class ResponsePanelView {
             }
         }
         show(fullBodyButton, truncated);
+        updateActions();
+    }
+
+    private void updateActions() {
+        boolean content = !sending && (data != null || !notice.isEmpty());
+        copyButton.setDisable(!content);
+        saveButton.setDisable(!content);
+        clearButton.setDisable(!content);
+    }
+
+    private void applyWrap() {
+        boolean on = wrapToggle.isSelected();
+        for (Node node : viewer.lookupAll(".code-area")) {
+            if (node instanceof CodeArea area) {
+                area.setWrapText(on);
+            }
+        }
+    }
+
+    private boolean previewing() {
+        return data != null && selectedTab() == ResponseTab.BODY && !fullBody && data.body().length() > PREVIEW_LIMIT;
+    }
+
+    private String currentText() {
+        return previewing() ? data.body() : viewer.getText();
+    }
+
+    private String suggestedName() {
+        if (data == null) {
+            return "response.txt";
+        }
+        return switch (selectedTab()) {
+            case BODY -> looksLikeJson(data.body()) ? "response.json" : "response.txt";
+            case HEADERS -> "response-headers.txt";
+            case SENT -> "request-sent.txt";
+            case COOKIES -> "response-cookies.txt";
+            case TIMELINE -> "response-timeline.txt";
+        };
+    }
+
+    private Stage owner() {
+        return root.getScene() != null && root.getScene().getWindow() instanceof Stage stage ? stage : null;
+    }
+
+    private void flash(Button anchor, String message) {
+        Bounds bounds = anchor.localToScreen(anchor.getBoundsInLocal());
+        if (bounds == null) {
+            return;
+        }
+        Tooltip tip = new Tooltip(message);
+        tip.show(anchor, bounds.getMaxX() + 6, bounds.getMinY());
+        PauseTransition pause = new PauseTransition(Duration.millis(900));
+        pause.setOnFinished(event -> tip.hide());
+        pause.play();
     }
 
     private boolean displayBody(String body) {
@@ -386,5 +513,43 @@ public class ResponsePanelView {
     private void onShowFullBody() {
         fullBody = true;
         renderContent();
+    }
+
+    @FXML
+    private void onCopy() {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(currentText());
+        Clipboard.getSystemClipboard().setContent(content);
+        flash(copyButton, "Copied");
+    }
+
+    @FXML
+    private void onSave() {
+        String text = currentText();
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save response");
+        String name = suggestedName();
+        chooser.setInitialFileName(name);
+        FileChooser.ExtensionFilter json = new FileChooser.ExtensionFilter("JSON", "*.json");
+        FileChooser.ExtensionFilter plain = new FileChooser.ExtensionFilter("Text", "*.txt");
+        chooser.getExtensionFilters().addAll(json, plain, new FileChooser.ExtensionFilter("All files", "*.*"));
+        chooser.setSelectedExtensionFilter(name.endsWith(".json") ? json : plain);
+        File file = chooser.showSaveDialog(owner());
+        if (file == null) {
+            return;
+        }
+        try {
+            Files.writeString(file.toPath(), text, StandardCharsets.UTF_8);
+            flash(saveButton, "Saved");
+        } catch (IOException e) {
+            AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Save failed")
+                    .message("Could not save the response: " + e.getMessage()).addOwner(owner())
+                    .addButton("OK", null).build().show();
+        }
+    }
+
+    @FXML
+    private void onClear() {
+        clear();
     }
 }
