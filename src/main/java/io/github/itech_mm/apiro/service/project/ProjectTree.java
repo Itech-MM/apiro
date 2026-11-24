@@ -4,6 +4,7 @@ import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,14 @@ public final class ProjectTree {
     }
 
     public static Project withRequest(Project project, RequestItem updated) {
+        return withItem(project, updated);
+    }
+
+    public static Project withScenario(Project project, ScenarioItem updated) {
+        return withItem(project, updated);
+    }
+
+    private static Project withItem(Project project, ProjectItem updated) {
         return rebuilt(project, replace(project.items(), updated));
     }
 
@@ -85,7 +94,7 @@ public final class ProjectTree {
             }
             return count;
         }
-        return 1;
+        return item instanceof RequestItem ? 1 : 0;
     }
 
     public static Optional<String> parentOf(Project project, String itemId) {
@@ -127,6 +136,10 @@ public final class ProjectTree {
             return new Folder(folder.id(), name, folder.auth(), folder.headers(), folder.variables(),
                     folder.settings(), folder.items());
         }
+        if (item instanceof ScenarioItem scenario) {
+            return new ScenarioItem(scenario.id(), name, scenario.variables(), scenario.steps(), scenario.edges(),
+                    scenario.onFailure());
+        }
         RequestItem request = (RequestItem) item;
         return new RequestItem(request.id(), name, request.method(), request.url(), request.query(),
                 request.headers(), request.auth(), request.body(), request.settings());
@@ -141,6 +154,10 @@ public final class ProjectTree {
             }
             return new Folder(null, name, folder.auth(), folder.headers(), folder.variables(),
                     folder.settings(), children);
+        }
+        if (item instanceof ScenarioItem scenario) {
+            return new ScenarioItem(null, name, scenario.variables(), scenario.steps(), scenario.edges(),
+                    scenario.onFailure());
         }
         RequestItem request = (RequestItem) item;
         return new RequestItem(null, name, request.method(), request.url(), request.query(),
@@ -182,7 +199,7 @@ public final class ProjectTree {
         return result;
     }
 
-    private static List<ProjectItem> replace(List<ProjectItem> items, RequestItem updated) {
+    private static List<ProjectItem> replace(List<ProjectItem> items, ProjectItem updated) {
         List<ProjectItem> result = new ArrayList<>(items.size());
         for (ProjectItem item : items) {
             if (item.id().equals(updated.id())) {

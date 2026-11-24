@@ -10,7 +10,8 @@ public record Project(String format, int version, String id, String name, String
                       List<ProjectItem> items) {
 
     public static final String FORMAT = "apiro-project";
-    public static final int CURRENT_VERSION = 1;
+    public static final int BASE_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     public Project {
         format = format == null || format.isBlank() ? FORMAT : format;
