@@ -8,6 +8,7 @@ import io.github.itech_framework.java_fx.annotations.components.FxComponent;
 import io.github.itech_framework.java_fx.annotations.components.Root;
 import io.github.itech_mm.apiro.model.AuthConfig;
 import io.github.itech_mm.apiro.model.AuthType;
+import io.github.itech_mm.apiro.ui.editor.SecretVariableField;
 import io.github.itech_mm.apiro.ui.editor.VariableField;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -15,7 +16,6 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.PasswordField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
@@ -44,16 +44,16 @@ public class AuthEditorView {
 	private VariableField usernameField;
 
 	@FXML
-	private PasswordField passwordField;
+	private SecretVariableField passwordField;
 
 	@FXML
-	private PasswordField tokenField;
+	private SecretVariableField tokenField;
 
 	@FXML
 	private VariableField keyNameField;
 
 	@FXML
-	private PasswordField keyValueField;
+	private SecretVariableField keyValueField;
 
 	private boolean allowInherit = true;
 

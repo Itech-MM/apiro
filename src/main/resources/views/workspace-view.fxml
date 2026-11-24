@@ -17,7 +17,7 @@
         <HBox styleClass="url-bar" alignment="CENTER_LEFT" spacing="8">
 		    <Button fx:id="sendButton" styleClass="send-button" onAction="#onSend">
 		        <graphic>
-		            <Region styleClass="icon, icon-play" />
+		            <Region fx:id="sendIcon" styleClass="icon, icon-play" />
 		        </graphic>
 		    </Button>
 		

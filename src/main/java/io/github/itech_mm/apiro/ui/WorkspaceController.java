@@ -107,6 +107,9 @@ public class WorkspaceController implements Routable {
 	private Button sendButton;
 
 	@FXML
+	private Region sendIcon;
+
+	@FXML
 	private StackPane editorPane;
 
 	@FXML
@@ -921,11 +924,28 @@ public class WorkspaceController implements Routable {
 	}
 
 	private void updateSend() {
-		sendButton.setDisable(active == null || runService.isRunning(active.id));
+		boolean running = active != null && runService.isRunning(active.id);
+		sendButton.setDisable(active == null);
+		sendIcon.getStyleClass().removeAll("icon-play", "icon-stop");
+		sendIcon.getStyleClass().add(running ? "icon-stop" : "icon-play");
+		sendButton.getStyleClass().remove("send-running");
+		if (running) {
+			sendButton.getStyleClass().add("send-running");
+		}
+		Tooltip tip = sendButton.getTooltip();
+		if (tip == null) {
+			tip = new Tooltip();
+			sendButton.setTooltip(tip);
+		}
+		tip.setText(running ? "Stop request" : "Send request (Ctrl+Enter)");
 	}
 
 	@FXML
 	private void onSend() {
+		if (active != null && runService.isRunning(active.id)) {
+			runService.cancel(active.id);
+			return;
+		}
 		send();
 	}
 

@@ -44,7 +44,7 @@ public final class RequestPreparer {
         applyAuth(headers, effective.auth(), resolver);
         RequestBody body = resolveBody(request.body(), resolver);
         addContentType(headers, body);
-        List<String> unresolved = unresolved(url, headers, body, resolver);
+        List<String> unresolved = unresolved(url, headers, body, effective.auth(), resolver);
         return new PreparedRequest(request.method(), url, List.copyOf(headers), body, effective.settings(),
                 unresolved);
     }
@@ -134,10 +134,20 @@ public final class RequestPreparer {
         setIfAbsent(headers, "Content-Type", body.effectiveContentType());
     }
 
+    private static List<String> authTexts(AuthConfig auth) {
+        return switch (auth.type()) {
+            case BASIC -> List.of(auth.username(), auth.password());
+            case BEARER -> List.of(auth.token());
+            case API_KEY -> List.of(auth.keyName(), auth.keyValue());
+            case NONE, INHERIT -> List.of();
+        };
+    }
+
     private static List<String> unresolved(String url, List<KeyValue> headers, RequestBody body,
-                                           VariableResolver resolver) {
+                                           AuthConfig auth, VariableResolver resolver) {
         List<String> texts = new ArrayList<>();
         texts.add(url);
+        texts.addAll(authTexts(auth));
         for (KeyValue header : headers) {
             texts.add(header.key());
             texts.add(header.value());

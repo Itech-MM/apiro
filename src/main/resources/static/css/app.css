@@ -1098,6 +1098,19 @@
     -fx-border-color: -fx-primary;
 }
 
+.variable-field.kv-field {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.variable-field.kv-field:focused {
+    -fx-background-color: -fx-surface;
+}
+
 .kv-disabled .text-field.kv-field {
     -fx-opacity: 0.5;
 }
@@ -1173,6 +1186,19 @@
 
 .button.send-button .icon-play {
     -fx-translate-x: 1;
+}
+
+.button.send-button.send-running,
+.button.send-button.send-running:focused {
+    -fx-background-color: -method-delete-tint;
+}
+
+.button.send-button.send-running:hover {
+    -fx-background-color: derive(-method-delete-tint, -8%);
+}
+
+.button.send-button.send-running .icon {
+    -fx-background-color: -fx-danger;
 }
 
 .toggle-button.chip,
