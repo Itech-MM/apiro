@@ -835,8 +835,94 @@
 }
 
 .scenario-bar { -fx-border-color: transparent transparent -app-gutter-border transparent; }
-.scenario-run { -fx-text-fill: -fx-success; -fx-font-weight: bold; }
-.scenario-stop { -fx-text-fill: -fx-danger; -fx-font-weight: bold; }
+.button.scenario-run,
+.button.scenario-run:focused {
+    -fx-background-color: -app-success-tint;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-text-fill: -fx-secondary-dark;
+    -fx-font-weight: bold;
+}
+
+.button.scenario-run:hover { -fx-background-color: -app-success-tint-hover; }
+.button.scenario-run:disabled { -fx-opacity: 0.5; }
+
+.button.scenario-stop,
+.button.scenario-stop:focused {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0 14 0 14;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-text-fill: -fx-danger;
+    -fx-font-weight: bold;
+}
+
+.button.scenario-stop:hover { -fx-background-color: -fx-row-hover; }
+.button.scenario-stop:disabled { -fx-opacity: 0.5; }
+
+.menu-button.scenario-add,
+.menu-button.scenario-add:focused,
+.menu-button.scenario-add:showing {
+    -fx-background-color: -fx-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0 4 0 12;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.menu-button.scenario-add:hover { -fx-background-color: -fx-row-hover; }
+
+.combo-box.bar-combo,
+.combo-box.bar-combo:hover,
+.combo-box.bar-combo:focused {
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.combo-box.bar-combo .list-cell { -fx-padding: 0 0 0 12; }
+
+.combo-box.field-combo,
+.combo-box.field-combo:hover,
+.combo-box.field-combo:focused {
+    -fx-background-color: -app-layer;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.combo-box.field-combo:hover { -fx-background-color: -fx-row-hover; }
+
+.combo-box.field-combo:focused {
+    -fx-background-color: -fx-surface;
+    -fx-border-color: -fx-primary;
+}
+
+.combo-box.field-combo .list-cell {
+    -fx-padding: 0 0 0 10;
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 12px;
+}
 .scenario-log { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }
 .step-inspector, .step-inspector > .viewport { -fx-background-color: transparent; }
 .step-response-body { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }

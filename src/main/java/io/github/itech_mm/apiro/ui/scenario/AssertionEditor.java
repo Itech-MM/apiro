@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 final class AssertionEditor extends VBox {
@@ -74,13 +75,23 @@ final class AssertionEditor extends VBox {
             expected.setText(assertion.expected());
             expression.getStyleClass().add("kv-field");
             expected.getStyleClass().add("kv-field");
+            source.getStyleClass().add("field-combo");
+            operator.getStyleClass().add("field-combo");
+            source.setPrefWidth(150);
+            source.setMinWidth(Region.USE_PREF_SIZE);
+            operator.setPrefWidth(150);
+            operator.setMinWidth(Region.USE_PREF_SIZE);
             remove.getStyleClass().addAll("icon-button", "icon-button-sm");
             expression.setPromptText("path or header name");
             expected.setPromptText("expected");
             HBox.setHgrow(expression, Priority.ALWAYS);
             HBox.setHgrow(expected, Priority.ALWAYS);
             HBox first = new HBox(4, source, expression, remove);
-            HBox second = new HBox(4, operator, expected);
+            Region gap = new Region();
+            gap.setMinWidth(26);
+            gap.setPrefWidth(26);
+            gap.setMaxWidth(26);
+            HBox second = new HBox(4, operator, expected, gap);
             first.setAlignment(Pos.CENTER_LEFT);
             second.setAlignment(Pos.CENTER_LEFT);
             box = new VBox(4, first, second);

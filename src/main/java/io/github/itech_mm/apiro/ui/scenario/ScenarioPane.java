@@ -96,6 +96,8 @@ public final class ScenarioPane extends BorderPane {
         title.getStyleClass().add("scenario-title");
         summary.getStyleClass().add("muted");
         policy.setTooltip(new Tooltip("What happens after a step fails"));
+        policy.getStyleClass().add("bar-combo");
+        addStep.getStyleClass().add("scenario-add");
         Label policyLabel = new Label("On failure");
         policyLabel.getStyleClass().add("muted");
         run.getStyleClass().add("scenario-run");
@@ -134,7 +136,7 @@ public final class ScenarioPane extends BorderPane {
 
         list.getStyleClass().add("scenario-list");
         SplitPane horizontal = new SplitPane(list, inspector);
-        horizontal.getStyleClass().add("editor-split");
+        horizontal.getStyleClass().add("main-split");
         horizontal.setDividerPositions(0.5);
         SplitPane vertical = new SplitPane(horizontal, log);
         vertical.setOrientation(Orientation.VERTICAL);

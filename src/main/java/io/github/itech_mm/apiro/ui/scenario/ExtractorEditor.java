@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 final class ExtractorEditor extends VBox {
@@ -67,6 +68,9 @@ final class ExtractorEditor extends VBox {
 
         Row(Extractor extractor) {
             variable.getStyleClass().add("kv-field");
+            source.getStyleClass().add("field-combo");
+            source.setPrefWidth(130);
+            source.setMinWidth(Region.USE_PREF_SIZE);
             expression.getStyleClass().add("kv-field");
             remove.getStyleClass().addAll("icon-button", "icon-button-sm");
             variable.setPromptText("variable");

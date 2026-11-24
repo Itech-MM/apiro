@@ -62,6 +62,7 @@ final class StepInspector extends ScrollPane {
         responseTitle.getStyleClass().add("section-title");
         name.getStyleClass().add("kv-field");
         delay.getStyleClass().add("kv-field");
+        policy.getStyleClass().add("field-combo");
         policy.setMaxWidth(Double.MAX_VALUE);
         VBox general = new VBox(10, request, labeled("Name", name), labeled("Delay (ms)", delay),
                 labeled("On failure", policy));
