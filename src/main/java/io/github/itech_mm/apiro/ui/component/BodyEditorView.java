@@ -16,6 +16,7 @@ import io.github.itech_framework.java_fx.loader.FxProvider;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.ui.EditorStyle;
+import io.github.itech_mm.apiro.ui.editor.VariableCompletionProvider;
 import io.github.itech_mm.apiro.ui.editor.VariableStyler;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -62,6 +63,8 @@ public class BodyEditorView {
     @FxUse
     private FxProvider<KeyValueTableView> formTables;
 
+    private static final VariableCompletionProvider COMPLETION = new VariableCompletionProvider();
+
     private final ToggleGroup group = new ToggleGroup();
     private final Map<BodyType, ToggleButton> chips = new EnumMap<>(BodyType.class);
     private final ReadOnlyStringWrapper preview = new ReadOnlyStringWrapper("none");
@@ -74,6 +77,7 @@ public class BodyEditorView {
         formTable.getRoot().setPadding(new Insets(12, 16, 12, 16));
         EditorStyle.apply(editor);
         VariableStyler.install(editor);
+        installVariableCompletion();
         for (BodyType type : BodyType.values()) {
             ToggleButton chip = new ToggleButton(label(type));
             chip.getStyleClass().add("chip");
@@ -152,9 +156,16 @@ public class BodyEditorView {
 
         if (text) {
             editor.setLanguage(type == BodyType.JSON ? "json" : "plaintext");
+            installVariableCompletion();
         }
         contentTypeLabel.setText(type.defaultContentType());
         preview.set(label(type));
+    }
+
+    private void installVariableCompletion() {
+        editor.setCompletionProvider(COMPLETION);
+        editor.setCompletionAutoOpen(true);
+        editor.setCompletionMinChars(1);
     }
 
     private void show(Node node, boolean visible) {

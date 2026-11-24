@@ -9,6 +9,7 @@ import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.RequestSettings;
+import io.github.itech_mm.apiro.model.Variable;
 import io.github.itech_mm.apiro.service.project.Inheritance;
 import io.github.itech_mm.apiro.service.variables.VariableResolver;
 import java.net.URLEncoder;
@@ -29,12 +30,17 @@ public final class RequestPreparer {
     }
 
     public static PreparedRequest prepare(Project project, String environmentId, String requestId) {
+        return prepare(project, environmentId, requestId, List.of());
+    }
+
+    public static PreparedRequest prepare(Project project, String environmentId, String requestId,
+                                          List<Variable> runtime) {
         RequestItem request = project.findItem(requestId)
                 .filter(RequestItem.class::isInstance)
                 .map(RequestItem.class::cast)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown request: " + requestId));
         Inheritance.Effective effective = Inheritance.forItem(project, requestId).orElseThrow();
-        VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId);
+        VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId, runtime);
 
         String url = withQuery(resolver.resolve(request.url()), request.query(), resolver);
         List<KeyValue> headers = new ArrayList<>();

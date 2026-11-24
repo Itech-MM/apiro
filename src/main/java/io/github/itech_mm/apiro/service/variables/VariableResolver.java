@@ -18,16 +18,22 @@ public final class VariableResolver {
 	public record Reference(int start, int end, String name, boolean defined) {
 	}
 
-	private static final Pattern REFERENCE = Pattern.compile("\\$\\{\\s*([A-Za-z0-9_.\\-]+)\\s*\\}");
+	public static final Pattern REFERENCE = Pattern.compile("\\$\\{\\s*(\\$?[A-Za-z0-9_.\\-]+)\\s*\\}");
 	private static final int MAX_DEPTH = 8;
 
 	private final Map<String, String> values;
+	private final DynamicVariables dynamic;
 
-	private VariableResolver(Map<String, String> values) {
+	private VariableResolver(Map<String, String> values, DynamicVariables dynamic) {
 		this.values = values;
+		this.dynamic = dynamic;
 	}
 
 	public static VariableResolver of(List<List<Variable>> layersHighestFirst) {
+		return of(layersHighestFirst, DynamicVariables.system());
+	}
+
+	public static VariableResolver of(List<List<Variable>> layersHighestFirst, DynamicVariables dynamic) {
 		Map<String, String> values = new LinkedHashMap<>();
 		for (List<Variable> layer : layersHighestFirst) {
 			for (Variable variable : layer) {
@@ -36,11 +42,17 @@ public final class VariableResolver {
 				}
 			}
 		}
-		return new VariableResolver(Collections.unmodifiableMap(values));
+		return new VariableResolver(Collections.unmodifiableMap(values), dynamic);
 	}
 
 	public static VariableResolver forItem(Project project, String environmentId, String itemId) {
+		return forItem(project, environmentId, itemId, List.of());
+	}
+
+	public static VariableResolver forItem(Project project, String environmentId, String itemId,
+			List<Variable> runtime) {
 		List<List<Variable>> layers = new ArrayList<>();
+		layers.add(runtime);
 		List<Folder> path = folderPath(project.items(), itemId).orElse(List.of());
 		for (int i = path.size() - 1; i >= 0; i--) {
 			layers.add(path.get(i).variables());
@@ -51,11 +63,19 @@ public final class VariableResolver {
 	}
 
 	public Optional<String> value(String name) {
-		return Optional.ofNullable(values.get(name));
+		return Optional.ofNullable(lookup(name));
 	}
 
 	public boolean isDefined(String name) {
-		return values.containsKey(name);
+		return values.containsKey(name) || DynamicVariables.isKnown(name);
+	}
+
+	private String lookup(String name) {
+		String value = values.get(name);
+		if (value != null || !DynamicVariables.isDynamic(name)) {
+			return value;
+		}
+		return dynamic.generate(name).orElse(null);
 	}
 
 	public List<String> names() {
@@ -70,7 +90,7 @@ public final class VariableResolver {
 		Matcher matcher = REFERENCE.matcher(text);
 		while (matcher.find()) {
 			String name = matcher.group(1);
-			references.add(new Reference(matcher.start(), matcher.end(), name, values.containsKey(name)));
+			references.add(new Reference(matcher.start(), matcher.end(), name, isDefined(name)));
 		}
 		return references;
 	}
@@ -88,7 +108,7 @@ public final class VariableResolver {
 		int last = 0;
 		boolean replaced = false;
 		while (matcher.find()) {
-			String value = values.get(matcher.group(1));
+			String value = lookup(matcher.group(1));
 			out.append(text, last, matcher.start());
 			if (value == null) {
 				out.append(matcher.group());

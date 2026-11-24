@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.ui.editor;
 
 import io.github.itech_framework.code_editor.completion.CompletionItem;
 import io.github.itech_framework.code_editor.completion.CompletionProvider;
+import io.github.itech_mm.apiro.service.variables.DynamicVariables;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ public final class VariableCompletionProvider implements CompletionProvider {
         String typed = text.substring(start, caret);
         for (int i = 0; i < typed.length(); i++) {
             char c = typed.charAt(i);
-            if (!(Character.isLetterOrDigit(c) || c == '_' || c == '.' || c == '-')) {
+            boolean leadingDollar = i == 0 && c == '$';
+            if (!(leadingDollar || Character.isLetterOrDigit(c) || c == '_' || c == '.' || c == '-')) {
                 return List.of();
             }
         }
@@ -34,6 +36,13 @@ public final class VariableCompletionProvider implements CompletionProvider {
         for (Map.Entry<String, String> entry : VariableScope.current().entrySet()) {
             String name = entry.getKey();
             if (!name.toLowerCase(Locale.ROOT).startsWith(needle)) {
+                continue;
+            }
+            items.add(new CompletionItem(name, closed ? name : name + "}", CompletionItem.Kind.VARIABLE, start,
+                    caret));
+        }
+        for (String name : DynamicVariables.names()) {
+            if (VariableScope.current().containsKey(name) || !name.toLowerCase(Locale.ROOT).startsWith(needle)) {
                 continue;
             }
             items.add(new CompletionItem(name, closed ? name : name + "}", CompletionItem.Kind.VARIABLE, start,

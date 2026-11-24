@@ -3,17 +3,16 @@ package io.github.itech_mm.apiro.ui.editor;
 import io.github.itech_framework.code_editor.diagnostics.Diagnostic;
 import io.github.itech_framework.code_editor.diagnostics.DiagnosticSeverity;
 import io.github.itech_framework.code_editor.diagnostics.DiagnosticsProvider;
+import io.github.itech_mm.apiro.service.variables.DynamicVariables;
+import io.github.itech_mm.apiro.service.variables.VariableResolver;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public final class VariableDiagnosticsProvider implements DiagnosticsProvider {
-
-    private static final Pattern REFERENCE = Pattern.compile("\\$\\{\\s*([A-Za-z0-9_.\\-]+)\\s*}");
 
     @Override
     public List<Diagnostic> diagnose(String text) {
@@ -22,13 +21,14 @@ public final class VariableDiagnosticsProvider implements DiagnosticsProvider {
         }
         Map<String, String> scope = VariableScope.current();
         List<Diagnostic> result = new ArrayList<>();
-        Matcher matcher = REFERENCE.matcher(text);
+        Matcher matcher = VariableResolver.REFERENCE.matcher(text);
         while (matcher.find()) {
             String name = matcher.group(1);
-            if (!scope.containsKey(name)) {
-                result.add(new Diagnostic(matcher.start(), matcher.end(), DiagnosticSeverity.WARNING,
-                        "Undefined variable: " + name));
+            if (scope.containsKey(name) || DynamicVariables.isKnown(name)) {
+                continue;
             }
+            String label = DynamicVariables.isDynamic(name) ? "Unknown dynamic variable: " : "Undefined variable: ";
+            result.add(new Diagnostic(matcher.start(), matcher.end(), DiagnosticSeverity.WARNING, label + name));
         }
         return result;
     }
