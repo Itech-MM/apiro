@@ -37,6 +37,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -87,6 +89,7 @@ public final class ScenarioPane extends BorderPane {
     private final ObservableList<Step> items = FXCollections.observableArrayList();
     private final ListView<Step> list = new ListView<>(items);
     private final StepInspector inspector;
+    private final DiagramView diagram;
     private final CodeEditor log = new CodeEditor();
     private ScenarioItem current;
     private boolean loading;
@@ -96,6 +99,7 @@ public final class ScenarioPane extends BorderPane {
         this.host = host;
         getStyleClass().add("scenario-pane");
         inspector = new StepInspector(this::onStepEdited);
+        diagram = new DiagramView(support(), this::selectById);
 
         title.getStyleClass().add("scenario-title");
         summary.getStyleClass().add("muted");
@@ -143,7 +147,12 @@ public final class ScenarioPane extends BorderPane {
         log.getStyleClass().add("scenario-log");
 
         list.getStyleClass().add("scenario-list");
-        SplitPane horizontal = new SplitPane(list, inspector);
+        Tab listTab = new Tab("List", list);
+        Tab diagramTab = new Tab("Diagram", diagram);
+        TabPane views = new TabPane(listTab, diagramTab);
+        views.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        views.getStyleClass().addAll("request-tabs", "scenario-views");
+        SplitPane horizontal = new SplitPane(views, inspector);
         horizontal.getStyleClass().add("main-split");
         horizontal.setDividerPositions(0.5);
         SplitPane vertical = new SplitPane(horizontal, log);
@@ -174,6 +183,7 @@ public final class ScenarioPane extends BorderPane {
         boolean same = current != null && current.id().equals(scenario.id());
         if (same && current.equals(scenario)) {
             list.refresh();
+            diagram.refresh();
             return;
         }
         String keep = same ? selectedId() : null;
@@ -187,6 +197,7 @@ public final class ScenarioPane extends BorderPane {
         selectById(keep);
         syncing = false;
         inspectSelected();
+        diagram.show(scenario.steps(), selectedId(), !same);
         refreshRunState();
         refreshLog();
     }
@@ -209,6 +220,7 @@ public final class ScenarioPane extends BorderPane {
             }
         }
         syncing = false;
+        diagram.show(current.steps(), selectedId(), false);
         host.save(next);
         refreshSummary();
     }
@@ -225,6 +237,7 @@ public final class ScenarioPane extends BorderPane {
             selectById(keep);
             syncing = false;
             inspectSelected();
+            diagram.show(next.steps(), selectedId(), false);
         }
         host.save(next);
         refreshRunState();
@@ -280,6 +293,7 @@ public final class ScenarioPane extends BorderPane {
 
     private void inspectSelected() {
         Step selected = list.getSelectionModel().getSelectedItem();
+        diagram.select(selected == null ? null : selected.id());
         refreshScope();
         if (selected != null && selected.equals(inspector.step())) {
             return;
@@ -390,6 +404,7 @@ public final class ScenarioPane extends BorderPane {
         refreshRunState();
         refreshLog();
         list.refresh();
+        diagram.refresh();
         pool.execute(() -> {
             try {
                 new ScenarioRunner(sender).run(project, environment, scenario, token, listener(scenario, view));
@@ -453,6 +468,7 @@ public final class ScenarioPane extends BorderPane {
             return;
         }
         list.refresh();
+        diagram.refresh();
         refreshRunState();
         refreshLog();
         Step selected = list.getSelectionModel().getSelectedItem();

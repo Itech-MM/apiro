@@ -968,6 +968,60 @@
 
 .scenario-pane .scroll-pane > .viewport { -fx-background-color: transparent; }
 
+.diagram-view,
+.diagram-viewport {
+    -fx-background-color: -app-gutter;
+}
+
+.diagram-node {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 8;
+    -fx-border-width: 1.5;
+    -fx-padding: 8 10 8 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 6, 0, 0, 1);
+}
+
+.diagram-node.selected {
+    -fx-border-color: -fx-primary;
+    -fx-effect: dropshadow(gaussian, -fx-primary, 12, 0.3, 0, 0);
+}
+
+.diagram-node.state-passed { -fx-border-color: -fx-success; }
+.diagram-node.state-failed { -fx-border-color: -fx-danger; }
+.diagram-node.state-running,
+.diagram-node.state-cancelled { -fx-border-color: -fx-warning; }
+
+.diagram-edge {
+    -fx-stroke: -app-muted;
+    -fx-stroke-width: 2;
+}
+
+.diagram-arrow {
+    -fx-fill: -app-muted;
+}
+
+.diagram-tools {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-padding: 3;
+}
+
+.diagram-tool {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-padding: 3 8 3 8;
+    -fx-cursor: hand;
+}
+
+.diagram-tool:hover {
+    -fx-background-color: -fx-row-hover;
+}
+
 .main-split {
     -fx-background-color: transparent;
     -fx-padding: 0;
