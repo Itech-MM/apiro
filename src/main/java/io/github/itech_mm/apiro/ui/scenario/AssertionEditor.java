@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_mm.apiro.model.Assertion;
+import io.github.itech_mm.apiro.ui.editor.VariableField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -64,7 +65,7 @@ final class AssertionEditor extends VBox {
         final TextField expression = new TextField();
         final ComboBox<Assertion.Operator> operator = new ComboBox<>(
                 FXCollections.observableArrayList(Assertion.Operator.values()));
-        final TextField expected = new TextField();
+        final VariableField expected = new VariableField();
         final Button remove = new Button("×");
         final VBox box;
 
@@ -83,7 +84,6 @@ final class AssertionEditor extends VBox {
             operator.setMinWidth(Region.USE_PREF_SIZE);
             remove.getStyleClass().addAll("icon-button", "icon-button-sm");
             expression.setPromptText("path or header name");
-            expected.setPromptText("expected");
             HBox.setHgrow(expression, Priority.ALWAYS);
             HBox.setHgrow(expected, Priority.ALWAYS);
             HBox first = new HBox(4, source, expression, remove);
@@ -106,7 +106,7 @@ final class AssertionEditor extends VBox {
                 emit();
             });
             expression.textProperty().addListener((obs, oldValue, newValue) -> emit());
-            expected.textProperty().addListener((obs, oldValue, newValue) -> emit());
+            expected.valueProperty().addListener((obs, oldValue, newValue) -> emit());
             remove.setOnAction(event -> {
                 list.remove(this);
                 rows.getChildren().remove(box);

@@ -815,6 +815,10 @@ public class WorkspaceController implements Routable {
 	}
 
 	private void refreshScope() {
+		if (activeScenario != null) {
+			scenarioPane.refreshScope();
+			return;
+		}
 		try {
 			if (active == null) {
 				VariableScope.update(null);

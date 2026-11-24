@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "apiro-log",
+  "name": "Apiro scenario log",
+  "autoClosingPairs": [],
+  "states": {
+    "root": [
+      { "match": "^\\[PASSED\\]", "scope": "string" },
+      { "match": "^\\[FAILED\\]", "scope": "invalid" },
+      { "match": "^\\[(SKIPPED|CANCELLED|PENDING)\\]", "scope": "comment" },
+      { "match": "^\\[RUNNING\\]", "scope": "keyword" },
+      { "match": "^Scenario(?= )", "scope": "keyword" },
+      { "match": "(?<=^Scenario )passed", "scope": "string" },
+      { "match": "(?<=^Scenario )failed", "scope": "invalid" },
+      { "match": "(?<=^Scenario )cancelled", "scope": "comment" },
+      { "match": "^\\s+extract(?= )", "scope": "keyword" },
+      { "match": "(?<=extract )[A-Za-z0-9_.\\-]+", "scope": "variable" },
+      { "match": "(?<= )failed:", "scope": "invalid" },
+      { "match": "=", "scope": "operator" },
+      { "match": "^\\s+pass(?= )", "scope": "string" },
+      { "match": "^\\s+fail(?= )", "scope": "invalid" },
+      { "match": "(?<=  )[1-5]\\d\\d(?=\\s|$)", "scope": "number" },
+      { "match": "\\d+(?= ms\\b)", "scope": "number" },
+      { "match": "(?<=\\d )ms\\b", "scope": "comment" },
+      { "match": "\\d+(?= (passed|failed|skipped)\\b)", "scope": "number" },
+      { "match": "\\*{3,}", "scope": "comment" }
+    ]
+  }
+}

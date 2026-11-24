@@ -923,9 +923,7 @@
     -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
     -fx-font-size: 12px;
 }
-.scenario-log { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }
 .step-inspector, .step-inspector > .viewport { -fx-background-color: transparent; }
-.step-response-body { -fx-font-family: "JetBrains Mono", "Consolas", "Menlo", monospace; -fx-font-size: 12px; }
 .assertion-row { -fx-padding: 0 0 6 0; }
 .step-missing { -fx-text-fill: -fx-danger; }
 .step-dot {
@@ -961,16 +959,11 @@
 .scenario-list .list-cell:filled:hover { -fx-background-color: -fx-row-hover; }
 .scenario-list .list-cell:filled:selected { -fx-background-color: -app-tree-selected; }
 
-.text-area.scenario-log,
-.text-area.step-response-body {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-}
-
-.text-area.scenario-log .content,
-.text-area.step-response-body .content {
+.code-editor.scenario-log,
+.code-editor.step-response-body {
     -fx-background-color: -app-layer;
     -fx-background-radius: 6;
+    -fx-border-radius: 6;
 }
 
 .scenario-pane .scroll-pane > .viewport { -fx-background-color: transparent; }

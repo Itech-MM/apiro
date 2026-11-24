@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_mm.apiro.model.KeyValue;
+import io.github.itech_mm.apiro.ui.editor.VariableField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -8,7 +9,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -61,8 +61,8 @@ final class HeaderEditor extends VBox {
     private final class Row {
 
         final CheckBox enabled = new CheckBox();
-        final TextField key = new TextField();
-        final TextField value = new TextField();
+        final VariableField key = new VariableField();
+        final VariableField value = new VariableField();
         final Button remove = new Button("×");
         final HBox box = new HBox(4, enabled, key, value, remove);
 
@@ -70,17 +70,17 @@ final class HeaderEditor extends VBox {
             key.getStyleClass().add("kv-field");
             value.getStyleClass().add("kv-field");
             remove.getStyleClass().addAll("icon-button", "icon-button-sm");
-            key.setPromptText("Authorization");
-            key.setPrefWidth(150);
-            value.setPromptText("Bearer ${token}");
+            key.setMinWidth(170);
+            key.setPrefWidth(170);
+            key.setMaxWidth(170);
             HBox.setHgrow(value, Priority.ALWAYS);
             enabled.setSelected(header.enabled());
             key.setText(header.key());
             value.setText(header.value());
             box.setAlignment(Pos.CENTER_LEFT);
             enabled.selectedProperty().addListener((obs, oldValue, newValue) -> emit());
-            key.textProperty().addListener((obs, oldValue, newValue) -> emit());
-            value.textProperty().addListener((obs, oldValue, newValue) -> emit());
+            key.valueProperty().addListener((obs, oldValue, newValue) -> emit());
+            value.valueProperty().addListener((obs, oldValue, newValue) -> emit());
             remove.setOnAction(event -> {
                 list.remove(this);
                 rows.getChildren().remove(box);

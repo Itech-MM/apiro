@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_framework.api_client.utils.CancelToken;
+import io.github.itech_framework.code_editor.CodeEditor;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestItem;
@@ -11,8 +12,12 @@ import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
 import io.github.itech_mm.apiro.service.scenario.ScenarioListener;
 import io.github.itech_mm.apiro.service.scenario.ScenarioResult;
 import io.github.itech_mm.apiro.service.scenario.ScenarioRunner;
+import io.github.itech_mm.apiro.service.scenario.ScenarioScope;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
+import io.github.itech_mm.apiro.service.variables.VariableScope;
+import io.github.itech_mm.apiro.ui.EditorStyle;
+import io.github.itech_mm.apiro.ui.editor.ScenarioLogLanguage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +37,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -83,7 +87,7 @@ public final class ScenarioPane extends BorderPane {
     private final ObservableList<Step> items = FXCollections.observableArrayList();
     private final ListView<Step> list = new ListView<>(items);
     private final StepInspector inspector;
-    private final TextArea log = new TextArea();
+    private final CodeEditor log = new CodeEditor();
     private ScenarioItem current;
     private boolean loading;
     private boolean syncing;
@@ -130,8 +134,12 @@ public final class ScenarioPane extends BorderPane {
             event.consume();
         });
 
+        ScenarioLogLanguage.ensureRegistered();
+        EditorStyle.apply(log);
+        log.setLanguage(ScenarioLogLanguage.ID);
         log.setEditable(false);
-        log.setPrefRowCount(7);
+        log.setShowLineNumbers(false);
+        log.setMinHeight(90);
         log.getStyleClass().add("scenario-log");
 
         list.getStyleClass().add("scenario-list");
@@ -256,8 +264,23 @@ public final class ScenarioPane extends BorderPane {
         }
     }
 
+    public void refreshScope() {
+        Step selected = list.getSelectionModel().getSelectedItem();
+        Project project = host.project();
+        if (current == null || selected == null || project == null) {
+            VariableScope.update(null);
+            return;
+        }
+        try {
+            VariableScope.update(ScenarioScope.forStep(project, host.environmentId(), current, selected));
+        } catch (RuntimeException error) {
+            VariableScope.update(null);
+        }
+    }
+
     private void inspectSelected() {
         Step selected = list.getSelectionModel().getSelectedItem();
+        refreshScope();
         if (selected != null && selected.equals(inspector.step())) {
             return;
         }
@@ -456,6 +479,6 @@ public final class ScenarioPane extends BorderPane {
     private void refreshLog() {
         RunView view = viewOf(current);
         log.setText(view == null ? "" : view.log.toString());
-        log.positionCaret(log.getLength());
+        log.moveCaret(log.getLength());
     }
 }
