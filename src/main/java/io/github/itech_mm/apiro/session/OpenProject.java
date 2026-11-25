@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.session;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -10,12 +11,16 @@ import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.RunRecord;
 import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.repository.LastRun;
 import io.github.itech_mm.apiro.repository.LocalState;
 import io.github.itech_mm.apiro.repository.LocalStateStore;
 import io.github.itech_mm.apiro.repository.ProjectStore;
+import io.github.itech_mm.apiro.repository.RunHistoryStore;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
+import io.github.itech_mm.apiro.service.scenario.RunRecords;
+import io.github.itech_mm.apiro.service.scenario.RunStore;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -95,6 +100,16 @@ public final class OpenProject {
     public void save() throws IOException {
         state = ProjectStore.save(project.get(), state, file);
         saves.set(saves.get() + 1);
+        pruneRuns();
+    }
+
+    private void pruneRuns() {
+        Project saved = project.get();
+        try {
+            RunHistoryStore.prune(file, saved.id(), RunRecords.scenarioIds(saved));
+        } catch (IOException error) {
+            return;
+        }
     }
 
     public void selectEnvironment(String id) {
@@ -206,6 +221,37 @@ public final class OpenProject {
         } catch (IOException error) {
             return;
         }
+    }
+
+    public RunStore runStore() {
+        Path projectFile = file;
+        String projectId = project.get().id();
+        return new RunStore() {
+            @Override
+            public List<RunRecord> load(String scenarioId) {
+                return RunHistoryStore.load(projectFile, projectId, scenarioId);
+            }
+
+            @Override
+            public List<RunRecord> add(String scenarioId, RunRecord record) {
+                List<RunRecord> next = RunRecords.add(load(scenarioId), record, RunRecords.LIMIT);
+                try {
+                    RunHistoryStore.save(projectFile, projectId, scenarioId, next);
+                } catch (IOException error) {
+                    return next;
+                }
+                return next;
+            }
+
+            @Override
+            public void clear(String scenarioId) {
+                try {
+                    RunHistoryStore.delete(projectFile, projectId, scenarioId);
+                } catch (IOException error) {
+                    return;
+                }
+            }
+        };
     }
 
     public Map<String, ScenarioItem> scenarioDrafts() {

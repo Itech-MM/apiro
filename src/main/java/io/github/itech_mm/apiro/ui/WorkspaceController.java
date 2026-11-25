@@ -41,6 +41,7 @@ import io.github.itech_mm.apiro.service.http.RequestPreparer.PreparedRequest;
 import io.github.itech_mm.apiro.service.http.RequestRunService;
 import io.github.itech_mm.apiro.service.http.SendOutcome;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
+import io.github.itech_mm.apiro.service.scenario.RunStore;
 import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
 import io.github.itech_mm.apiro.service.variables.VariableResolver;
@@ -231,6 +232,11 @@ public class WorkspaceController implements Routable {
 			@Override
 			public StepSender sender() {
 				return executor::send;
+			}
+
+			@Override
+			public RunStore runStore() {
+				return activeScenario == null ? RunStore.NONE : activeScenario.owner.runStore();
 			}
 
 			@Override

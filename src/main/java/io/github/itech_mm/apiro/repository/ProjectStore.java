@@ -37,6 +37,7 @@ public final class ProjectStore {
         Path state = LocalStateStore.pathFor(file, projectId);
         try {
             Files.deleteIfExists(state);
+            RunHistoryStore.deleteAll(file, projectId);
             Path directory = state.getParent();
             if (directory != null && Files.isDirectory(directory)) {
                 try (var entries = Files.list(directory)) {

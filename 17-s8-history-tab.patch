@@ -1,0 +1,550 @@
+diff --git a/src/main/java/io/github/itech_mm/apiro/repository/RunHistoryStore.java b/src/main/java/io/github/itech_mm/apiro/repository/RunHistoryStore.java
+index 3c480ae..6fdad11 100644
+--- a/src/main/java/io/github/itech_mm/apiro/repository/RunHistoryStore.java
++++ b/src/main/java/io/github/itech_mm/apiro/repository/RunHistoryStore.java
+@@ -8,8 +8,10 @@ import java.io.IOException;
+ import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.util.HashSet;
+ import java.util.List;
+ import java.util.Objects;
++import java.util.Set;
+ 
+ public final class RunHistoryStore {
+ 
+@@ -30,8 +32,11 @@ public final class RunHistoryStore {
+     }
+ 
+     public static Path pathFor(Path projectFile, String projectId, String scenarioId) {
+-        String name = scenarioId.replaceAll("[^A-Za-z0-9._-]", "_");
+-        return directoryFor(projectFile, projectId).resolve(name + ".json");
++        return directoryFor(projectFile, projectId).resolve(fileName(scenarioId));
++    }
++
++    private static String fileName(String scenarioId) {
++        return scenarioId.replaceAll("[^A-Za-z0-9._-]", "_") + ".json";
+     }
+ 
+     public static List<RunRecord> load(Path projectFile, String projectId, String scenarioId) {
+@@ -59,6 +64,32 @@ public final class RunHistoryStore {
+         Files.deleteIfExists(pathFor(projectFile, projectId, scenarioId));
+     }
+ 
++    public static void prune(Path projectFile, String projectId, Set<String> keepScenarioIds) throws IOException {
++        Path directory = directoryFor(projectFile, projectId);
++        if (!Files.isDirectory(directory)) {
++            return;
++        }
++        Set<String> keep = new HashSet<>();
++        for (String id : keepScenarioIds) {
++            keep.add(fileName(id));
++        }
++        List<Path> files;
++        try (var entries = Files.list(directory)) {
++            files = entries.toList();
++        }
++        for (Path entry : files) {
++            String name = entry.getFileName().toString();
++            if (name.endsWith(".json") && !keep.contains(name)) {
++                Files.deleteIfExists(entry);
++            }
++        }
++        try (var rest = Files.list(directory)) {
++            if (rest.findAny().isEmpty()) {
++                Files.delete(directory);
++            }
++        }
++    }
++
+     public static void deleteAll(Path projectFile, String projectId) throws IOException {
+         Path directory = directoryFor(projectFile, projectId);
+         if (!Files.isDirectory(directory)) {
+diff --git a/src/main/java/io/github/itech_mm/apiro/service/scenario/RunRecords.java b/src/main/java/io/github/itech_mm/apiro/service/scenario/RunRecords.java
+index ec2a051..772d42b 100644
+--- a/src/main/java/io/github/itech_mm/apiro/service/scenario/RunRecords.java
++++ b/src/main/java/io/github/itech_mm/apiro/service/scenario/RunRecords.java
+@@ -1,5 +1,8 @@
+ package io.github.itech_mm.apiro.service.scenario;
+ 
++import io.github.itech_mm.apiro.model.Folder;
++import io.github.itech_mm.apiro.model.Project;
++import io.github.itech_mm.apiro.model.ProjectItem;
+ import io.github.itech_mm.apiro.model.RunRecord;
+ import io.github.itech_mm.apiro.model.RunStep;
+ import io.github.itech_mm.apiro.model.ScenarioItem;
+@@ -8,8 +11,10 @@ import java.time.Instant;
+ import java.time.ZoneId;
+ import java.time.format.DateTimeFormatter;
+ import java.util.ArrayList;
++import java.util.LinkedHashSet;
+ import java.util.List;
+ import java.util.Locale;
++import java.util.Set;
+ import java.util.function.Function;
+ 
+ public final class RunRecords {
+@@ -52,8 +57,18 @@ public final class RunRecords {
+     }
+ 
+     public static String label(RunRecord run, ZoneId zone) {
+-        return when(run, zone) + "  " + word(run.state()) + "  " + run.count("PASSED") + "/" + run.steps().size()
+-                + "  " + StepSummary.duration(run.millis());
++        return when(run, zone) + "  " + brief(run);
++    }
++
++    public static String brief(RunRecord run) {
++        return word(run.state()) + "  " + run.count("PASSED") + "/" + run.steps().size() + "  "
++                + StepSummary.duration(run.millis());
++    }
++
++    public static Set<String> scenarioIds(Project project) {
++        Set<String> ids = new LinkedHashSet<>();
++        collectScenarios(project.items(), ids);
++        return ids;
+     }
+ 
+     public static StepResult.State stepState(RunStep step) {
+@@ -64,6 +79,16 @@ public final class RunRecords {
+         }
+     }
+ 
++    private static void collectScenarios(List<ProjectItem> items, Set<String> ids) {
++        for (ProjectItem item : items) {
++            if (item instanceof ScenarioItem scenario) {
++                ids.add(scenario.id());
++            } else if (item instanceof Folder folder) {
++                collectScenarios(folder.items(), ids);
++            }
++        }
++    }
++
+     private static String word(String state) {
+         if (state.isEmpty()) {
+             return "";
+diff --git a/src/main/java/io/github/itech_mm/apiro/session/OpenProject.java b/src/main/java/io/github/itech_mm/apiro/session/OpenProject.java
+index 3f82e62..48be76e 100644
+--- a/src/main/java/io/github/itech_mm/apiro/session/OpenProject.java
++++ b/src/main/java/io/github/itech_mm/apiro/session/OpenProject.java
+@@ -100,6 +100,16 @@ public final class OpenProject {
+     public void save() throws IOException {
+         state = ProjectStore.save(project.get(), state, file);
+         saves.set(saves.get() + 1);
++        pruneRuns();
++    }
++
++    private void pruneRuns() {
++        Project saved = project.get();
++        try {
++            RunHistoryStore.prune(file, saved.id(), RunRecords.scenarioIds(saved));
++        } catch (IOException error) {
++            return;
++        }
+     }
+ 
+     public void selectEnvironment(String id) {
+diff --git a/src/main/java/io/github/itech_mm/apiro/ui/scenario/HistoryPane.java b/src/main/java/io/github/itech_mm/apiro/ui/scenario/HistoryPane.java
+new file mode 100644
+index 0000000..2a28555
+--- /dev/null
++++ b/src/main/java/io/github/itech_mm/apiro/ui/scenario/HistoryPane.java
+@@ -0,0 +1,118 @@
++package io.github.itech_mm.apiro.ui.scenario;
++
++import io.github.itech_framework.code_editor.CodeEditor;
++import io.github.itech_mm.apiro.model.RunRecord;
++import io.github.itech_mm.apiro.service.scenario.RunRecords;
++import io.github.itech_mm.apiro.ui.EditorStyle;
++import io.github.itech_mm.apiro.ui.editor.ScenarioLogLanguage;
++import java.time.ZoneId;
++import java.util.List;
++import java.util.Locale;
++import java.util.function.Consumer;
++import javafx.collections.FXCollections;
++import javafx.collections.ObservableList;
++import javafx.geometry.Insets;
++import javafx.geometry.Pos;
++import javafx.scene.control.Label;
++import javafx.scene.control.ListCell;
++import javafx.scene.control.ListView;
++import javafx.scene.control.SplitPane;
++import javafx.scene.control.Tooltip;
++import javafx.scene.layout.HBox;
++import javafx.scene.layout.Priority;
++import javafx.scene.layout.VBox;
++
++final class HistoryPane extends SplitPane {
++
++    private final ObservableList<RunRecord> items = FXCollections.observableArrayList();
++    private final ListView<RunRecord> list = new ListView<>(items);
++    private final Label heading = new Label();
++    private final CodeEditor viewer = new CodeEditor();
++
++    HistoryPane(Consumer<RunRecord> onOpen) {
++        getStyleClass().add("main-split");
++        list.getStyleClass().add("scenario-list");
++        list.setPlaceholder(new Label("No saved runs yet"));
++        list.setCellFactory(view -> new HistoryCell());
++        list.setTooltip(new Tooltip("Double-click a run to show its results on the diagram"));
++        list.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> showRun(newValue));
++        list.setOnMouseClicked(event -> {
++            RunRecord picked = list.getSelectionModel().getSelectedItem();
++            if (event.getClickCount() == 2 && picked != null) {
++                onOpen.accept(picked);
++            }
++        });
++
++        ScenarioLogLanguage.ensureRegistered();
++        EditorStyle.apply(viewer);
++        viewer.setLanguage(ScenarioLogLanguage.ID);
++        viewer.setEditable(false);
++        viewer.setShowLineNumbers(false);
++        viewer.getStyleClass().add("scenario-log");
++        heading.getStyleClass().add("muted");
++        heading.setPadding(new Insets(8, 10, 6, 10));
++        VBox right = new VBox(heading, viewer);
++        right.setMinWidth(0);
++        VBox.setVgrow(viewer, Priority.ALWAYS);
++        list.setMinWidth(0);
++        getItems().addAll(list, right);
++        setDividerPositions(0.32);
++    }
++
++    void show(List<RunRecord> runs) {
++        items.setAll(runs);
++        if (runs.isEmpty()) {
++            showRun(null);
++        } else {
++            list.getSelectionModel().select(0);
++        }
++    }
++
++    private void showRun(RunRecord run) {
++        if (run == null) {
++            heading.setText("");
++            viewer.setText("");
++            return;
++        }
++        String environment = run.environmentName().isBlank() ? "" : "  ·  " + run.environmentName();
++        heading.setText(RunRecords.label(run, ZoneId.systemDefault()) + environment);
++        viewer.setText(run.log());
++        viewer.moveCaret(0);
++    }
++
++    private static String stateClass(String state) {
++        String lower = state.toLowerCase(Locale.ROOT);
++        return lower.equals("passed") || lower.equals("cancelled") ? lower : "failed";
++    }
++
++    private static final class HistoryCell extends ListCell<RunRecord> {
++
++        private final Label dot = new Label();
++        private final Label when = new Label();
++        private final Label brief = new Label();
++        private final HBox row;
++
++        HistoryCell() {
++            dot.getStyleClass().add("step-dot");
++            brief.getStyleClass().add("muted");
++            VBox text = new VBox(1, when, brief);
++            row = new HBox(8, dot, text);
++            row.setAlignment(Pos.CENTER_LEFT);
++            row.setPadding(new Insets(3, 6, 3, 6));
++        }
++
++        @Override
++        protected void updateItem(RunRecord run, boolean empty) {
++            super.updateItem(run, empty);
++            if (empty || run == null) {
++                setGraphic(null);
++                return;
++            }
++            dot.getStyleClass().removeIf(style -> style.startsWith("state-"));
++            dot.getStyleClass().add("state-" + stateClass(run.state()));
++            when.setText(RunRecords.when(run, ZoneId.systemDefault()));
++            brief.setText(RunRecords.brief(run));
++            setGraphic(row);
++        }
++    }
++}
+diff --git a/src/main/java/io/github/itech_mm/apiro/ui/scenario/ScenarioPane.java b/src/main/java/io/github/itech_mm/apiro/ui/scenario/ScenarioPane.java
+index 20196ee..df76729 100644
+--- a/src/main/java/io/github/itech_mm/apiro/ui/scenario/ScenarioPane.java
++++ b/src/main/java/io/github/itech_mm/apiro/ui/scenario/ScenarioPane.java
+@@ -44,7 +44,6 @@ import javafx.scene.control.Label;
+ import javafx.scene.control.ListView;
+ import javafx.scene.control.MenuButton;
+ import javafx.scene.control.MenuItem;
+-import javafx.scene.control.SeparatorMenuItem;
+ import javafx.scene.control.SplitPane;
+ import javafx.scene.control.ToggleButton;
+ import javafx.scene.control.ToggleGroup;
+@@ -102,8 +101,12 @@ public final class ScenarioPane extends BorderPane {
+     private final Label summary = new Label();
+     private final ComboBox<String> policy = new ComboBox<>(FXCollections.observableArrayList(STOP, CONTINUE));
+     private final MenuButton addStep = new MenuButton("Add step");
+-    private final MenuButton historyButton = new MenuButton("History");
+     private final Map<String, List<RunRecord>> saved = new HashMap<>();
++    private final HistoryPane historyPane = new HistoryPane(this::openRun);
++    private final Button clearHistoryButton = new Button("Clear history");
++    private final ToggleButton liveToggle = new ToggleButton("Log");
++    private final ToggleButton historyToggle = new ToggleButton("History");
++    private VBox logPanel;
+     private final Button run = new Button("Run");
+     private final Button stop = new Button("Stop");
+     private final ObservableList<Step> items = FXCollections.observableArrayList();
+@@ -174,8 +177,6 @@ public final class ScenarioPane extends BorderPane {
+         policy.setTooltip(new Tooltip("What happens after a step fails"));
+         policy.getStyleClass().add("bar-combo");
+         addStep.getStyleClass().add("scenario-add");
+-        historyButton.getStyleClass().add("scenario-add");
+-        historyButton.setTooltip(new Tooltip("Open a saved run of this scenario"));
+         Label policyLabel = new Label("On failure");
+         policyLabel.getStyleClass().add("muted");
+         run.getStyleClass().add("scenario-run");
+@@ -186,8 +187,7 @@ public final class ScenarioPane extends BorderPane {
+         redoButton.setTooltip(new Tooltip("Redo (Ctrl+Y)"));
+         undoButton.setOnAction(event -> undo());
+         redoButton.setOnAction(event -> redo());
+-        HBox bar = new HBox(8, title, summary, spacer, policyLabel, policy, undoButton, redoButton, addStep,
+-                historyButton, run, stop);
++        HBox bar = new HBox(8, title, summary, spacer, policyLabel, policy, undoButton, redoButton, addStep, run, stop);
+         bar.setAlignment(Pos.CENTER_LEFT);
+         bar.setPadding(new Insets(10, 12, 10, 12));
+         bar.getStyleClass().add("scenario-bar");
+@@ -267,7 +267,7 @@ public final class ScenarioPane extends BorderPane {
+             }
+         });
+         diagramToggle.setSelected(true);
+-        vertical = new SplitPane(horizontal, log);
++        vertical = new SplitPane(horizontal, buildLogPanel());
+         vertical.setOrientation(Orientation.VERTICAL);
+         vertical.getStyleClass().add("editor-split");
+         horizontal.widthProperty().addListener((obs, oldValue, newValue) -> {
+@@ -287,7 +287,6 @@ public final class ScenarioPane extends BorderPane {
+             }
+         });
+         addStep.setOnShowing(event -> fillAddMenu());
+-        historyButton.setOnShowing(event -> fillHistoryMenu());
+         run.setOnAction(event -> startRun());
+         stop.setOnAction(event -> cancelRun());
+         list.setOnMouseClicked(event -> {
+@@ -313,10 +312,10 @@ public final class ScenarioPane extends BorderPane {
+         }
+         logShown = shown;
+         if (shown) {
+-            vertical.getItems().add(log);
++            vertical.getItems().add(logPanel);
+             applySplit();
+         } else {
+-            vertical.getItems().remove(log);
++            vertical.getItems().remove(logPanel);
+         }
+     }
+ 
+@@ -374,6 +373,9 @@ public final class ScenarioPane extends BorderPane {
+         diagram.show(scenario.steps(), selectedId(), !same);
+         refreshRunState();
+         refreshLog();
++        if (!same) {
++            refreshHistory();
++        }
+     }
+ 
+     private void onStepEdited(Step step) {
+@@ -607,28 +609,46 @@ public final class ScenarioPane extends BorderPane {
+         return null;
+     }
+ 
+-    private void fillHistoryMenu() {
+-        historyButton.getItems().clear();
+-        if (current == null) {
+-            return;
+-        }
+-        List<RunRecord> recorded = savedRuns(current);
+-        if (recorded.isEmpty()) {
+-            MenuItem none = new MenuItem("No saved runs yet");
+-            none.setDisable(true);
+-            historyButton.getItems().add(none);
+-            return;
+-        }
+-        ZoneId zone = ZoneId.systemDefault();
+-        for (RunRecord run : recorded) {
+-            MenuItem entry = new MenuItem(RunRecords.label(run, zone));
+-            entry.setOnAction(event -> openRun(run));
+-            historyButton.getItems().add(entry);
+-        }
+-        historyButton.getItems().add(new SeparatorMenuItem());
+-        MenuItem clear = new MenuItem("Clear history");
+-        clear.setOnAction(event -> clearHistory());
+-        historyButton.getItems().add(clear);
++    private VBox buildLogPanel() {
++        ToggleGroup group = new ToggleGroup();
++        liveToggle.setToggleGroup(group);
++        historyToggle.setToggleGroup(group);
++        HBox switcher = new HBox(liveToggle, historyToggle);
++        switcher.getStyleClass().add("view-switch");
++        switcher.setMaxWidth(Region.USE_PREF_SIZE);
++        clearHistoryButton.getStyleClass().add("link-button");
++        clearHistoryButton.setOnAction(event -> clearHistory());
++        Region gap = new Region();
++        HBox.setHgrow(gap, Priority.ALWAYS);
++        HBox header = new HBox(8, switcher, gap, clearHistoryButton);
++        header.getStyleClass().add("view-header");
++        header.setAlignment(Pos.CENTER_LEFT);
++        StackPane stack = new StackPane(log, historyPane);
++        VBox.setVgrow(stack, Priority.ALWAYS);
++        logPanel = new VBox(header, stack);
++        logPanel.setMinHeight(110);
++        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
++            if (newValue == null) {
++                oldValue.setSelected(true);
++                return;
++            }
++            boolean history = newValue == historyToggle;
++            log.setVisible(!history);
++            log.setManaged(!history);
++            historyPane.setVisible(history);
++            historyPane.setManaged(history);
++            clearHistoryButton.setVisible(history);
++            clearHistoryButton.setManaged(history);
++            if (history) {
++                refreshHistory();
++            }
++        });
++        liveToggle.setSelected(true);
++        return logPanel;
++    }
++
++    private void refreshHistory() {
++        historyPane.show(current == null ? List.of() : savedRuns(current));
+     }
+ 
+     private void openRun(RunRecord run) {
+@@ -647,6 +667,7 @@ public final class ScenarioPane extends BorderPane {
+         }
+         host.runStore().clear(current.id());
+         saved.remove(current.id());
++        refreshHistory();
+     }
+ 
+     private RunView viewOf(ScenarioItem scenario) {
+@@ -737,6 +758,7 @@ public final class ScenarioPane extends BorderPane {
+             return;
+         }
+         showLog(true);
++        liveToggle.setSelected(true);
+         view.results.clear();
+         view.states.clear();
+         view.recorded.clear();
+@@ -812,6 +834,9 @@ public final class ScenarioPane extends BorderPane {
+                 Platform.runLater(() -> {
+                     if (persisted != null) {
+                         saved.put(scenario.id(), persisted);
++                        if (current != null && current.id().equals(scenario.id())) {
++                            refreshHistory();
++                        }
+                     }
+                     view.running = false;
+                     view.summary = RunLog.summary(result);
+@@ -840,7 +865,7 @@ public final class ScenarioPane extends BorderPane {
+         RunView view = viewOf(current);
+         boolean running = view != null && view.running;
+         run.setDisable(current == null || running || items.isEmpty());
+-        historyButton.setDisable(current == null || running);
++        clearHistoryButton.setDisable(current == null || running);
+         stop.setDisable(!running);
+         diagram.syncRun(!run.isDisable(), !stop.isDisable());
+         ScenarioHistory history = current == null ? null : history();
+diff --git a/src/test/java/io/github/itech_mm/apiro/repository/RunHistoryStoreTest.java b/src/test/java/io/github/itech_mm/apiro/repository/RunHistoryStoreTest.java
+index 518f1fc..8399fc4 100644
+--- a/src/test/java/io/github/itech_mm/apiro/repository/RunHistoryStoreTest.java
++++ b/src/test/java/io/github/itech_mm/apiro/repository/RunHistoryStoreTest.java
+@@ -10,6 +10,7 @@ import java.io.IOException;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.util.List;
++import java.util.Set;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.io.TempDir;
+ 
+@@ -75,6 +76,35 @@ class RunHistoryStoreTest {
+         assertFalse(RunHistoryStore.load(project, "p1", "sc2").isEmpty());
+     }
+ 
++    @Test
++    void pruneRemovesHistoryOfScenariosThatNoLongerExist(@TempDir Path dir) throws IOException {
++        Path project = dir.resolve("shop.apiro.json");
++        RunHistoryStore.save(project, "p1", "sc1", List.of(run(1, "PASSED")));
++        RunHistoryStore.save(project, "p1", "sc2", List.of(run(2, "PASSED")));
++        RunHistoryStore.save(project, "p1", "sc3", List.of(run(3, "PASSED")));
++
++        RunHistoryStore.prune(project, "p1", Set.of("sc2"));
++
++        assertTrue(RunHistoryStore.load(project, "p1", "sc1").isEmpty());
++        assertFalse(RunHistoryStore.load(project, "p1", "sc2").isEmpty());
++        assertTrue(RunHistoryStore.load(project, "p1", "sc3").isEmpty());
++    }
++
++    @Test
++    void pruneRemovesTheFolderWhenNothingIsKept(@TempDir Path dir) throws IOException {
++        Path project = dir.resolve("shop.apiro.json");
++        RunHistoryStore.save(project, "p1", "sc1", List.of(run(1, "PASSED")));
++
++        RunHistoryStore.prune(project, "p1", Set.of());
++
++        assertFalse(Files.exists(RunHistoryStore.directoryFor(project, "p1")));
++    }
++
++    @Test
++    void pruneIsQuietWhenThereIsNothing(@TempDir Path dir) throws IOException {
++        RunHistoryStore.prune(dir.resolve("shop.apiro.json"), "p1", Set.of("sc1"));
++    }
++
+     @Test
+     void deleteAllRemovesTheFolder(@TempDir Path dir) throws IOException {
+         Path project = dir.resolve("shop.apiro.json");
+diff --git a/src/test/java/io/github/itech_mm/apiro/service/scenario/RunRecordsTest.java b/src/test/java/io/github/itech_mm/apiro/service/scenario/RunRecordsTest.java
+index 6836e4c..00e3209 100644
+--- a/src/test/java/io/github/itech_mm/apiro/service/scenario/RunRecordsTest.java
++++ b/src/test/java/io/github/itech_mm/apiro/service/scenario/RunRecordsTest.java
+@@ -3,12 +3,15 @@ package io.github.itech_mm.apiro.service.scenario;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
+ 
++import io.github.itech_mm.apiro.model.Folder;
++import io.github.itech_mm.apiro.model.Project;
+ import io.github.itech_mm.apiro.model.RunRecord;
+ import io.github.itech_mm.apiro.model.RunStep;
+ import io.github.itech_mm.apiro.model.ScenarioItem;
+ import io.github.itech_mm.apiro.model.Step;
+ import java.time.ZoneOffset;
+ import java.util.List;
++import java.util.Set;
+ import org.junit.jupiter.api.Test;
+ 
+ class RunRecordsTest {
+@@ -78,6 +81,23 @@ class RunRecordsTest {
+         assertEquals("1970-01-01 00:00:00  Failed  1/3  90 ms", RunRecords.label(record, ZoneOffset.UTC));
+     }
+ 
++    @Test
++    void briefLeavesOutTheTime() {
++        RunRecord record = run(0, "FAILED", 90, step("PASSED"), step("FAILED"));
++        assertEquals("Failed  1/2  90 ms", RunRecords.brief(record));
++    }
++
++    @Test
++    void scenarioIdsIncludeScenariosInsideFolders() {
++        ScenarioItem top = ScenarioItem.of("Top");
++        ScenarioItem nested = ScenarioItem.of("Nested");
++        Folder folder = Folder.of("Group", List.of(nested));
++        Project project = new Project(null, 0, null, "Shop", null, null, null, null, null, null,
++                List.of(top, folder));
++
++        assertEquals(Set.of(top.id(), nested.id()), RunRecords.scenarioIds(project));
++    }
++
+     @Test
+     void unknownStepStateFallsBackToPending() {
+         assertEquals(StepResult.State.PENDING, RunRecords.stepState(step("")));

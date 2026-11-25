@@ -2,12 +2,17 @@ package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_framework.api_client.utils.CancelToken;
 import io.github.itech_framework.code_editor.CodeEditor;
+import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.RunRecord;
+import io.github.itech_mm.apiro.model.RunStep;
 import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.RunLog;
+import io.github.itech_mm.apiro.service.scenario.RunRecords;
+import io.github.itech_mm.apiro.service.scenario.RunStore;
 import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
 import io.github.itech_mm.apiro.service.scenario.ScenarioHistory;
 import io.github.itech_mm.apiro.service.scenario.ScenarioListener;
@@ -20,6 +25,7 @@ import io.github.itech_mm.apiro.service.scenario.StepSender;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.editor.ScenarioLogLanguage;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +69,8 @@ public final class ScenarioPane extends BorderPane {
         StepSender sender();
 
         void save(ScenarioItem scenario);
+
+        RunStore runStore();
     }
 
     private static final double DIAGRAM_SPLIT = 0.70;
@@ -75,6 +83,7 @@ public final class ScenarioPane extends BorderPane {
 
         final Map<String, StepResult> results = new HashMap<>();
         final Map<String, StepResult.State> states = new HashMap<>();
+        final Map<String, RunStep> recorded = new HashMap<>();
         final StringBuilder log = new StringBuilder();
         CancelToken token;
         boolean running;
@@ -92,6 +101,12 @@ public final class ScenarioPane extends BorderPane {
     private final Label summary = new Label();
     private final ComboBox<String> policy = new ComboBox<>(FXCollections.observableArrayList(STOP, CONTINUE));
     private final MenuButton addStep = new MenuButton("Add step");
+    private final Map<String, List<RunRecord>> saved = new HashMap<>();
+    private final HistoryPane historyPane = new HistoryPane(this::openRun);
+    private final Button clearHistoryButton = new Button("Clear history");
+    private final ToggleButton liveToggle = new ToggleButton("Log");
+    private final ToggleButton historyToggle = new ToggleButton("History");
+    private VBox logPanel;
     private final Button run = new Button("Run");
     private final Button stop = new Button("Stop");
     private final ObservableList<Step> items = FXCollections.observableArrayList();
@@ -252,7 +267,7 @@ public final class ScenarioPane extends BorderPane {
             }
         });
         diagramToggle.setSelected(true);
-        vertical = new SplitPane(horizontal, log);
+        vertical = new SplitPane(horizontal, buildLogPanel());
         vertical.setOrientation(Orientation.VERTICAL);
         vertical.getStyleClass().add("editor-split");
         horizontal.widthProperty().addListener((obs, oldValue, newValue) -> {
@@ -297,10 +312,10 @@ public final class ScenarioPane extends BorderPane {
         }
         logShown = shown;
         if (shown) {
-            vertical.getItems().add(log);
+            vertical.getItems().add(logPanel);
             applySplit();
         } else {
-            vertical.getItems().remove(log);
+            vertical.getItems().remove(logPanel);
         }
     }
 
@@ -342,6 +357,7 @@ public final class ScenarioPane extends BorderPane {
         }
         String keep = same ? selectedId() : null;
         current = scenario;
+        restoreLastRun();
         if (!same) {
             applySplit();
         }
@@ -357,6 +373,9 @@ public final class ScenarioPane extends BorderPane {
         diagram.show(scenario.steps(), selectedId(), !same);
         refreshRunState();
         refreshLog();
+        if (!same) {
+            refreshHistory();
+        }
     }
 
     private void onStepEdited(Step step) {
@@ -476,7 +495,7 @@ public final class ScenarioPane extends BorderPane {
             inspector.show(null, "", null);
             return;
         }
-        inspector.show(selected, requestLabel(selected), resultOf(selected.id()));
+        inspector.show(selected, requestLabel(selected), inspectedResult(selected.id()));
     }
 
     private String requestLabel(Step step) {
@@ -512,6 +531,145 @@ public final class ScenarioPane extends BorderPane {
         }
     }
 
+    private static List<RunRecord> persist(RunStore store, ScenarioItem scenario, String environmentName,
+                                           long startedAt, ScenarioResult result, Map<String, String> labels) {
+        try {
+            return store.add(scenario.id(), RunRecords.of(scenario, environmentName, startedAt, result,
+                    step -> labels.getOrDefault(step.id(), RunLog.label(step))));
+        } catch (RuntimeException error) {
+            return null;
+        }
+    }
+
+    private Map<String, String> stepLabels(ScenarioItem scenario) {
+        Map<String, String> labels = new HashMap<>();
+        for (Step step : scenario.steps()) {
+            labels.put(step.id(), step.name().isBlank()
+                    ? request(step.requestId()).map(RequestItem::name).orElse(RunLog.label(step))
+                    : step.name());
+        }
+        return labels;
+    }
+
+    private List<RunRecord> savedRuns(ScenarioItem scenario) {
+        List<RunRecord> known = saved.get(scenario.id());
+        if (known != null) {
+            return known;
+        }
+        RunStore store = host.runStore();
+        List<RunRecord> loaded = store.load(scenario.id());
+        if (store != RunStore.NONE) {
+            saved.put(scenario.id(), loaded);
+        }
+        return loaded;
+    }
+
+    private void restoreLastRun() {
+        if (current == null || runs.containsKey(current.id())) {
+            return;
+        }
+        List<RunRecord> recorded = savedRuns(current);
+        if (!recorded.isEmpty()) {
+            runs.put(current.id(), viewFrom(recorded.get(0)));
+        }
+    }
+
+    private RunView viewFrom(RunRecord run) {
+        RunView view = new RunView();
+        view.log.append("Saved run from ").append(RunRecords.when(run, ZoneId.systemDefault())).append('\n')
+                .append(run.log());
+        for (RunStep step : run.steps()) {
+            view.states.put(step.stepId(), RunRecords.stepState(step));
+            view.recorded.put(step.stepId(), step);
+        }
+        view.summary = RunRecords.label(run, ZoneId.systemDefault());
+        return view;
+    }
+
+    private RunStep recordedOf(String stepId) {
+        RunView view = viewOf(current);
+        return view == null ? null : view.recorded.get(stepId);
+    }
+
+    private StepResult inspectedResult(String stepId) {
+        StepResult result = resultOf(stepId);
+        if (result != null) {
+            return result;
+        }
+        RunStep recorded = recordedOf(stepId);
+        if (recorded == null || current == null) {
+            return null;
+        }
+        for (Step step : current.steps()) {
+            if (step.id().equals(stepId)) {
+                return new StepResult(step, RunRecords.stepState(recorded), recorded.message(), recorded.millis(),
+                        null, null, null);
+            }
+        }
+        return null;
+    }
+
+    private VBox buildLogPanel() {
+        ToggleGroup group = new ToggleGroup();
+        liveToggle.setToggleGroup(group);
+        historyToggle.setToggleGroup(group);
+        HBox switcher = new HBox(liveToggle, historyToggle);
+        switcher.getStyleClass().add("view-switch");
+        switcher.setMaxWidth(Region.USE_PREF_SIZE);
+        clearHistoryButton.getStyleClass().add("link-button");
+        clearHistoryButton.setOnAction(event -> clearHistory());
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
+        HBox header = new HBox(8, switcher, gap, clearHistoryButton);
+        header.getStyleClass().add("view-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+        StackPane stack = new StackPane(log, historyPane);
+        VBox.setVgrow(stack, Priority.ALWAYS);
+        logPanel = new VBox(header, stack);
+        logPanel.setMinHeight(110);
+        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null) {
+                oldValue.setSelected(true);
+                return;
+            }
+            boolean history = newValue == historyToggle;
+            log.setVisible(!history);
+            log.setManaged(!history);
+            historyPane.setVisible(history);
+            historyPane.setManaged(history);
+            clearHistoryButton.setVisible(history);
+            clearHistoryButton.setManaged(history);
+            if (history) {
+                refreshHistory();
+            }
+        });
+        liveToggle.setSelected(true);
+        return logPanel;
+    }
+
+    private void refreshHistory() {
+        historyPane.show(current == null ? List.of() : savedRuns(current));
+    }
+
+    private void openRun(RunRecord run) {
+        RunView existing = viewOf(current);
+        if (current == null || existing != null && existing.running) {
+            return;
+        }
+        runs.put(current.id(), viewFrom(run));
+        update(current);
+    }
+
+    private void clearHistory() {
+        RunView existing = viewOf(current);
+        if (current == null || existing != null && existing.running) {
+            return;
+        }
+        host.runStore().clear(current.id());
+        saved.remove(current.id());
+        refreshHistory();
+    }
+
     private RunView viewOf(ScenarioItem scenario) {
         return scenario == null ? null : runs.get(scenario.id());
     }
@@ -537,19 +695,31 @@ public final class ScenarioPane extends BorderPane {
             @Override
             public int status(String stepId) {
                 StepResult result = resultOf(stepId);
-                return result == null ? 0 : result.status();
+                if (result != null) {
+                    return result.status();
+                }
+                RunStep recorded = recordedOf(stepId);
+                return recorded == null ? 0 : recorded.status();
             }
 
             @Override
             public String detail(String stepId) {
                 StepResult result = resultOf(stepId);
-                return result == null ? "" : StepSummary.describe(result);
+                if (result != null) {
+                    return StepSummary.describe(result);
+                }
+                RunStep recorded = recordedOf(stepId);
+                return recorded == null ? "" : recorded.detail();
             }
 
             @Override
             public long millis(String stepId) {
                 StepResult result = resultOf(stepId);
-                return result == null ? 0 : result.millis();
+                if (result != null) {
+                    return result.millis();
+                }
+                RunStep recorded = recordedOf(stepId);
+                return recorded == null ? 0 : recorded.millis();
             }
 
             @Override
@@ -588,8 +758,10 @@ public final class ScenarioPane extends BorderPane {
             return;
         }
         showLog(true);
+        liveToggle.setSelected(true);
         view.results.clear();
         view.states.clear();
+        view.recorded.clear();
         view.log.setLength(0);
         view.summary = "";
         view.running = true;
@@ -599,13 +771,19 @@ public final class ScenarioPane extends BorderPane {
         Project project = host.project();
         String environment = host.environmentId();
         StepSender sender = host.sender();
+        RunStore store = host.runStore();
+        long startedAt = System.currentTimeMillis();
+        String environmentName = project == null ? ""
+                : project.findEnvironment(environment).map(Environment::name).orElse("");
+        Map<String, String> labels = stepLabels(scenario);
         refreshRunState();
         refreshLog();
         list.refresh();
         diagram.refresh();
         pool.execute(() -> {
             try {
-                new ScenarioRunner(sender).run(project, environment, scenario, token, listener(scenario, view));
+                new ScenarioRunner(sender).run(project, environment, scenario, token,
+                        listener(scenario, view, store, startedAt, environmentName, labels));
             } catch (RuntimeException error) {
                 Platform.runLater(() -> {
                     view.running = false;
@@ -617,7 +795,8 @@ public final class ScenarioPane extends BorderPane {
         });
     }
 
-    private ScenarioListener listener(ScenarioItem scenario, RunView view) {
+    private ScenarioListener listener(ScenarioItem scenario, RunView view, RunStore store, long startedAt,
+                                      String environmentName, Map<String, String> labels) {
         Map<String, Step> byId = new HashMap<>();
         scenario.steps().forEach(step -> byId.put(step.id(), step));
         return new ScenarioListener() {
@@ -651,7 +830,14 @@ public final class ScenarioPane extends BorderPane {
 
             @Override
             public void onFinished(ScenarioResult result) {
+                List<RunRecord> persisted = persist(store, scenario, environmentName, startedAt, result, labels);
                 Platform.runLater(() -> {
+                    if (persisted != null) {
+                        saved.put(scenario.id(), persisted);
+                        if (current != null && current.id().equals(scenario.id())) {
+                            refreshHistory();
+                        }
+                    }
                     view.running = false;
                     view.summary = RunLog.summary(result);
                     view.log.append(view.summary).append('\n');
@@ -671,7 +857,7 @@ public final class ScenarioPane extends BorderPane {
         refreshLog();
         Step selected = list.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            inspector.showResult(resultOf(selected.id()));
+            inspector.showResult(inspectedResult(selected.id()));
         }
     }
 
@@ -679,6 +865,7 @@ public final class ScenarioPane extends BorderPane {
         RunView view = viewOf(current);
         boolean running = view != null && view.running;
         run.setDisable(current == null || running || items.isEmpty());
+        clearHistoryButton.setDisable(current == null || running);
         stop.setDisable(!running);
         diagram.syncRun(!run.isDisable(), !stop.isDisable());
         ScenarioHistory history = current == null ? null : history();
