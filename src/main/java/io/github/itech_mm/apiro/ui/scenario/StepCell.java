@@ -32,6 +32,8 @@ final class StepCell extends ListCell<Step> {
 
         int status(String stepId);
 
+        String detail(String stepId);
+
         void move(String stepId, int index);
 
         void remove(String stepId);

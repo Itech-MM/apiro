@@ -3,6 +3,7 @@ package io.github.itech_mm.apiro.ui.scenario;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
+import io.github.itech_mm.apiro.service.scenario.StepSummary;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +25,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
@@ -53,6 +56,14 @@ final class DiagramView extends StackPane {
         void undo();
 
         void redo();
+
+        void run();
+
+        void stop();
+
+        void log(boolean shown);
+
+        void focusInspector();
     }
 
     private static final double NODE_WIDTH = 230;
@@ -80,6 +91,9 @@ final class DiagramView extends StackPane {
     private final List<Link> links = new ArrayList<>();
     private final Label empty = new Label("Add steps to see them here");
     private final Label zoomLabel = new Label("100%");
+    private final Button runButton = tool("▶ Run");
+    private final Button stopButton = tool("■ Stop");
+    private final ToggleButton logButton = new ToggleButton("Logs");
     private List<Step> steps = List.of();
     private String selectedId;
     private double zoom = 1;
@@ -130,7 +144,23 @@ final class DiagramView extends StackPane {
         StackPane.setAlignment(tools, Pos.TOP_RIGHT);
         StackPane.setMargin(tools, new Insets(10));
 
-        getChildren().addAll(viewport, empty, tools);
+        runButton.getStyleClass().add("run");
+        stopButton.getStyleClass().add("stop");
+        logButton.getStyleClass().add("diagram-tool");
+        runButton.setTooltip(new Tooltip("Run the scenario"));
+        stopButton.setTooltip(new Tooltip("Stop the run"));
+        logButton.setTooltip(new Tooltip("Show or hide the run log"));
+        runButton.setOnAction(event -> actions.run());
+        stopButton.setOnAction(event -> actions.stop());
+        logButton.setOnAction(event -> actions.log(logButton.isSelected()));
+        HBox runTools = new HBox(4, runButton, stopButton, logButton);
+        runTools.setAlignment(Pos.CENTER);
+        runTools.getStyleClass().add("diagram-tools");
+        runTools.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        StackPane.setAlignment(runTools, Pos.TOP_LEFT);
+        StackPane.setMargin(runTools, new Insets(10));
+
+        getChildren().addAll(viewport, empty, tools, runTools);
 
         setOnKeyPressed(event -> {
             if (event.isShortcutDown() && event.getCode() == KeyCode.Z && !event.isShiftDown()) {
@@ -266,6 +296,15 @@ final class DiagramView extends StackPane {
         marker.setX(anchor.x() - 2);
         marker.setY(anchor.y() - marker.getHeight() / 2);
         marker.setVisible(true);
+    }
+
+    void syncRun(boolean runEnabled, boolean stopEnabled) {
+        runButton.setDisable(!runEnabled);
+        stopButton.setDisable(!stopEnabled);
+    }
+
+    void syncLog(boolean shown) {
+        logButton.setSelected(shown);
     }
 
     void select(String stepId) {
@@ -463,6 +502,8 @@ final class DiagramView extends StackPane {
         private final Circle portIn = new Circle(5);
         private final Circle portOut = new Circle(5);
         private final FadeTransition pulse = new FadeTransition(Duration.millis(700), pill);
+        private final Tooltip tip = new Tooltip();
+        private boolean tipInstalled;
 
         StepNode(Step step, int index) {
             this.step = step;
@@ -538,6 +579,27 @@ final class DiagramView extends StackPane {
                 event.consume();
             });
             setOnMouseDragged(event -> event.consume());
+            setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                    actions.focusInspector();
+                }
+                event.consume();
+            });
+            tip.setShowDelay(Duration.millis(400));
+            tip.setShowDuration(Duration.INDEFINITE);
+            tip.setWrapText(true);
+            tip.setMaxWidth(420);
+        }
+
+        private void updateTip(String text) {
+            tip.setText(text);
+            if (text.isEmpty() && tipInstalled) {
+                Tooltip.uninstall(this, tip);
+                tipInstalled = false;
+            } else if (!text.isEmpty() && !tipInstalled) {
+                Tooltip.install(this, tip);
+                tipInstalled = true;
+            }
         }
 
         void placePorts(int index, int count) {
@@ -617,7 +679,10 @@ final class DiagramView extends StackPane {
                 pill.setOpacity(1);
             }
             long millis = support.millis(step.id());
-            time.setText(millis <= 0 ? "" : millis < 1000 ? millis + " ms" : String.format("%.1f s", millis / 1000.0));
+            time.setText(millis <= 0 ? "" : StepSummary.duration(millis));
+            String address = request.isPresent() ? request.get().method().name() + " " + url.getText() : "";
+            String detail = support.detail(step.id());
+            updateTip(detail.isEmpty() ? address.trim() : (address + "\n\n" + detail).trim());
             syncSelected();
         }
     }

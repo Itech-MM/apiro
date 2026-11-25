@@ -109,6 +109,14 @@ final class StepInspector extends ScrollPane {
         return step;
     }
 
+    void focusName() {
+        if (step != null) {
+            setVvalue(0);
+            name.requestFocus();
+            name.selectAll();
+        }
+    }
+
     void show(Step next, String requestLabel, StepResult result) {
         loading = true;
         step = next;

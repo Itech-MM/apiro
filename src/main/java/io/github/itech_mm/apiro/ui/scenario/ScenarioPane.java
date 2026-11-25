@@ -15,6 +15,7 @@ import io.github.itech_mm.apiro.service.scenario.ScenarioResult;
 import io.github.itech_mm.apiro.service.scenario.ScenarioRunner;
 import io.github.itech_mm.apiro.service.scenario.ScenarioScope;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
+import io.github.itech_mm.apiro.service.scenario.StepSummary;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 import io.github.itech_mm.apiro.ui.EditorStyle;
@@ -103,6 +104,7 @@ public final class ScenarioPane extends BorderPane {
     private boolean syncing;
     private boolean diagramShown = true;
     private boolean splitPending = true;
+    private boolean logShown = true;
     private SplitPane horizontal;
     private SplitPane vertical;
     private final Map<String, ScenarioHistory> histories = new HashMap<>();
@@ -132,6 +134,26 @@ public final class ScenarioPane extends BorderPane {
             @Override
             public void redo() {
                 ScenarioPane.this.redo();
+            }
+
+            @Override
+            public void run() {
+                startRun();
+            }
+
+            @Override
+            public void stop() {
+                cancelRun();
+            }
+
+            @Override
+            public void log(boolean shown) {
+                showLog(shown);
+            }
+
+            @Override
+            public void focusInspector() {
+                Platform.runLater(inspector::focusName);
             }
         });
 
@@ -251,19 +273,43 @@ public final class ScenarioPane extends BorderPane {
         });
         addStep.setOnShowing(event -> fillAddMenu());
         run.setOnAction(event -> startRun());
-        stop.setOnAction(event -> {
-            RunView view = viewOf(current);
-            if (view != null && view.token != null) {
-                view.token.cancel();
+        stop.setOnAction(event -> cancelRun());
+        list.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && list.getSelectionModel().getSelectedItem() != null) {
+                Platform.runLater(inspector::focusName);
             }
         });
         refreshRunState();
+        diagram.syncLog(logShown);
+    }
+
+    private void cancelRun() {
+        RunView view = viewOf(current);
+        if (view != null && view.token != null) {
+            view.token.cancel();
+        }
+    }
+
+    private void showLog(boolean shown) {
+        diagram.syncLog(shown);
+        if (logShown == shown) {
+            return;
+        }
+        logShown = shown;
+        if (shown) {
+            vertical.getItems().add(log);
+            applySplit();
+        } else {
+            vertical.getItems().remove(log);
+        }
     }
 
     private void applySplit() {
         Platform.runLater(() -> {
             horizontal.setDividerPositions(diagramShown ? DIAGRAM_SPLIT : LIST_SPLIT);
-            vertical.setDividerPositions(LOG_SPLIT);
+            if (logShown) {
+                vertical.setDividerPositions(LOG_SPLIT);
+            }
         });
     }
 
@@ -495,6 +541,12 @@ public final class ScenarioPane extends BorderPane {
             }
 
             @Override
+            public String detail(String stepId) {
+                StepResult result = resultOf(stepId);
+                return result == null ? "" : StepSummary.describe(result);
+            }
+
+            @Override
             public long millis(String stepId) {
                 StepResult result = resultOf(stepId);
                 return result == null ? 0 : result.millis();
@@ -535,6 +587,7 @@ public final class ScenarioPane extends BorderPane {
         if (view.running) {
             return;
         }
+        showLog(true);
         view.results.clear();
         view.states.clear();
         view.log.setLength(0);
@@ -627,6 +680,7 @@ public final class ScenarioPane extends BorderPane {
         boolean running = view != null && view.running;
         run.setDisable(current == null || running || items.isEmpty());
         stop.setDisable(!running);
+        diagram.syncRun(!run.isDisable(), !stop.isDisable());
         ScenarioHistory history = current == null ? null : history();
         undoButton.setDisable(history == null || !history.canUndo());
         redoButton.setDisable(history == null || !history.canRedo());

@@ -1173,6 +1173,16 @@
     -fx-background-color: -fx-row-hover;
 }
 
+.diagram-node-body .method-badge {
+    -fx-min-width: 52;
+    -fx-pref-width: 52;
+    -fx-max-width: 52;
+}
+.diagram-tool:selected { -fx-background-color: -app-tree-selected; }
+.diagram-tool:disabled { -fx-opacity: 0.4; }
+.diagram-tool.run { -fx-text-fill: -fx-success; -fx-font-weight: bold; }
+.diagram-tool.stop { -fx-text-fill: -fx-danger; -fx-font-weight: bold; }
+
 .main-split {
     -fx-background-color: transparent;
     -fx-padding: 0;
