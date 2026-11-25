@@ -16,12 +16,19 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -37,16 +44,33 @@ import javafx.util.Duration;
 
 final class DiagramView extends StackPane {
 
+    interface Actions {
+
+        Optional<RequestItem> dropped(Dragboard board);
+
+        void add(String requestId, int index);
+
+        void undo();
+
+        void redo();
+    }
+
     private static final double NODE_WIDTH = 230;
     private static final double NODE_HEIGHT = 100;
     private static final double GAP = 80;
+    private static final double ROW_GAP = 70;
     private static final double MARGIN = 40;
+    private static final double TARGET_ZOOM = 0.8;
+    private static final int MIN_COLUMNS = 2;
+    private static final int MAX_COLUMNS = 8;
     private static final double MIN_ZOOM = 0.25;
     private static final double MAX_ZOOM = 2.5;
     private static final double INITIAL_FLOOR = 0.6;
 
     private final StepCell.Support support;
     private final Consumer<String> onSelect;
+    private final Actions actions;
+    private final Rectangle marker = new Rectangle(4, NODE_HEIGHT + 24);
     private final Pane viewport = new Pane();
     private final Group world = new Group();
     private final Group edgeLayer = new Group();
@@ -64,10 +88,18 @@ final class DiagramView extends StackPane {
     private double dragX;
     private double dragY;
     private boolean fitPending = true;
+    private int cols = 4;
 
-    DiagramView(StepCell.Support support, Consumer<String> onSelect) {
+    DiagramView(StepCell.Support support, Consumer<String> onSelect, Actions actions) {
         this.support = support;
         this.onSelect = onSelect;
+        this.actions = actions;
+        setFocusTraversable(true);
+        marker.getStyleClass().add("diagram-drop-marker");
+        marker.setArcWidth(4);
+        marker.setArcHeight(4);
+        marker.setVisible(false);
+        marker.setMouseTransparent(true);
         getStyleClass().add("diagram-view");
         viewport.getStyleClass().add("diagram-viewport");
         viewport.setMinSize(0, 0);
@@ -75,7 +107,7 @@ final class DiagramView extends StackPane {
         clip.widthProperty().bind(viewport.widthProperty());
         clip.heightProperty().bind(viewport.heightProperty());
         viewport.setClip(clip);
-        world.getChildren().addAll(edgeLayer, nodeLayer);
+        world.getChildren().addAll(edgeLayer, nodeLayer, marker);
         world.getTransforms().add(view);
         viewport.getChildren().add(world);
 
@@ -100,7 +132,50 @@ final class DiagramView extends StackPane {
 
         getChildren().addAll(viewport, empty, tools);
 
+        setOnKeyPressed(event -> {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.Z && !event.isShiftDown()) {
+                actions.undo();
+                event.consume();
+            } else if (event.isShortcutDown() && (event.getCode() == KeyCode.Y
+                    || event.getCode() == KeyCode.Z && event.isShiftDown())) {
+                actions.redo();
+                event.consume();
+            } else if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) && selectedId != null) {
+                support.remove(selectedId);
+                event.consume();
+            }
+        });
+        viewport.setOnDragOver(event -> {
+            Dragboard board = event.getDragboard();
+            if (board.hasContent(StepCell.STEP) || actions.dropped(board).isPresent()) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                showMarker(gapAt(event.getSceneX(), event.getSceneY()));
+                event.consume();
+            }
+        });
+        viewport.setOnDragExited(event -> marker.setVisible(false));
+        viewport.setOnDragDropped(event -> {
+            Dragboard board = event.getDragboard();
+            int gap = gapAt(event.getSceneX(), event.getSceneY());
+            marker.setVisible(false);
+            if (board.hasContent(StepCell.STEP)) {
+                String id = (String) board.getContent(StepCell.STEP);
+                int from = indexOf(id);
+                if (from >= 0) {
+                    support.move(id, DiagramLayout.targetAfterRemoval(from, gap));
+                    event.setDropCompleted(true);
+                }
+            } else {
+                Optional<RequestItem> request = actions.dropped(board);
+                if (request.isPresent()) {
+                    actions.add(request.get().id(), gap);
+                    event.setDropCompleted(true);
+                }
+            }
+            event.consume();
+        });
         viewport.setOnMousePressed(event -> {
+            requestFocus();
             dragX = event.getX();
             dragY = event.getY();
             viewport.setCursor(Cursor.CLOSED_HAND);
@@ -141,22 +216,56 @@ final class DiagramView extends StackPane {
         links.clear();
         for (int i = 0; i < steps.size(); i++) {
             StepNode node = new StepNode(steps.get(i), i);
-            node.setLayoutX(i * (NODE_WIDTH + GAP));
-            node.setLayoutY(0);
             nodes.put(steps.get(i).id(), node);
             nodeLayer.getChildren().add(node);
             if (i > 0) {
-                Link link = new Link(steps.get(i - 1).id(), steps.get(i).id(), i - 1, i);
+                Link link = new Link(steps.get(i - 1).id(), steps.get(i).id(), i - 1);
                 links.add(link);
                 edgeLayer.getChildren().add(link.group);
             }
         }
         empty.setVisible(steps.isEmpty());
+        relayout();
         refresh();
         if (refit) {
             fitPending = true;
             tryFit();
         }
+    }
+
+    private int indexOf(String stepId) {
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i).id().equals(stepId)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void relayout() {
+        int index = 0;
+        for (StepNode node : nodes.values()) {
+            node.setLayoutX(DiagramLayout.nodeX(index, cols, NODE_WIDTH, GAP));
+            node.setLayoutY(DiagramLayout.nodeY(index, cols, NODE_HEIGHT, ROW_GAP));
+            node.placePorts(index, steps.size());
+            index++;
+        }
+        links.forEach(Link::place);
+    }
+
+    private int gapAt(double sceneX, double sceneY) {
+        Point2D local = viewport.sceneToLocal(sceneX, sceneY);
+        double worldX = (local.getX() - panX) / zoom;
+        double worldY = (local.getY() - panY) / zoom;
+        return DiagramLayout.nearestGap(worldX, worldY, steps.size(), cols, NODE_WIDTH, NODE_HEIGHT, GAP, ROW_GAP);
+    }
+
+    private void showMarker(int gap) {
+        DiagramLayout.Point anchor = DiagramLayout.gapAnchor(gap, steps.size(), cols, NODE_WIDTH, NODE_HEIGHT, GAP,
+                ROW_GAP);
+        marker.setX(anchor.x() - 2);
+        marker.setY(anchor.y() - marker.getHeight() / 2);
+        marker.setVisible(true);
     }
 
     void select(String stepId) {
@@ -191,12 +300,19 @@ final class DiagramView extends StackPane {
             apply();
             return;
         }
-        double contentWidth = steps.size() * NODE_WIDTH + (steps.size() - 1) * GAP;
-        double fitted = Math.min((width - 2 * MARGIN) / contentWidth, (height - 2 * MARGIN) / NODE_HEIGHT);
+        int columns = DiagramLayout.columns(width, TARGET_ZOOM, MARGIN, NODE_WIDTH, GAP, MIN_COLUMNS, MAX_COLUMNS);
+        if (columns != cols) {
+            cols = columns;
+            relayout();
+        }
+        double contentWidth = DiagramLayout.contentWidth(steps.size(), cols, NODE_WIDTH, GAP);
+        double contentHeight = DiagramLayout.contentHeight(steps.size(), cols, NODE_HEIGHT, ROW_GAP);
+        double fitted = Math.min((width - 2 * MARGIN) / contentWidth, (height - 2 * MARGIN) / contentHeight);
         zoom = clamp(Math.max(Math.min(fitted, 1), floor));
         double scaledWidth = contentWidth * zoom;
+        double scaledHeight = contentHeight * zoom;
         panX = scaledWidth + 2 * MARGIN <= width ? (width - scaledWidth) / 2 : MARGIN;
-        panY = (height - NODE_HEIGHT * zoom) / 2;
+        panY = scaledHeight + 2 * MARGIN <= height ? (height - scaledHeight) / 2 : MARGIN;
         apply();
     }
 
@@ -227,17 +343,16 @@ final class DiagramView extends StackPane {
         final Group group;
         private final Timeline flow;
 
-        Link(String fromId, String toId, int from, int to) {
+        private final int from;
+
+        Link(String fromId, String toId, int from) {
             this.fromId = fromId;
             this.toId = toId;
-            double x1 = from * (NODE_WIDTH + GAP) + NODE_WIDTH;
-            double x2 = to * (NODE_WIDTH + GAP);
-            double y = NODE_HEIGHT / 2;
-            double handle = (x2 - x1) / 2;
-            curve = new CubicCurve(x1, y, x1 + handle, y, x2 - handle, y, x2, y);
+            this.from = from;
+            curve = new CubicCurve();
             curve.setFill(null);
             curve.getStyleClass().add("diagram-edge");
-            arrow = new Polygon(x2, y, x2 - 10, y - 5.5, x2 - 10, y + 5.5);
+            arrow = new Polygon();
             arrow.getStyleClass().add("diagram-arrow");
             group = new Group(curve, arrow);
             group.setMouseTransparent(true);
@@ -245,7 +360,57 @@ final class DiagramView extends StackPane {
                     new KeyFrame(Duration.millis(450),
                             new KeyValue(curve.strokeDashOffsetProperty(), -14, Interpolator.LINEAR)));
             flow.setCycleCount(Animation.INDEFINITE);
+            place();
             refresh();
+        }
+
+        void place() {
+            int to = from + 1;
+            double fx = DiagramLayout.nodeX(from, cols, NODE_WIDTH, GAP);
+            double fy = DiagramLayout.nodeY(from, cols, NODE_HEIGHT, ROW_GAP);
+            double tx = DiagramLayout.nodeX(to, cols, NODE_WIDTH, GAP);
+            double ty = DiagramLayout.nodeY(to, cols, NODE_HEIGHT, ROW_GAP);
+            double x1;
+            double y1;
+            double x2;
+            double y2;
+            double ux;
+            double uy;
+            if (DiagramLayout.turns(from, cols)) {
+                x1 = fx + NODE_WIDTH / 2;
+                y1 = fy + NODE_HEIGHT;
+                x2 = tx + NODE_WIDTH / 2;
+                y2 = ty;
+                double handle = (y2 - y1) / 2;
+                curve.setControlX1(x1);
+                curve.setControlY1(y1 + handle);
+                curve.setControlX2(x2);
+                curve.setControlY2(y2 - handle);
+                ux = 0;
+                uy = 1;
+            } else {
+                int direction = DiagramLayout.direction(from, cols);
+                x1 = direction > 0 ? fx + NODE_WIDTH : fx;
+                x2 = direction > 0 ? tx : tx + NODE_WIDTH;
+                y1 = fy + NODE_HEIGHT / 2;
+                y2 = y1;
+                double handle = (x2 - x1) / 2;
+                curve.setControlX1(x1 + handle);
+                curve.setControlY1(y1);
+                curve.setControlX2(x2 - handle);
+                curve.setControlY2(y2);
+                ux = direction;
+                uy = 0;
+            }
+            curve.setStartX(x1);
+            curve.setStartY(y1);
+            curve.setEndX(x2);
+            curve.setEndY(y2);
+            double baseX = x2 - ux * 10;
+            double baseY = y2 - uy * 10;
+            double px = -uy * 5.5;
+            double py = ux * 5.5;
+            arrow.getPoints().setAll(x2, y2, baseX + px, baseY + py, baseX - px, baseY - py);
         }
 
         void refresh() {
@@ -332,10 +497,6 @@ final class DiagramView extends StackPane {
 
             portIn.getStyleClass().add("diagram-port");
             portOut.getStyleClass().add("diagram-port");
-            StackPane.setAlignment(portIn, Pos.CENTER_LEFT);
-            StackPane.setAlignment(portOut, Pos.CENTER_RIGHT);
-            portIn.setTranslateX(-5);
-            portOut.setTranslateX(5);
             portIn.setMouseTransparent(true);
             portOut.setMouseTransparent(true);
             getChildren().addAll(card, portIn, portOut);
@@ -345,7 +506,30 @@ final class DiagramView extends StackPane {
             pulse.setAutoReverse(true);
             pulse.setCycleCount(Animation.INDEFINITE);
 
+            MenuItem left = new MenuItem("Move left");
+            left.setOnAction(event -> support.move(step.id(), indexOf(step.id()) - 1));
+            MenuItem right = new MenuItem("Move right");
+            right.setOnAction(event -> support.move(step.id(), indexOf(step.id()) + 1));
+            MenuItem remove = new MenuItem("Remove step");
+            remove.setOnAction(event -> support.remove(step.id()));
+            ContextMenu menu = new ContextMenu(left, right, remove);
+            setOnContextMenuRequested(event -> {
+                selectedId = step.id();
+                nodes.values().forEach(StepNode::syncSelected);
+                onSelect.accept(step.id());
+                menu.show(this, event.getScreenX(), event.getScreenY());
+                event.consume();
+            });
+            setOnDragDetected(event -> {
+                Dragboard board = startDragAndDrop(TransferMode.MOVE);
+                ClipboardContent content = new ClipboardContent();
+                content.put(StepCell.STEP, step.id());
+                board.setContent(content);
+                event.consume();
+            });
+            setOnDragDone(event -> marker.setVisible(false));
             setOnMousePressed(event -> {
+                DiagramView.this.requestFocus();
                 if (event.getButton() == MouseButton.PRIMARY) {
                     selectedId = step.id();
                     nodes.values().forEach(StepNode::syncSelected);
@@ -354,6 +538,22 @@ final class DiagramView extends StackPane {
                 event.consume();
             });
             setOnMouseDragged(event -> event.consume());
+        }
+
+        void placePorts(int index, int count) {
+            int direction = DiagramLayout.direction(index, cols);
+            Pos in = index > 0 && index % cols == 0 ? Pos.TOP_CENTER
+                    : direction > 0 ? Pos.CENTER_LEFT : Pos.CENTER_RIGHT;
+            Pos out = index < count - 1 && DiagramLayout.turns(index, cols) ? Pos.BOTTOM_CENTER
+                    : direction > 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
+            place(portIn, in);
+            place(portOut, out);
+        }
+
+        private void place(Circle port, Pos side) {
+            StackPane.setAlignment(port, side);
+            port.setTranslateX(side == Pos.CENTER_LEFT ? -5 : side == Pos.CENTER_RIGHT ? 5 : 0);
+            port.setTranslateY(side == Pos.TOP_CENTER ? -5 : side == Pos.BOTTOM_CENTER ? 5 : 0);
         }
 
         void dispose() {

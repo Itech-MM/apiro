@@ -1,12 +1,14 @@
 package io.github.itech_mm.apiro.repository;
 
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public record LocalState(String activeEnvironmentId, Map<String, Map<String, String>> secrets,
-                         Map<String, LastRun> lastRuns, Map<String, RequestItem> drafts) {
+                         Map<String, LastRun> lastRuns, Map<String, RequestItem> drafts,
+                         Map<String, ScenarioItem> scenarioDrafts) {
 
     public LocalState {
         activeEnvironmentId = activeEnvironmentId == null ? "" : activeEnvironmentId;
@@ -36,10 +38,19 @@ public record LocalState(String activeEnvironmentId, Map<String, Map<String, Str
             });
         }
         drafts = Collections.unmodifiableMap(kept);
+        Map<String, ScenarioItem> keptScenarios = new LinkedHashMap<>();
+        if (scenarioDrafts != null) {
+            scenarioDrafts.forEach((scenarioId, draft) -> {
+                if (scenarioId != null && draft != null) {
+                    keptScenarios.put(scenarioId, draft);
+                }
+            });
+        }
+        scenarioDrafts = Collections.unmodifiableMap(keptScenarios);
     }
 
     public static LocalState empty() {
-        return new LocalState(null, null, null, null);
+        return new LocalState(null, null, null, null, null);
     }
 
     public String secret(String environmentId, String key) {
@@ -51,7 +62,7 @@ public record LocalState(String activeEnvironmentId, Map<String, Map<String, Str
     }
 
     public LocalState withActiveEnvironment(String environmentId) {
-        return new LocalState(environmentId, secrets, lastRuns, drafts);
+        return new LocalState(environmentId, secrets, lastRuns, drafts, scenarioDrafts);
     }
 
     public LocalState withSecret(String environmentId, String key, String value) {
@@ -59,16 +70,20 @@ public record LocalState(String activeEnvironmentId, Map<String, Map<String, Str
         Map<String, String> values = new LinkedHashMap<>(next.getOrDefault(environmentId, Map.of()));
         values.put(key, value);
         next.put(environmentId, values);
-        return new LocalState(activeEnvironmentId, next, lastRuns, drafts);
+        return new LocalState(activeEnvironmentId, next, lastRuns, drafts, scenarioDrafts);
     }
 
     public LocalState withLastRun(String requestId, LastRun run) {
         Map<String, LastRun> next = new LinkedHashMap<>(lastRuns);
         next.put(requestId, run);
-        return new LocalState(activeEnvironmentId, secrets, next, drafts);
+        return new LocalState(activeEnvironmentId, secrets, next, drafts, scenarioDrafts);
     }
 
     public LocalState withDrafts(Map<String, RequestItem> next) {
-        return new LocalState(activeEnvironmentId, secrets, lastRuns, next);
+        return new LocalState(activeEnvironmentId, secrets, lastRuns, next, scenarioDrafts);
+    }
+
+    public LocalState withScenarioDrafts(Map<String, ScenarioItem> next) {
+        return new LocalState(activeEnvironmentId, secrets, lastRuns, drafts, next);
     }
 }

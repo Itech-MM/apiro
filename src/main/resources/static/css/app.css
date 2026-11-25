@@ -1097,6 +1097,11 @@
 .diagram-port.state-failed { -fx-stroke: -fx-danger; }
 .diagram-port.state-running { -fx-stroke: -fx-warning; }
 
+.diagram-drop-marker {
+    -fx-fill: -fx-primary;
+    -fx-opacity: 0.9;
+}
+
 .diagram-edge {
     -fx-stroke: -app-muted;
     -fx-stroke-width: 2;

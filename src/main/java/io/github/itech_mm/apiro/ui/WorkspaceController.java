@@ -41,6 +41,7 @@ import io.github.itech_mm.apiro.service.http.RequestPreparer.PreparedRequest;
 import io.github.itech_mm.apiro.service.http.RequestRunService;
 import io.github.itech_mm.apiro.service.http.SendOutcome;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
+import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
 import io.github.itech_mm.apiro.service.variables.VariableResolver;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
@@ -235,7 +236,9 @@ public class WorkspaceController implements Routable {
 			@Override
 			public void save(ScenarioItem scenario) {
 				if (activeScenario != null) {
-					activeScenario.owner.updateProject(project -> ProjectTree.withScenario(project, scenario));
+					activeScenario.draft = scenario;
+					refreshScenarioDirty(activeScenario);
+					draftTimer.playFromStart();
 				}
 			}
 		});
@@ -423,7 +426,7 @@ public class WorkspaceController implements Routable {
 		OpenProject scenarioOwner = session.activeProperty().get();
 		Optional<ScenarioItem> scenarioItem = findScenario(id);
 		if (scenarioOwner != null && scenarioItem.isPresent()) {
-			requestTabs.getSelectionModel().select(addScenarioTab(scenarioOwner, scenarioItem.get(), -1).tab);
+			requestTabs.getSelectionModel().select(addScenarioTab(scenarioOwner, scenarioItem.get(), -1, null).tab);
 			return;
 		}
 		OpenRequest state = open.get(id);
@@ -459,10 +462,15 @@ public class WorkspaceController implements Routable {
 		return state;
 	}
 
-	private OpenScenario addScenarioTab(OpenProject owner, ScenarioItem item, int index) {
+	private OpenScenario addScenarioTab(OpenProject owner, ScenarioItem item, int index, ScenarioItem draft) {
 		OpenScenario state = new OpenScenario(owner, item);
+		if (draft != null) {
+			state.draft = ScenarioEdit.withContent(item, draft);
+			state.showDirty(true);
+		}
 		state.showProject(session.projects().size() > 1);
 		state.tab.setUserData(state);
+		state.tab.setOnCloseRequest(event -> onScenarioCloseRequest(event, state));
 		scenarios.put(item.id(), state);
 		if (index < 0 || index > requestTabs.getTabs().size()) {
 			requestTabs.getTabs().add(state.tab);
@@ -475,7 +483,7 @@ public class WorkspaceController implements Routable {
 	private void showScenario(OpenScenario next) {
 		activeScenario = next;
 		if (next != null) {
-			findScenario(next).ifPresent(scenarioPane::show);
+			scenarioView(next).ifPresent(scenarioPane::show);
 			if (session.activeProperty().get() == next.owner) {
 				session.selectedRequestIdProperty().set(next.id);
 			} else {
@@ -491,6 +499,14 @@ public class WorkspaceController implements Routable {
 			return Optional.empty();
 		}
 		return project.findItem(id).filter(ScenarioItem.class::isInstance).map(ScenarioItem.class::cast);
+	}
+
+	private Optional<ScenarioItem> scenarioView(OpenScenario state) {
+		return findScenario(state).map(item -> ScenarioEdit.withContent(item, state.draft));
+	}
+
+	private void refreshScenarioDirty(OpenScenario state) {
+		findScenario(state).ifPresent(item -> state.showDirty(!ScenarioEdit.sameContent(item, state.draft)));
 	}
 
 	private Optional<ScenarioItem> findScenario(OpenScenario state) {
@@ -534,6 +550,7 @@ public class WorkspaceController implements Routable {
 						}
 					}
 					removed.setDrafts(Map.of());
+					removed.setScenarioDrafts(Map.of());
 				}
 			}
 			if (change.wasAdded()) {
@@ -565,7 +582,10 @@ public class WorkspaceController implements Routable {
 				Optional<ScenarioItem> savedScenario = project.project().findItem(requestId)
 						.filter(ScenarioItem.class::isInstance).map(ScenarioItem.class::cast);
 				if (savedScenario.isPresent()) {
-					addScenarioTab(project, savedScenario.get(), insertIndex(key));
+					ScenarioItem scenarioDraft = project.scenarioDrafts().get(requestId);
+					boolean scenarioEdited = scenarioDraft != null
+							&& !ScenarioEdit.sameContent(scenarioDraft, savedScenario.get());
+					addScenarioTab(project, savedScenario.get(), insertIndex(key), scenarioEdited ? scenarioDraft : null);
 					any = true;
 					continue;
 				}
@@ -645,6 +665,13 @@ public class WorkspaceController implements Routable {
 				}
 			}
 			project.setDrafts(drafts);
+			Map<String, ScenarioItem> scenarioDrafts = new LinkedHashMap<>();
+			for (OpenScenario state : scenarios.values()) {
+				if (state.owner == project && state.dirty) {
+					scenarioDrafts.put(state.id, state.draft);
+				}
+			}
+			project.setScenarioDrafts(scenarioDrafts);
 		}
 	}
 
@@ -757,8 +784,11 @@ public class WorkspaceController implements Routable {
 			} else {
 				state.rename(item.get().name());
 				state.showProject(many);
+				if (!state.dirty) {
+					state.draft = item.get();
+				}
 				if (state == activeScenario) {
-					scenarioPane.show(item.get());
+					scenarioPane.show(ScenarioEdit.withContent(item.get(), state.draft));
 				}
 			}
 		}
@@ -954,11 +984,30 @@ public class WorkspaceController implements Routable {
 		Platform.runLater(() -> requestTabs.getTabs().remove(state.tab));
 	}
 
-	private boolean saveRequest(OpenRequest state) {
-		if (session.activeProperty().get() != state.owner) {
-			session.activateProject(state.owner.id());
+	private void onScenarioCloseRequest(Event event, OpenScenario state) {
+		if (!state.dirty) {
+			return;
 		}
-		saveOnly = state.id;
+		event.consume();
+		AlertDialog.builder().level(AlertDialog.Level.WARNING).title("Unsaved changes")
+				.message("\"" + state.title.getText() + "\" has unsaved changes. Save before closing?")
+				.addOwner(owner()).addButton("Save", () -> {
+					if (saveItem(state.owner, state.id)) {
+						Platform.runLater(() -> requestTabs.getTabs().remove(state.tab));
+					}
+				}).addButton("Discard", () -> Platform.runLater(() -> requestTabs.getTabs().remove(state.tab)))
+				.addButton("Cancel", null).build().showAsync();
+	}
+
+	private boolean saveRequest(OpenRequest state) {
+		return saveItem(state.owner, state.id);
+	}
+
+	private boolean saveItem(OpenProject owner, String id) {
+		if (session.activeProperty().get() != owner) {
+			session.activateProject(owner.id());
+		}
+		saveOnly = id;
 		try {
 			session.save();
 			return true;
@@ -984,12 +1033,26 @@ public class WorkspaceController implements Routable {
 			}
 			find(state).ifPresent(item -> current.updateRequest(withName(state.draft, item.name())));
 		}
+		for (OpenScenario state : scenarios.values()) {
+			if (state.owner != current || !state.dirty || (!saveOnly.isEmpty() && !saveOnly.equals(state.id))) {
+				continue;
+			}
+			findScenario(state).ifPresent(item -> {
+				ScenarioItem merged = ScenarioEdit.withContent(item, state.draft);
+				current.updateProject(project -> ProjectTree.withScenario(project, merged));
+			});
+		}
 	}
 
 	private void markSaved() {
 		for (OpenRequest state : open.values()) {
 			if (state.dirty && find(state).map(item -> sameContent(item, state.draft)).orElse(false)) {
 				state.baseline = state.draft;
+				state.showDirty(false);
+			}
+		}
+		for (OpenScenario state : scenarios.values()) {
+			if (state.dirty && findScenario(state).map(item -> ScenarioEdit.sameContent(item, state.draft)).orElse(false)) {
 				state.showDirty(false);
 			}
 		}
@@ -1332,21 +1395,34 @@ public class WorkspaceController implements Routable {
 		final Label badge = new Label("SCN");
 		final Label title = new Label();
 		final Label project = new Label();
+		final Region dot = new Region();
+		ScenarioItem draft;
+		boolean dirty;
 
 		OpenScenario(OpenProject owner, ScenarioItem item) {
 			this.owner = owner;
 			this.id = item.id();
+			this.draft = item;
+			dot.getStyleClass().add("tab-dirty");
+			dot.setVisible(false);
+			dot.setManaged(false);
 			project.getStyleClass().add("muted");
 			project.setVisible(false);
 			project.setManaged(false);
 			badge.getStyleClass().add("method-badge");
 			title.setText(item.name());
 			title.setMaxWidth(180);
-			HBox header = new HBox(6, badge, title, project);
+			HBox header = new HBox(6, badge, title, project, dot);
 			header.setAlignment(Pos.CENTER_LEFT);
 			tab.setGraphic(header);
 			tab.setClosable(true);
 			refreshText();
+		}
+
+		void showDirty(boolean on) {
+			dirty = on;
+			dot.setVisible(on);
+			dot.setManaged(on);
 		}
 
 		void showProject(boolean on) {

@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.service.scenario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +38,39 @@ class ScenarioEditTest {
         assertEquals(4, next.steps().size());
         assertEquals("r4", next.steps().get(3).requestId());
         assertTrue(next.edges().isEmpty());
+    }
+
+    @Test
+    void insertPlacesTheStepAtTheGapAndClamps() {
+        assertEquals("r9", ScenarioEdit.withInserted(three(), "r9", "", 1).steps().get(1).requestId());
+        assertEquals("r9", ScenarioEdit.withInserted(three(), "r9", "", -5).steps().get(0).requestId());
+        assertEquals("r9", ScenarioEdit.withInserted(three(), "r9", "", 99).steps().get(3).requestId());
+        assertEquals(4, ScenarioEdit.withInserted(three(), "r9", "", 2).steps().size());
+    }
+
+    @Test
+    void restoringContentKeepsTheCurrentNameAndId() {
+        ScenarioItem renamed = new ScenarioItem("sc", "Renamed", null, three().steps(), null, null);
+        ScenarioItem old = new ScenarioItem("sc", "Flow", null, three().steps().subList(0, 1), null,
+                OnFailure.CONTINUE);
+
+        ScenarioItem restored = ScenarioEdit.withContent(renamed, old);
+
+        assertEquals("Renamed", restored.name());
+        assertEquals(1, restored.steps().size());
+        assertEquals(OnFailure.CONTINUE, restored.onFailure());
+    }
+
+    @Test
+    void sameContentIgnoresTheName() {
+        ScenarioItem base = three();
+        ScenarioItem renamed = new ScenarioItem("sc", "Other", base.variables(), base.steps(), base.edges(),
+                base.onFailure());
+        ScenarioItem edited = ScenarioEdit.withOnFailure(base, OnFailure.CONTINUE);
+
+        assertTrue(ScenarioEdit.sameContent(base, renamed));
+        assertFalse(ScenarioEdit.sameContent(base, edited));
+        assertFalse(ScenarioEdit.sameContent(base, ScenarioEdit.withoutStep(base, "a")));
     }
 
     @Test

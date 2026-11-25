@@ -8,6 +8,7 @@ import java.util.Map;
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Variable;
 
 public final class SecretSplitter {
@@ -20,7 +21,7 @@ public final class SecretSplitter {
 
     public static Split split(Project project, LocalState state) {
     	LocalState next = new LocalState(state.activeEnvironmentId(), null, keptRuns(project, state),
-    	        keptDrafts(project, state));
+    	        keptDrafts(project, state), keptScenarioDrafts(project, state));
         List<Environment> environments = new ArrayList<>();
         for (Environment environment : project.environments()) {
             List<Variable> variables = new ArrayList<>();
@@ -70,6 +71,16 @@ public final class SecretSplitter {
         return kept;
     }
     
+    private static Map<String, ScenarioItem> keptScenarioDrafts(Project project, LocalState state) {
+        Map<String, ScenarioItem> kept = new LinkedHashMap<>();
+        state.scenarioDrafts().forEach((scenarioId, draft) -> {
+            if (project.findItem(scenarioId).filter(ScenarioItem.class::isInstance).isPresent()) {
+                kept.put(scenarioId, draft);
+            }
+        });
+        return kept;
+    }
+
     private static Map<String, RequestItem> keptDrafts(Project project, LocalState state) {
         Map<String, RequestItem> kept = new LinkedHashMap<>();
         state.drafts().forEach((requestId, draft) -> {

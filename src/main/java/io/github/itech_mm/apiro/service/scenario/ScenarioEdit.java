@@ -27,8 +27,12 @@ public final class ScenarioEdit {
     }
 
     public static ScenarioItem withAppended(ScenarioItem scenario, String requestId, String name) {
+        return withInserted(scenario, requestId, name, scenario.steps().size());
+    }
+
+    public static ScenarioItem withInserted(ScenarioItem scenario, String requestId, String name, int index) {
         List<Step> steps = new ArrayList<>(scenario.steps());
-        steps.add(Step.of(requestId, name));
+        steps.add(Math.max(0, Math.min(index, steps.size())), Step.of(requestId, name));
         return rebuilt(scenario, steps);
     }
 
@@ -63,6 +67,16 @@ public final class ScenarioEdit {
         steps.set(index, updated);
         return new ScenarioItem(scenario.id(), scenario.name(), scenario.variables(), steps, scenario.edges(),
                 scenario.onFailure());
+    }
+
+    public static ScenarioItem withContent(ScenarioItem scenario, ScenarioItem snapshot) {
+        return new ScenarioItem(scenario.id(), scenario.name(), snapshot.variables(), snapshot.steps(),
+                snapshot.edges(), snapshot.onFailure());
+    }
+
+    public static boolean sameContent(ScenarioItem first, ScenarioItem second) {
+        return first.variables().equals(second.variables()) && first.steps().equals(second.steps())
+                && first.edges().equals(second.edges()) && first.onFailure() == second.onFailure();
     }
 
     public static ScenarioItem withOnFailure(ScenarioItem scenario, OnFailure policy) {

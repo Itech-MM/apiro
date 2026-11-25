@@ -9,6 +9,7 @@ import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.RunLog;
 import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
+import io.github.itech_mm.apiro.service.scenario.ScenarioHistory;
 import io.github.itech_mm.apiro.service.scenario.ScenarioListener;
 import io.github.itech_mm.apiro.service.scenario.ScenarioResult;
 import io.github.itech_mm.apiro.service.scenario.ScenarioRunner;
@@ -41,6 +42,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -64,6 +66,7 @@ public final class ScenarioPane extends BorderPane {
 
     private static final double DIAGRAM_SPLIT = 0.70;
     private static final double LIST_SPLIT = 0.5;
+    private static final double LOG_SPLIT = 0.74;
     private static final String STOP = "Stop";
     private static final String CONTINUE = "Continue";
 
@@ -98,12 +101,39 @@ public final class ScenarioPane extends BorderPane {
     private ScenarioItem current;
     private boolean loading;
     private boolean syncing;
+    private boolean diagramShown = true;
+    private boolean splitPending = true;
+    private SplitPane horizontal;
+    private SplitPane vertical;
+    private final Map<String, ScenarioHistory> histories = new HashMap<>();
+    private final Button undoButton = new Button("Undo");
+    private final Button redoButton = new Button("Redo");
 
     public ScenarioPane(Host host) {
         this.host = host;
         getStyleClass().add("scenario-pane");
         inspector = new StepInspector(this::onStepEdited);
-        diagram = new DiagramView(support(), this::selectById);
+        diagram = new DiagramView(support(), this::selectById, new DiagramView.Actions() {
+            @Override
+            public Optional<RequestItem> dropped(Dragboard board) {
+                return droppedRequest(board);
+            }
+
+            @Override
+            public void add(String requestId, int index) {
+                insertAt(requestId, index);
+            }
+
+            @Override
+            public void undo() {
+                ScenarioPane.this.undo();
+            }
+
+            @Override
+            public void redo() {
+                ScenarioPane.this.redo();
+            }
+        });
 
         title.getStyleClass().add("scenario-title");
         summary.getStyleClass().add("muted");
@@ -116,7 +146,11 @@ public final class ScenarioPane extends BorderPane {
         stop.getStyleClass().add("scenario-stop");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox bar = new HBox(8, title, summary, spacer, policyLabel, policy, addStep, run, stop);
+        undoButton.setTooltip(new Tooltip("Undo (Ctrl+Z)"));
+        redoButton.setTooltip(new Tooltip("Redo (Ctrl+Y)"));
+        undoButton.setOnAction(event -> undo());
+        redoButton.setOnAction(event -> redo());
+        HBox bar = new HBox(8, title, summary, spacer, policyLabel, policy, undoButton, redoButton, addStep, run, stop);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(10, 12, 10, 12));
         bar.getStyleClass().add("scenario-bar");
@@ -151,6 +185,16 @@ public final class ScenarioPane extends BorderPane {
         log.getStyleClass().add("scenario-log");
 
         list.getStyleClass().add("scenario-list");
+        list.setOnKeyPressed(event -> {
+            if (event.isShortcutDown() && event.getCode() == KeyCode.Z && !event.isShiftDown()) {
+                undo();
+                event.consume();
+            } else if (event.isShortcutDown() && (event.getCode() == KeyCode.Y
+                    || event.getCode() == KeyCode.Z && event.isShiftDown())) {
+                redo();
+                event.consume();
+            }
+        });
         ToggleButton diagramToggle = new ToggleButton("Diagram");
         ToggleButton listToggle = new ToggleButton("List");
         ToggleGroup group = new ToggleGroup();
@@ -171,24 +215,31 @@ public final class ScenarioPane extends BorderPane {
         VBox.setVgrow(stack, Priority.ALWAYS);
         VBox views = new VBox(viewHeader, stack);
         views.setMinWidth(0);
-        SplitPane horizontal = new SplitPane(views, inspector);
+        horizontal = new SplitPane(views, inspector);
         horizontal.getStyleClass().add("main-split");
         group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
             boolean showDiagram = newValue == diagramToggle;
+            diagramShown = showDiagram;
             diagram.setVisible(showDiagram);
             diagram.setManaged(showDiagram);
             list.setVisible(!showDiagram);
             list.setManaged(!showDiagram);
-            horizontal.setDividerPositions(showDiagram ? DIAGRAM_SPLIT : LIST_SPLIT);
+            applySplit();
             if (showDiagram) {
                 diagram.refit();
             }
         });
         diagramToggle.setSelected(true);
-        SplitPane vertical = new SplitPane(horizontal, log);
+        vertical = new SplitPane(horizontal, log);
         vertical.setOrientation(Orientation.VERTICAL);
         vertical.getStyleClass().add("editor-split");
-        vertical.setDividerPositions(0.74);
+        horizontal.widthProperty().addListener((obs, oldValue, newValue) -> {
+            if (splitPending && newValue.doubleValue() > 200) {
+                splitPending = false;
+                applySplit();
+            }
+        });
+        applySplit();
         setTop(bar);
         setCenter(vertical);
 
@@ -209,6 +260,33 @@ public final class ScenarioPane extends BorderPane {
         refreshRunState();
     }
 
+    private void applySplit() {
+        Platform.runLater(() -> {
+            horizontal.setDividerPositions(diagramShown ? DIAGRAM_SPLIT : LIST_SPLIT);
+            vertical.setDividerPositions(LOG_SPLIT);
+        });
+    }
+
+    private ScenarioHistory history() {
+        return histories.computeIfAbsent(current.id(), key -> new ScenarioHistory());
+    }
+
+    private void undo() {
+        if (current != null) {
+            history().undo(current).ifPresent(this::restore);
+        }
+    }
+
+    private void redo() {
+        if (current != null) {
+            history().redo(current).ifPresent(this::restore);
+        }
+    }
+
+    private void restore(ScenarioItem snapshot) {
+        commit(ScenarioEdit.withContent(current, snapshot), true, false);
+    }
+
     public void show(ScenarioItem scenario) {
         boolean same = current != null && current.id().equals(scenario.id());
         if (same && current.equals(scenario)) {
@@ -218,6 +296,9 @@ public final class ScenarioPane extends BorderPane {
         }
         String keep = same ? selectedId() : null;
         current = scenario;
+        if (!same) {
+            applySplit();
+        }
         loading = true;
         title.setText(scenario.name());
         policy.setValue(scenario.onFailure() == OnFailure.CONTINUE ? CONTINUE : STOP);
@@ -240,6 +321,7 @@ public final class ScenarioPane extends BorderPane {
         if (next == current) {
             return;
         }
+        history().record(current, "step:" + step.id(), System.currentTimeMillis());
         current = next;
         syncing = true;
         for (int i = 0; i < items.size(); i++) {
@@ -252,14 +334,21 @@ public final class ScenarioPane extends BorderPane {
         syncing = false;
         diagram.show(current.steps(), selectedId(), false);
         host.save(next);
-        refreshSummary();
+        refreshRunState();
     }
 
     private void commit(ScenarioItem next, boolean rebuild) {
+        commit(next, rebuild, true);
+    }
+
+    private void commit(ScenarioItem next, boolean rebuild, boolean record) {
         if (next == current) {
             return;
         }
         String keep = selectedId();
+        if (record) {
+            history().record(current, null, System.currentTimeMillis());
+        }
         current = next;
         if (rebuild) {
             syncing = true;
@@ -280,6 +369,15 @@ public final class ScenarioPane extends BorderPane {
         ScenarioItem next = ScenarioEdit.withAppended(current, requestId, "");
         commit(next, true);
         selectById(next.steps().get(next.steps().size() - 1).id());
+    }
+
+    private void insertAt(String requestId, int index) {
+        if (current == null) {
+            return;
+        }
+        ScenarioItem next = ScenarioEdit.withInserted(current, requestId, "", index);
+        commit(next, true);
+        selectById(next.steps().get(Math.max(0, Math.min(index, next.steps().size() - 1))).id());
     }
 
     private Optional<RequestItem> droppedRequest(Dragboard board) {
@@ -412,7 +510,18 @@ public final class ScenarioPane extends BorderPane {
             @Override
             public void remove(String stepId) {
                 if (current != null) {
+                    String neighbour = null;
+                    List<Step> before = current.steps();
+                    for (int i = 0; i < before.size(); i++) {
+                        if (before.get(i).id().equals(stepId)) {
+                            int next = i + 1 < before.size() ? i + 1 : i - 1;
+                            neighbour = next >= 0 ? before.get(next).id() : null;
+                        }
+                    }
                     commit(ScenarioEdit.withoutStep(current, stepId), true);
+                    if (neighbour != null) {
+                        selectById(neighbour);
+                    }
                 }
             }
         };
@@ -518,6 +627,9 @@ public final class ScenarioPane extends BorderPane {
         boolean running = view != null && view.running;
         run.setDisable(current == null || running || items.isEmpty());
         stop.setDisable(!running);
+        ScenarioHistory history = current == null ? null : history();
+        undoButton.setDisable(history == null || !history.canUndo());
+        redoButton.setDisable(history == null || !history.canRedo());
         refreshSummary();
     }
 

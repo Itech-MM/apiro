@@ -10,6 +10,7 @@ import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
 import io.github.itech_mm.apiro.model.RequestItem;
+import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.repository.LastRun;
 import io.github.itech_mm.apiro.repository.LocalState;
 import io.github.itech_mm.apiro.repository.LocalStateStore;
@@ -200,6 +201,22 @@ public final class OpenProject {
             return;
         }
         state = state.withDrafts(next);
+        try {
+            LocalStateStore.save(state, file, project.get().id());
+        } catch (IOException error) {
+            return;
+        }
+    }
+
+    public Map<String, ScenarioItem> scenarioDrafts() {
+        return state.scenarioDrafts();
+    }
+
+    public void setScenarioDrafts(Map<String, ScenarioItem> next) {
+        if (state.scenarioDrafts().equals(next)) {
+            return;
+        }
+        state = state.withScenarioDrafts(next);
         try {
             LocalStateStore.save(state, file, project.get().id());
         } catch (IOException error) {
