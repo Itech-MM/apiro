@@ -73,7 +73,6 @@ public final class ScenarioPane extends BorderPane {
         RunStore runStore();
     }
 
-    private static final double DIAGRAM_SPLIT = 0.70;
     private static final double LIST_SPLIT = 0.5;
     private static final double LOG_SPLIT = 0.74;
     private static final String STOP = "Stop";
@@ -113,6 +112,8 @@ public final class ScenarioPane extends BorderPane {
     private final ObservableList<Step> items = FXCollections.observableArrayList();
     private final ListView<Step> list = new ListView<>(items);
     private final StepInspector inspector;
+    private final StepFloat stepFloat;
+    private boolean floatOpen;
     private final DiagramView diagram;
     private final CodeEditor log = new CodeEditor();
     private ScenarioItem current;
@@ -131,6 +132,8 @@ public final class ScenarioPane extends BorderPane {
         this.host = host;
         getStyleClass().add("scenario-pane");
         inspector = new StepInspector(this::onStepEdited);
+        stepFloat = new StepFloat(inspector, this::closeFloat);
+        stepFloat.attach();
         diagram = new DiagramView(support(), this::selectById, new DiagramView.Actions() {
             @Override
             public Optional<RequestItem> dropped(Dragboard board) {
@@ -169,7 +172,7 @@ public final class ScenarioPane extends BorderPane {
 
             @Override
             public void focusInspector() {
-                Platform.runLater(inspector::focusName);
+                openFloat();
             }
         });
 
@@ -234,15 +237,16 @@ public final class ScenarioPane extends BorderPane {
             }
         });
         Tab diagramTab = tab("Diagram");
-        diagramTab.setContent(diagram);
+        diagramTab.setContent(new StackPane(diagram, stepFloat));
         Tab listTab = tab("List");
         listTab.setContent(list);
         TabPane views = tabs(diagramTab, listTab);
         views.setMinWidth(0);
-        horizontal = new SplitPane(views, inspector);
+        horizontal = new SplitPane(views);
         horizontal.getStyleClass().add("main-split");
         views.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
             diagramShown = newValue == diagramTab;
+            dock();
             applySplit();
             if (diagramShown) {
                 diagram.refit();
@@ -300,9 +304,37 @@ public final class ScenarioPane extends BorderPane {
         }
     }
 
+    private void dock() {
+        if (diagramShown) {
+            horizontal.getItems().remove(inspector);
+            stepFloat.attach();
+            stepFloat.setOpen(floatOpen);
+        } else {
+            stepFloat.detach();
+            stepFloat.setOpen(false);
+            if (!horizontal.getItems().contains(inspector)) {
+                horizontal.getItems().add(inspector);
+            }
+        }
+    }
+
+    private void openFloat() {
+        floatOpen = true;
+        stepFloat.setOpen(true);
+        Platform.runLater(inspector::focusName);
+    }
+
+    private void closeFloat() {
+        floatOpen = false;
+        stepFloat.setOpen(false);
+        diagram.requestFocus();
+    }
+
     private void applySplit() {
         Platform.runLater(() -> {
-            horizontal.setDividerPositions(diagramShown ? DIAGRAM_SPLIT : LIST_SPLIT);
+            if (!diagramShown) {
+                horizontal.setDividerPositions(LIST_SPLIT);
+            }
             if (logShown) {
                 vertical.setDividerPositions(LOG_SPLIT);
             }
