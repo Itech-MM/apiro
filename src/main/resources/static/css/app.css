@@ -969,6 +969,8 @@
 .step-dot.state-running { -fx-background-color: -fx-warning; -fx-opacity: 1; }
 .step-dot.state-passed { -fx-background-color: -fx-success; -fx-opacity: 1; }
 .step-dot.state-failed { -fx-background-color: -fx-danger; -fx-opacity: 1; }
+.export-status.state-passed { -fx-text-fill: -fx-success; }
+.export-status.state-failed { -fx-text-fill: -fx-danger; }
 .step-dot.state-cancelled { -fx-background-color: -fx-warning; -fx-opacity: 1; }
 .step-dot.state-skipped, .step-dot.state-pending { -fx-background-color: -app-muted; -fx-opacity: 0.6; }
 
@@ -1118,41 +1120,6 @@
 .diagram-arrow.edge-failed { -fx-fill: -fx-danger; }
 .diagram-edge.edge-dim,
 .diagram-arrow.edge-dim { -fx-opacity: 0.45; }
-
-.view-header {
-    -fx-padding: 8 10 8 10;
-    -fx-border-color: transparent transparent -fx-grid-line transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.view-switch {
-    -fx-background-color: -app-gutter;
-    -fx-background-radius: 7;
-    -fx-border-color: -fx-border-base;
-    -fx-border-radius: 7;
-    -fx-padding: 2;
-    -fx-spacing: 2;
-}
-
-.view-switch .toggle-button,
-.view-switch .toggle-button:focused {
-    -fx-background-color: transparent;
-    -fx-background-radius: 5;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-padding: 3 14 3 14;
-    -fx-text-fill: -app-muted;
-    -fx-cursor: hand;
-}
-
-.view-switch .toggle-button:hover { -fx-background-color: -fx-row-hover; }
-
-.view-switch .toggle-button:selected,
-.view-switch .toggle-button:selected:hover {
-    -fx-background-color: -app-success-tint;
-    -fx-text-fill: -app-muted;
-    -fx-font-weight: bold;
-}
 
 .diagram-tools {
     -fx-background-color: -app-layer;

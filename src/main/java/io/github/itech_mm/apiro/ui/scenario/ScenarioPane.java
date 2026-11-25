@@ -45,8 +45,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
@@ -104,9 +104,10 @@ public final class ScenarioPane extends BorderPane {
     private final Map<String, List<RunRecord>> saved = new HashMap<>();
     private final HistoryPane historyPane = new HistoryPane(this::openRun);
     private final Button clearHistoryButton = new Button("Clear history");
-    private final ToggleButton liveToggle = new ToggleButton("Log");
-    private final ToggleButton historyToggle = new ToggleButton("History");
-    private VBox logPanel;
+    private final Tab logTab = tab("Log");
+    private final Tab historyTab = tab("History");
+    private TabPane logTabs;
+    private StackPane logPanel;
     private final Button run = new Button("Run");
     private final Button stop = new Button("Stop");
     private final ObservableList<Step> items = FXCollections.observableArrayList();
@@ -232,41 +233,21 @@ public final class ScenarioPane extends BorderPane {
                 event.consume();
             }
         });
-        ToggleButton diagramToggle = new ToggleButton("Diagram");
-        ToggleButton listToggle = new ToggleButton("List");
-        ToggleGroup group = new ToggleGroup();
-        diagramToggle.setToggleGroup(group);
-        listToggle.setToggleGroup(group);
-        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue == null) {
-                oldValue.setSelected(true);
-            }
-        });
-        HBox switcher = new HBox(diagramToggle, listToggle);
-        switcher.getStyleClass().add("view-switch");
-        switcher.setMaxWidth(Region.USE_PREF_SIZE);
-        HBox viewHeader = new HBox(switcher);
-        viewHeader.getStyleClass().add("view-header");
-        viewHeader.setAlignment(Pos.CENTER_LEFT);
-        StackPane stack = new StackPane(list, diagram);
-        VBox.setVgrow(stack, Priority.ALWAYS);
-        VBox views = new VBox(viewHeader, stack);
+        Tab diagramTab = tab("Diagram");
+        diagramTab.setContent(diagram);
+        Tab listTab = tab("List");
+        listTab.setContent(list);
+        TabPane views = tabs(diagramTab, listTab);
         views.setMinWidth(0);
         horizontal = new SplitPane(views, inspector);
         horizontal.getStyleClass().add("main-split");
-        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
-            boolean showDiagram = newValue == diagramToggle;
-            diagramShown = showDiagram;
-            diagram.setVisible(showDiagram);
-            diagram.setManaged(showDiagram);
-            list.setVisible(!showDiagram);
-            list.setManaged(!showDiagram);
+        views.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            diagramShown = newValue == diagramTab;
             applySplit();
-            if (showDiagram) {
+            if (diagramShown) {
                 diagram.refit();
             }
         });
-        diagramToggle.setSelected(true);
         vertical = new SplitPane(horizontal, buildLogPanel());
         vertical.setOrientation(Orientation.VERTICAL);
         vertical.getStyleClass().add("editor-split");
@@ -609,41 +590,38 @@ public final class ScenarioPane extends BorderPane {
         return null;
     }
 
-    private VBox buildLogPanel() {
-        ToggleGroup group = new ToggleGroup();
-        liveToggle.setToggleGroup(group);
-        historyToggle.setToggleGroup(group);
-        HBox switcher = new HBox(liveToggle, historyToggle);
-        switcher.getStyleClass().add("view-switch");
-        switcher.setMaxWidth(Region.USE_PREF_SIZE);
+    private static Tab tab(String text) {
+        Tab tab = new Tab();
+        tab.setGraphic(new Label(text));
+        tab.setClosable(false);
+        return tab;
+    }
+
+    private static TabPane tabs(Tab... items) {
+        TabPane pane = new TabPane(items);
+        pane.getStyleClass().add("request-tabs");
+        pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        return pane;
+    }
+
+    private StackPane buildLogPanel() {
+        logTab.setContent(log);
+        historyTab.setContent(historyPane);
+        logTabs = tabs(logTab, historyTab);
         clearHistoryButton.getStyleClass().add("link-button");
         clearHistoryButton.setOnAction(event -> clearHistory());
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox header = new HBox(8, switcher, gap, clearHistoryButton);
-        header.getStyleClass().add("view-header");
-        header.setAlignment(Pos.CENTER_LEFT);
-        StackPane stack = new StackPane(log, historyPane);
-        VBox.setVgrow(stack, Priority.ALWAYS);
-        logPanel = new VBox(header, stack);
+        clearHistoryButton.setVisible(false);
+        StackPane.setAlignment(clearHistoryButton, Pos.TOP_RIGHT);
+        StackPane.setMargin(clearHistoryButton, new Insets(2, 8, 0, 0));
+        logPanel = new StackPane(logTabs, clearHistoryButton);
         logPanel.setMinHeight(110);
-        group.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue == null) {
-                oldValue.setSelected(true);
-                return;
-            }
-            boolean history = newValue == historyToggle;
-            log.setVisible(!history);
-            log.setManaged(!history);
-            historyPane.setVisible(history);
-            historyPane.setManaged(history);
+        logTabs.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            boolean history = newValue == historyTab;
             clearHistoryButton.setVisible(history);
-            clearHistoryButton.setManaged(history);
             if (history) {
                 refreshHistory();
             }
         });
-        liveToggle.setSelected(true);
         return logPanel;
     }
 
@@ -758,7 +736,7 @@ public final class ScenarioPane extends BorderPane {
             return;
         }
         showLog(true);
-        liveToggle.setSelected(true);
+        logTabs.getSelectionModel().select(logTab);
         view.results.clear();
         view.states.clear();
         view.recorded.clear();
