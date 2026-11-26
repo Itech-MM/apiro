@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ApiroWebMvcConfiguration {
-
     @Bean
     public ApiroManifestController apiroManifestController() {
         return new ApiroManifestController();

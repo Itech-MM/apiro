@@ -4,14 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * One HTTP method on one path.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Endpoint {
-
     private String id;
     private String method;
     private String path;

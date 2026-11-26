@@ -9,12 +9,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
-/**
- * The example manifests are the contract other modules test against. Spec itself has no JSON
- * library, so this only guards packaging; parsing and writing are checked in the consumer modules.
- */
 class ExamplesTest {
-
     private static String read(String name) throws IOException {
         try (InputStream in = ExamplesTest.class.getResourceAsStream("/examples/" + name)) {
             assertNotNull(in, "missing resource /examples/" + name);

@@ -2,14 +2,7 @@ package io.github.itech_mm.apiro.spec;
 
 import java.util.Objects;
 
-/**
- * The described application.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Application {
-
     private String name;
     private String contextPath;
     private String servletPath;

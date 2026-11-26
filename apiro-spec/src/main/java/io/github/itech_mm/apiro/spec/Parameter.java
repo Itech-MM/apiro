@@ -2,14 +2,7 @@ package io.github.itech_mm.apiro.spec;
 
 import java.util.Objects;
 
-/**
- * A path, query, header, cookie, form or multipart parameter.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Parameter {
-
     private String name;
     private String in;
     private boolean required;

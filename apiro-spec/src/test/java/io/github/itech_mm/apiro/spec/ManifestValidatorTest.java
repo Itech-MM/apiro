@@ -8,7 +8,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ManifestValidatorTest {
-
     private static Manifest valid() {
         return new Manifest()
                 .setManifestVersion(ManifestVersion.CURRENT)

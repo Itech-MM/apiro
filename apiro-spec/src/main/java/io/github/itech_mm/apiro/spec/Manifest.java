@@ -6,14 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Root of the Apiro endpoint manifest.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Manifest {
-
     private int manifestVersion;
     private Generator generator;
     private String generatedAt;

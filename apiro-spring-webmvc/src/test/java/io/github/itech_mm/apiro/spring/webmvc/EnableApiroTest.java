@@ -8,7 +8,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 
 class EnableApiroTest {
-
     @Configuration
     @EnableApiro
     static class Config {

@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class ApiroManifestController {
-
     @GetMapping(value = "/apiro/manifest", produces = "application/json")
     @ResponseBody
     public String manifest() {

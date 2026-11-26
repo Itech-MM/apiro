@@ -2,14 +2,7 @@ package io.github.itech_mm.apiro.spec;
 
 import java.util.Objects;
 
-/**
- * Who produced the manifest.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Generator {
-
     private String name;
     private String version;
     private String framework;

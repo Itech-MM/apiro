@@ -4,14 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Where an endpoint is implemented in code.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Handler {
-
     private String className;
     private String methodName;
     private List<String> parameterTypes = new ArrayList<>();

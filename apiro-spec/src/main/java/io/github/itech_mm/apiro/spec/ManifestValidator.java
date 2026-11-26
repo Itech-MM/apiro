@@ -12,13 +12,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Structural checks every producer and consumer can run on a {@link Manifest}.
- * Returns human-readable problems; an empty list means the manifest is usable.
- * Never throws for bad input.
- */
 public final class ManifestValidator {
-
     private static final Set<String> METHODS = Collections.unmodifiableSet(new LinkedHashSet<>(
             Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")));
 

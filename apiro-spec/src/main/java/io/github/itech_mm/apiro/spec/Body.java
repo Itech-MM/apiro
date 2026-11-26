@@ -2,14 +2,7 @@ package io.github.itech_mm.apiro.spec;
 
 import java.util.Objects;
 
-/**
- * Request body description.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Body {
-
     private String contentType;
     private boolean required;
     private Schema schema;

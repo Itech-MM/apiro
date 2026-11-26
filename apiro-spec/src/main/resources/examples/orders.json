@@ -57,8 +57,7 @@
         "schema": { "ref": "CreateOrder" }
       },
       "security": {
-        "required": true,
-        "schemes": ["bearer"]
+        "required": true
       },
       "handler": {
         "className": "com.shop.OrderController",
@@ -83,8 +82,7 @@
         }
       ],
       "security": {
-        "required": true,
-        "schemes": ["bearer"]
+        "required": true
       },
       "handler": {
         "className": "com.shop.OrderController",

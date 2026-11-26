@@ -4,14 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Security requirement of an endpoint. Only scheme names, never values.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Security {
-
     private Boolean required;
     private List<String> schemes = new ArrayList<>();
 

@@ -6,14 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Small JSON-Schema-like subset describing a value shape. See manifest-spec-design.md, section 5.
- *
- * <p>Plain bean: no JSON library, no framework types. Collections are never null.
- * Absent optional values are null (or false / empty).
- */
 public final class Schema {
-
     private String type;
     private String format;
     private String ref;
