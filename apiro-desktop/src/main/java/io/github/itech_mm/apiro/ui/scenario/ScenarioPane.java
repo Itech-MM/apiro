@@ -1,5 +1,13 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
+import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import io.github.itech_framework.api_client.utils.CancelToken;
 import io.github.itech_framework.code_editor.CodeEditor;
 import io.github.itech_mm.apiro.model.Environment;
@@ -20,19 +28,12 @@ import io.github.itech_mm.apiro.service.scenario.ScenarioResult;
 import io.github.itech_mm.apiro.service.scenario.ScenarioRunner;
 import io.github.itech_mm.apiro.service.scenario.ScenarioScope;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
-import io.github.itech_mm.apiro.service.scenario.StepSummary;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
+import io.github.itech_mm.apiro.service.scenario.StepSummary;
 import io.github.itech_mm.apiro.service.scenario.VariableUsage;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.editor.ScenarioLogLanguage;
-import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -57,7 +58,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 public final class ScenarioPane extends BorderPane {
 
