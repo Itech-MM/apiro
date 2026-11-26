@@ -128,6 +128,134 @@ class ManifestValidatorTest {
         assertTrue(mentions(ManifestValidator.validate(manifest), "schemas.Bad.type"));
     }
 
+    private static Manifest withBodySchema(Schema schema) {
+        return valid().setEndpoints(Arrays.asList(
+                endpoint("x", "POST", "/a").setBody(new Body().setSchema(schema))));
+    }
+
+    @Test
+    void duplicateRouteIsReportedEvenWithDifferentIds() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(
+                endpoint("a", "GET", "/a"), endpoint("b", "GET", "/a")));
+        assertTrue(mentions(ManifestValidator.validate(manifest), "duplicates the route GET /a"));
+    }
+
+    @Test
+    void sameMethodOnDifferentPathsAndDifferentMethodOnSamePathAreFine() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(
+                endpoint("a", "GET", "/a"), endpoint("b", "POST", "/a"), endpoint("c", "GET", "/b")));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+    }
+
+    @Test
+    void itemsOnNonArrayIsReported() {
+        Schema schema = new Schema().setType(SchemaType.STRING).setItems(new Schema().setType(SchemaType.STRING));
+        assertTrue(mentions(ManifestValidator.validate(withBodySchema(schema)), ".items is only allowed on type 'array'"));
+    }
+
+    @Test
+    void propertiesAndRequiredOnNonObjectAreReported() {
+        Schema schema = new Schema().setType(SchemaType.ARRAY).setRequired(Arrays.asList("id"));
+        schema.getProperties().put("id", new Schema().setType(SchemaType.STRING));
+        List<String> problems = ManifestValidator.validate(withBodySchema(schema));
+        assertTrue(mentions(problems, ".properties is only allowed on type 'object'"));
+        assertTrue(mentions(problems, ".required is only allowed on type 'object'"));
+    }
+
+    @Test
+    void requiredNameMustBeAProperty() {
+        Schema schema = new Schema().setType(SchemaType.OBJECT).setRequired(Arrays.asList("missing"));
+        schema.getProperties().put("id", new Schema().setType(SchemaType.STRING));
+        assertTrue(mentions(ManifestValidator.validate(withBodySchema(schema)),
+                "names 'missing' which is not in properties"));
+    }
+
+    @Test
+    void contradictoryLimitsAreReported() {
+        Schema schema = new Schema().setType(SchemaType.STRING).setMinLength(5).setMaxLength(2)
+                .setMinimum(10.0).setMaximum(1.0).setMinItems(3).setMaxItems(1);
+        List<String> problems = ManifestValidator.validate(withBodySchema(schema));
+        assertTrue(mentions(problems, "minLength 5 is greater than maxLength 2"));
+        assertTrue(mentions(problems, "minimum 10.0 is greater than maximum 1.0"));
+        assertTrue(mentions(problems, "minItems 3 is greater than maxItems 1"));
+    }
+
+    @Test
+    void negativeLimitsAreReported() {
+        Schema schema = new Schema().setType(SchemaType.STRING).setMinLength(-1).setMaxItems(-2);
+        List<String> problems = ManifestValidator.validate(withBodySchema(schema));
+        assertTrue(mentions(problems, ".minLength must not be negative"));
+        assertTrue(mentions(problems, ".maxItems must not be negative"));
+    }
+
+    @Test
+    void refSchemaIgnoresShapeRules() {
+        Manifest manifest = valid();
+        manifest.getSchemas().put("Thing", new Schema().setType(SchemaType.OBJECT));
+        Schema ref = new Schema().setRef("Thing").setType(SchemaType.STRING)
+                .setItems(new Schema().setType(SchemaType.STRING));
+        manifest.setEndpoints(Arrays.asList(endpoint("x", "POST", "/a").setBody(new Body().setSchema(ref))));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+    }
+
+    @Test
+    void validManifestIsCanonical() {
+        assertEquals(0, ManifestValidator.validateCanonical(valid()).size());
+    }
+
+    @Test
+    void canonicalIncludesStructuralProblems() {
+        assertTrue(mentions(ManifestValidator.validateCanonical(valid().setManifestVersion(0)), "1 or higher"));
+    }
+
+    @Test
+    void unsortedEndpointsAreOnlyACanonicalProblem() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(
+                endpoint("b", "GET", "/b"), endpoint("a", "GET", "/a")));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+        assertTrue(mentions(ManifestValidator.validateCanonical(manifest), "endpoints[1] is out of order"));
+    }
+
+    @Test
+    void endpointsAreSortedByPathThenMethod() {
+        Manifest sorted = valid().setEndpoints(Arrays.asList(
+                endpoint("a", "DELETE", "/a"), endpoint("b", "GET", "/a"), endpoint("c", "POST", "/a"),
+                endpoint("d", "GET", "/b")));
+        assertEquals(0, ManifestValidator.validateCanonical(sorted).size());
+        Manifest wrongMethodOrder = valid().setEndpoints(Arrays.asList(
+                endpoint("a", "POST", "/a"), endpoint("b", "GET", "/a")));
+        assertTrue(mentions(ManifestValidator.validateCanonical(wrongMethodOrder), "out of order"));
+    }
+
+    @Test
+    void refWithOtherFieldsIsOnlyACanonicalProblem() {
+        Manifest manifest = valid();
+        manifest.getSchemas().put("Thing", new Schema().setType(SchemaType.OBJECT));
+        Schema ref = new Schema().setRef("Thing").setNullable(Boolean.TRUE);
+        manifest.setEndpoints(Arrays.asList(endpoint("x", "POST", "/a").setBody(new Body().setSchema(ref))));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+        assertTrue(mentions(ManifestValidator.validateCanonical(manifest), "has fields besides 'ref'"));
+    }
+
+    @Test
+    void bareRefIsCanonical() {
+        Manifest manifest = valid();
+        manifest.getSchemas().put("Thing", new Schema().setType(SchemaType.OBJECT));
+        manifest.setEndpoints(Arrays.asList(endpoint("x", "POST", "/a").setBody(
+                new Body().setSchema(new Schema().setRef("Thing")))));
+        assertEquals(0, ManifestValidator.validateCanonical(manifest).size());
+    }
+
+    @Test
+    void schemaCapIsACanonicalProblem() {
+        Manifest manifest = valid();
+        for (int i = 0; i <= ManifestValidator.MAX_SCHEMAS; i++) {
+            manifest.getSchemas().put("S" + i, new Schema().setType(SchemaType.OBJECT));
+        }
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+        assertTrue(mentions(ManifestValidator.validateCanonical(manifest), "the limit is 500"));
+    }
+
     @Test
     void settersCopyCollectionsAndNeverStoreNull() {
         Endpoint endpoint = new Endpoint().setConsumes(null);

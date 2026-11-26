@@ -18,10 +18,30 @@ public final class ManifestValidator {
 
     private static final Pattern PATH_VARIABLE = Pattern.compile("\\{([^/{}]+)}");
 
+    /** Most named schemas a producer may write into one manifest (design section 11, question 4). */
+    public static final int MAX_SCHEMAS = 500;
+
     private ManifestValidator() {
     }
 
+    /**
+     * Structural validation: everything a reader needs to trust the manifest. Style rules that only
+     * producers must follow are left out on purpose, so manifests from other producers still load.
+     */
     public static List<String> validate(Manifest manifest) {
+        return run(manifest, false);
+    }
+
+    /**
+     * {@link #validate(Manifest)} plus the canonical-form rules a producer must satisfy: endpoints
+     * sorted by path then method, {@code ref} schemas carrying no other fields, and the schema cap.
+     * Use it in golden-file and producer tests.
+     */
+    public static List<String> validateCanonical(Manifest manifest) {
+        return run(manifest, true);
+    }
+
+    private static List<String> run(Manifest manifest, boolean canonical) {
         List<String> problems = new ArrayList<>();
         if (manifest == null) {
             problems.add("manifest is null");
@@ -39,19 +59,48 @@ public final class ManifestValidator {
 
         Map<String, Schema> schemas = manifest.getSchemas();
         Set<String> seenIds = new HashSet<>();
+        Set<String> seenRoutes = new HashSet<>();
         List<Endpoint> endpoints = manifest.getEndpoints();
         for (int i = 0; i < endpoints.size(); i++) {
-            checkEndpoint("endpoints[" + i + "]", endpoints.get(i), schemas, seenIds, problems);
+            checkEndpoint("endpoints[" + i + "]", endpoints.get(i), schemas, seenIds, seenRoutes, problems,
+                    canonical);
         }
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             checkSchema("schemas." + entry.getKey(), entry.getValue(), schemas, problems,
-                    new IdentityHashMap<Schema, Boolean>());
+                    new IdentityHashMap<Schema, Boolean>(), canonical);
+        }
+        if (canonical) {
+            checkCanonical(manifest, problems);
         }
         return problems;
     }
 
+    private static void checkCanonical(Manifest manifest, List<String> problems) {
+        List<Endpoint> endpoints = manifest.getEndpoints();
+        for (int i = 1; i < endpoints.size(); i++) {
+            Endpoint previous = endpoints.get(i - 1);
+            Endpoint current = endpoints.get(i);
+            if (previous != null && current != null && compareRoute(previous, current) > 0) {
+                problems.add("endpoints[" + i + "] is out of order: endpoints must be sorted by path, then method");
+            }
+        }
+        if (manifest.getSchemas().size() > MAX_SCHEMAS) {
+            problems.add("schemas has " + manifest.getSchemas().size() + " entries but the limit is " + MAX_SCHEMAS);
+        }
+    }
+
+    private static int compareRoute(Endpoint a, Endpoint b) {
+        int byPath = nullToEmpty(a.getPath()).compareTo(nullToEmpty(b.getPath()));
+        return byPath != 0 ? byPath : nullToEmpty(a.getMethod()).compareTo(nullToEmpty(b.getMethod()));
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
     private static void checkEndpoint(String where, Endpoint endpoint, Map<String, Schema> schemas,
-                                      Set<String> seenIds, List<String> problems) {
+                                      Set<String> seenIds, Set<String> seenRoutes, List<String> problems,
+                                      boolean canonical) {
         if (endpoint == null) {
             problems.add(where + " is null");
             return;
@@ -67,6 +116,12 @@ public final class ManifestValidator {
         String path = endpoint.getPath();
         if (isBlank(path) || !path.startsWith("/")) {
             problems.add(where + ".path must start with '/' but was " + path);
+        }
+        if (endpoint.getMethod() != null && path != null) {
+            String route = endpoint.getMethod() + " " + path;
+            if (!seenRoutes.add(route)) {
+                problems.add(where + " duplicates the route " + route + ": one endpoint is one method and one path");
+            }
         }
 
         Set<String> templateNames = new LinkedHashSet<>();
@@ -99,7 +154,7 @@ public final class ManifestValidator {
             }
             if (parameter.getSchema() != null) {
                 checkSchema(parameterWhere + ".schema", parameter.getSchema(), schemas, problems,
-                        new IdentityHashMap<Schema, Boolean>());
+                        new IdentityHashMap<Schema, Boolean>(), canonical);
             }
         }
         for (String name : templateNames) {
@@ -114,12 +169,12 @@ public final class ManifestValidator {
         }
         if (endpoint.getBody() != null && endpoint.getBody().getSchema() != null) {
             checkSchema(where + ".body.schema", endpoint.getBody().getSchema(), schemas, problems,
-                    new IdentityHashMap<Schema, Boolean>());
+                    new IdentityHashMap<Schema, Boolean>(), canonical);
         }
     }
 
     private static void checkSchema(String where, Schema schema, Map<String, Schema> schemas,
-                                    List<String> problems, Map<Schema, Boolean> visiting) {
+                                    List<String> problems, Map<Schema, Boolean> visiting, boolean canonical) {
         if (schema == null) {
             problems.add(where + " is null");
             return;
@@ -131,16 +186,83 @@ public final class ManifestValidator {
             if (!schemas.containsKey(schema.getRef())) {
                 problems.add(where + " refers to unknown schema '" + schema.getRef() + "'");
             }
+            if (canonical && hasFieldsBesidesRef(schema)) {
+                problems.add(where + " has fields besides 'ref': a schema with a ref must carry only the ref");
+            }
         } else if (schema.getType() != null && !SchemaType.ALL.contains(schema.getType())) {
             problems.add(where + ".type must be one of " + SchemaType.ALL + " but was " + schema.getType());
+        } else {
+            checkShape(where, schema, problems);
         }
         if (schema.getItems() != null) {
-            checkSchema(where + ".items", schema.getItems(), schemas, problems, visiting);
+            checkSchema(where + ".items", schema.getItems(), schemas, problems, visiting, canonical);
         }
         for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
-            checkSchema(where + ".properties." + property.getKey(), property.getValue(), schemas, problems, visiting);
+            checkSchema(where + ".properties." + property.getKey(), property.getValue(), schemas, problems,
+                    visiting, canonical);
         }
         visiting.remove(schema);
+    }
+
+    /** Fields must fit the declared type, and limits must not contradict each other. */
+    private static void checkShape(String where, Schema schema, List<String> problems) {
+        String type = schema.getType();
+        if (type != null) {
+            if (schema.getItems() != null && !SchemaType.ARRAY.equals(type)) {
+                problems.add(where + ".items is only allowed on type 'array' but type is '" + type + "'");
+            }
+            if (!SchemaType.OBJECT.equals(type)) {
+                if (!schema.getProperties().isEmpty()) {
+                    problems.add(where + ".properties is only allowed on type 'object' but type is '" + type + "'");
+                }
+                if (!schema.getRequired().isEmpty()) {
+                    problems.add(where + ".required is only allowed on type 'object' but type is '" + type + "'");
+                }
+            }
+        }
+        if (SchemaType.OBJECT.equals(type)) {
+            for (String name : schema.getRequired()) {
+                if (!schema.getProperties().containsKey(name)) {
+                    problems.add(where + ".required names '" + name + "' which is not in properties");
+                }
+            }
+        }
+        if (schema.getMinimum() != null && schema.getMaximum() != null
+                && schema.getMinimum() > schema.getMaximum()) {
+            problems.add(where + ".minimum " + schema.getMinimum() + " is greater than maximum " + schema.getMaximum());
+        }
+        checkRange(where, "Length", schema.getMinLength(), schema.getMaxLength(), problems);
+        checkRange(where, "Items", schema.getMinItems(), schema.getMaxItems(), problems);
+    }
+
+    private static void checkRange(String where, String what, Integer min, Integer max, List<String> problems) {
+        if (min != null && min < 0) {
+            problems.add(where + ".min" + what + " must not be negative but was " + min);
+        }
+        if (max != null && max < 0) {
+            problems.add(where + ".max" + what + " must not be negative but was " + max);
+        }
+        if (min != null && max != null && min > max) {
+            problems.add(where + ".min" + what + " " + min + " is greater than max" + what + " " + max);
+        }
+    }
+
+    private static boolean hasFieldsBesidesRef(Schema schema) {
+        return schema.getType() != null
+                || schema.getFormat() != null
+                || schema.getItems() != null
+                || !schema.getProperties().isEmpty()
+                || !schema.getRequired().isEmpty()
+                || !schema.getEnumValues().isEmpty()
+                || schema.getNullable() != null
+                || schema.getMinimum() != null
+                || schema.getMaximum() != null
+                || schema.getMinLength() != null
+                || schema.getMaxLength() != null
+                || schema.getPattern() != null
+                || schema.getMinItems() != null
+                || schema.getMaxItems() != null
+                || schema.getExample() != null;
     }
 
     private static boolean isBlank(String value) {

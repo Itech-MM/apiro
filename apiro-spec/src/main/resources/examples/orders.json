@@ -57,7 +57,8 @@
         "schema": { "ref": "CreateOrder" }
       },
       "security": {
-        "required": true
+        "required": true,
+        "schemes": ["bearer"]
       },
       "handler": {
         "className": "com.shop.OrderController",
