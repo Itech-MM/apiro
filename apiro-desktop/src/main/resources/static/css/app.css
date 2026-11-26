@@ -2216,3 +2216,33 @@
 .step-float-title {
     -fx-font-weight: bold;
 }
+
+.data-edge {
+    -fx-stroke: -fx-info;
+    -fx-stroke-width: 1.6;
+    -fx-stroke-line-cap: round;
+}
+
+.data-edge.outbound { -fx-opacity: 0.55; }
+
+.data-arrow { -fx-fill: -fx-info; }
+
+.data-arrow.outbound { -fx-opacity: 0.55; }
+
+.data-label {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 4;
+    -fx-border-color: -fx-info;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-text-fill: -fx-info;
+    -fx-font-size: 11px;
+    -fx-padding: 0 4 0 4;
+}
+
+.data-label.outbound { -fx-opacity: 0.7; }
+
+.diagram-warn {
+    -fx-text-fill: -fx-warning;
+    -fx-font-weight: bold;
+}

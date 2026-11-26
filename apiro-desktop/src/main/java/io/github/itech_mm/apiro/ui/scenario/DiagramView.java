@@ -4,6 +4,7 @@ import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
 import io.github.itech_mm.apiro.service.scenario.StepSummary;
+import io.github.itech_mm.apiro.service.scenario.VariableUsage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +87,7 @@ final class DiagramView extends StackPane {
     private final Group world = new Group();
     private final Group edgeLayer = new Group();
     private final Group nodeLayer = new Group();
+    private final Group dataLayer = new Group();
     private final Affine view = new Affine();
     private final Map<String, StepNode> nodes = new LinkedHashMap<>();
     private final List<Link> links = new ArrayList<>();
@@ -95,6 +97,7 @@ final class DiagramView extends StackPane {
     private final Button stopButton = tool("■ Stop");
     private final ToggleButton logButton = new ToggleButton("Logs");
     private List<Step> steps = List.of();
+    private VariableUsage.Result usage = VariableUsage.Result.EMPTY;
     private String selectedId;
     private double zoom = 1;
     private double panX = MARGIN;
@@ -121,7 +124,8 @@ final class DiagramView extends StackPane {
         clip.widthProperty().bind(viewport.widthProperty());
         clip.heightProperty().bind(viewport.heightProperty());
         viewport.setClip(clip);
-        world.getChildren().addAll(edgeLayer, nodeLayer, marker);
+        dataLayer.setMouseTransparent(true);
+        world.getChildren().addAll(edgeLayer, nodeLayer, dataLayer, marker);
         world.getTransforms().add(view);
         viewport.getChildren().add(world);
 
@@ -235,8 +239,9 @@ final class DiagramView extends StackPane {
         return button;
     }
 
-    void show(List<Step> next, String selected, boolean refit) {
+    void show(List<Step> next, String selected, boolean refit, VariableUsage.Result analysis) {
         steps = List.copyOf(next);
+        usage = analysis;
         selectedId = selected;
         nodes.values().forEach(StepNode::dispose);
         links.forEach(Link::dispose);
@@ -281,6 +286,7 @@ final class DiagramView extends StackPane {
             index++;
         }
         links.forEach(Link::place);
+        refreshData();
     }
 
     private int gapAt(double sceneX, double sceneY) {
@@ -310,11 +316,100 @@ final class DiagramView extends StackPane {
     void select(String stepId) {
         selectedId = stepId;
         nodes.values().forEach(StepNode::syncSelected);
+        refreshData();
+    }
+
+    void setUsage(VariableUsage.Result analysis) {
+        usage = analysis;
+        refresh();
     }
 
     void refresh() {
         nodes.values().forEach(StepNode::refresh);
         links.forEach(Link::refresh);
+        refreshData();
+    }
+
+    private void refreshData() {
+        dataLayer.getChildren().clear();
+        boolean running = false;
+        for (Step step : steps) {
+            if (support.state(step.id()) == StepResult.State.RUNNING) {
+                running = true;
+                break;
+            }
+        }
+        for (VariableUsage.Link link : usage.links()) {
+            boolean inbound;
+            boolean visible;
+            if (running) {
+                inbound = true;
+                visible = support.state(link.toStepId()) == StepResult.State.RUNNING;
+            } else if (selectedId == null) {
+                inbound = false;
+                visible = false;
+            } else {
+                inbound = link.toStepId().equals(selectedId);
+                visible = inbound || link.fromStepId().equals(selectedId);
+            }
+            if (visible) {
+                addDataLink(link, inbound);
+            }
+        }
+    }
+
+    private void addDataLink(VariableUsage.Link link, boolean inbound) {
+        int from = indexOf(link.fromStepId());
+        int to = indexOf(link.toStepId());
+        if (from < 0 || to < 0) {
+            return;
+        }
+        double fx = DiagramLayout.nodeX(from, cols, NODE_WIDTH, GAP);
+        double fy = DiagramLayout.nodeY(from, cols, NODE_HEIGHT, ROW_GAP);
+        double tx = DiagramLayout.nodeX(to, cols, NODE_WIDTH, GAP);
+        double ty = DiagramLayout.nodeY(to, cols, NODE_HEIGHT, ROW_GAP);
+        boolean sameRow = DiagramLayout.row(from, cols) == DiagramLayout.row(to, cols);
+        double shift = sameRow ? 0 : 36;
+        double x1 = fx + NODE_WIDTH / 2 + shift;
+        double y1 = fy + NODE_HEIGHT;
+        double x2 = tx + NODE_WIDTH / 2 + shift;
+        double y2 = sameRow ? ty + NODE_HEIGHT : ty;
+        double c1y;
+        double c2y;
+        double uy;
+        if (sameRow) {
+            double drop = 46 + Math.min(60, Math.abs(x2 - x1) * 0.12);
+            c1y = y1 + drop;
+            c2y = y2 + drop;
+            uy = -1;
+        } else {
+            double handle = Math.max(30, (y2 - y1) / 2);
+            c1y = y1 + handle;
+            c2y = y2 - handle;
+            uy = 1;
+        }
+        CubicCurve curve = new CubicCurve(x1, y1, x1, c1y, x2, c2y, x2, y2);
+        curve.setFill(null);
+        curve.getStrokeDashArray().setAll(2.0, 5.0);
+        curve.getStyleClass().addAll("data-edge", inbound ? "inbound" : "outbound");
+        Polygon arrow = new Polygon(x2, y2, x2 - 5, y2 - uy * 10, x2 + 5, y2 - uy * 10);
+        arrow.getStyleClass().addAll("data-arrow", inbound ? "inbound" : "outbound");
+        String text = String.join(", ", link.names());
+        if (text.length() > 32) {
+            text = text.substring(0, 31) + "…";
+        }
+        Label label = new Label(text);
+        label.getStyleClass().addAll("data-label", inbound ? "inbound" : "outbound");
+        double width = text.length() * 6.4 + 14;
+        label.setMinWidth(width);
+        label.setPrefWidth(width);
+        label.setMaxWidth(width);
+        label.setAlignment(Pos.CENTER);
+        double midX = (x1 + 3 * x1 + 3 * x2 + x2) / 8;
+        double midY = (y1 + 3 * c1y + 3 * c2y + y2) / 8;
+        label.setLayoutX(midX - width / 2);
+        label.setLayoutY(midY - 9);
+        dataLayer.getChildren().addAll(curve, arrow, label);
     }
 
     void refit() {
@@ -497,6 +592,8 @@ final class DiagramView extends StackPane {
         private final Label name = new Label();
         private final Label time = new Label();
         private final Label badge = new Label();
+        private final Label warn = new Label("!");
+        private final Tooltip warnTip = new Tooltip();
         private final Label url = new Label();
         private final Label pill = new Label();
         private final Circle portIn = new Circle(5);
@@ -518,7 +615,11 @@ final class DiagramView extends StackPane {
             time.getStyleClass().add("diagram-node-time");
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
-            HBox head = new HBox(8, number, name, spacer, time);
+            warn.getStyleClass().add("diagram-warn");
+            warn.setTooltip(warnTip);
+            warn.setVisible(false);
+            warn.setManaged(false);
+            HBox head = new HBox(8, number, name, spacer, warn, time);
             head.setAlignment(Pos.CENTER_LEFT);
             head.getStyleClass().add("diagram-node-head");
             HBox.setHgrow(name, Priority.SOMETIMES);
@@ -672,6 +773,10 @@ final class DiagramView extends StackPane {
                 };
             }
             pill.setText(text);
+            List<String> missing = usage.unresolvedFor(step.id());
+            warn.setVisible(!missing.isEmpty());
+            warn.setManaged(!missing.isEmpty());
+            warnTip.setText(missing.isEmpty() ? "" : "Not defined before this step: " + String.join(", ", missing));
             if (state == StepResult.State.RUNNING) {
                 pulse.play();
             } else {

@@ -22,6 +22,7 @@ import io.github.itech_mm.apiro.service.scenario.ScenarioScope;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
 import io.github.itech_mm.apiro.service.scenario.StepSummary;
 import io.github.itech_mm.apiro.service.scenario.StepSender;
+import io.github.itech_mm.apiro.service.scenario.VariableUsage;
 import io.github.itech_mm.apiro.service.variables.VariableScope;
 import io.github.itech_mm.apiro.ui.EditorStyle;
 import io.github.itech_mm.apiro.ui.editor.ScenarioLogLanguage;
@@ -361,11 +362,19 @@ public final class ScenarioPane extends BorderPane {
         commit(ScenarioEdit.withContent(current, snapshot), true, false);
     }
 
+    private VariableUsage.Result usage() {
+        try {
+            return VariableUsage.analyze(host.project(), host.environmentId(), current);
+        } catch (RuntimeException e) {
+            return VariableUsage.Result.EMPTY;
+        }
+    }
+
     public void show(ScenarioItem scenario) {
         boolean same = current != null && current.id().equals(scenario.id());
         if (same && current.equals(scenario)) {
             list.refresh();
-            diagram.refresh();
+            diagram.setUsage(usage());
             return;
         }
         String keep = same ? selectedId() : null;
@@ -383,7 +392,7 @@ public final class ScenarioPane extends BorderPane {
         selectById(keep);
         syncing = false;
         inspectSelected();
-        diagram.show(scenario.steps(), selectedId(), !same);
+        diagram.show(scenario.steps(), selectedId(), !same, usage());
         refreshRunState();
         refreshLog();
         if (!same) {
@@ -410,7 +419,7 @@ public final class ScenarioPane extends BorderPane {
             }
         }
         syncing = false;
-        diagram.show(current.steps(), selectedId(), false);
+        diagram.show(current.steps(), selectedId(), false, usage());
         host.save(next);
         refreshRunState();
     }
@@ -434,7 +443,7 @@ public final class ScenarioPane extends BorderPane {
             selectById(keep);
             syncing = false;
             inspectSelected();
-            diagram.show(next.steps(), selectedId(), false);
+            diagram.show(next.steps(), selectedId(), false, usage());
         }
         host.save(next);
         refreshRunState();
