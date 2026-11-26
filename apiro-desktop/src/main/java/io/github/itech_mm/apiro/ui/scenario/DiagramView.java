@@ -93,6 +93,7 @@ final class DiagramView extends StackPane {
     private final List<Link> links = new ArrayList<>();
     private final Label empty = new Label("Add steps to see them here");
     private final Label zoomLabel = new Label("100%");
+    private final HBox zoomTools;
     private final Button runButton = tool("▶ Run");
     private final Button stopButton = tool("■ Stop");
     private final ToggleButton logButton = new ToggleButton("Logs");
@@ -141,7 +142,8 @@ final class DiagramView extends StackPane {
         zoomOut.setOnAction(event -> zoomAt(viewport.getWidth() / 2, viewport.getHeight() / 2, 1 / 1.2));
         zoomIn.setOnAction(event -> zoomAt(viewport.getWidth() / 2, viewport.getHeight() / 2, 1.2));
         fit.setOnAction(event -> fit(MIN_ZOOM));
-        HBox tools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit);
+        zoomTools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit);
+        HBox tools = zoomTools;
         tools.setAlignment(Pos.CENTER);
         tools.getStyleClass().add("diagram-tools");
         tools.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
@@ -302,6 +304,10 @@ final class DiagramView extends StackPane {
         marker.setX(anchor.x() - 2);
         marker.setY(anchor.y() - marker.getHeight() / 2);
         marker.setVisible(true);
+    }
+
+    void setRightInset(double inset) {
+        StackPane.setMargin(zoomTools, new Insets(10, 10 + inset, 10, 10));
     }
 
     void syncRun(boolean runEnabled, boolean stopEnabled) {

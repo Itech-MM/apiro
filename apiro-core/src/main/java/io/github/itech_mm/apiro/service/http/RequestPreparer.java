@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.service.http;
 
 import io.github.itech_mm.apiro.model.AuthConfig;
+import io.github.itech_mm.apiro.model.BodyOverride;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.FormPart;
 import io.github.itech_mm.apiro.model.HttpMethod;
@@ -46,10 +47,17 @@ public final class RequestPreparer {
     public static PreparedRequest prepare(Project project, String environmentId, String requestId,
                                           List<Variable> runtime, List<Variable> literal,
                                           List<KeyValue> headerOverrides) {
-        RequestItem request = project.findItem(requestId)
+        return prepare(project, environmentId, requestId, runtime, literal, headerOverrides, null);
+    }
+
+    public static PreparedRequest prepare(Project project, String environmentId, String requestId,
+                                          List<Variable> runtime, List<Variable> literal,
+                                          List<KeyValue> headerOverrides, BodyOverride bodyOverride) {
+        RequestItem original = project.findItem(requestId)
                 .filter(RequestItem.class::isInstance)
                 .map(RequestItem.class::cast)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown request: " + requestId));
+        RequestItem request = BodyOverrides.apply(original, bodyOverride);
         Inheritance.Effective effective = Inheritance.forItem(project, requestId).orElseThrow();
         VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId, runtime, literal);
 

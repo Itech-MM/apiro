@@ -11,8 +11,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.github.itech_mm.apiro.model.Assertion;
+import io.github.itech_mm.apiro.model.BodyOverride;
 import io.github.itech_mm.apiro.model.Edge;
 import io.github.itech_mm.apiro.model.Extractor;
+import io.github.itech_mm.apiro.model.FieldOverride;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.HttpMethod;
 import io.github.itech_mm.apiro.model.KeyValue;
@@ -143,7 +145,19 @@ class ScenarioPersistenceTest {
     void fileWithStepHeadersIsWrittenAsVersionThree() {
         int version = writtenVersion(ProjectJson.toJson(projectWith(flowWithHeaders())));
         assertEquals(Project.HEADERS_VERSION, version);
-        assertEquals(Project.CURRENT_VERSION, version);
+    }
+
+    @Test
+    void fileWithBodyOverrideIsWrittenAsVersionFourAndRoundTrips() {
+        Step step = new Step("s1", "r1", "Login", null, null, null, 0, null, 0, 0,
+                BodyOverride.patch(List.of(FieldOverride.of("$.age", FieldOverride.ValueType.NUMBER, "42"),
+                        FieldOverride.of("$.promo", FieldOverride.ValueType.REMOVE, ""))));
+        ScenarioItem scenario = new ScenarioItem("sc1", "Flow", null, List.of(step), null, null);
+        String json = ProjectJson.toJson(projectWith(scenario));
+
+        assertEquals(Project.OVERRIDES_VERSION, writtenVersion(json));
+        ScenarioItem loaded = (ScenarioItem) ProjectJson.fromJson(json).findItem("sc1").orElseThrow();
+        assertEquals(step, loaded.steps().get(0));
     }
 
     @Test

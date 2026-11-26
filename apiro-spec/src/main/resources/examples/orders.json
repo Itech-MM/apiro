@@ -1,0 +1,114 @@
+{
+  "manifestVersion": 1,
+  "generator": {
+    "name": "apiro-spring-webmvc",
+    "version": "1.0.0",
+    "framework": "spring-webmvc",
+    "frameworkVersion": "6.2.0"
+  },
+  "generatedAt": "2026-11-26T10:15:30Z",
+  "application": {
+    "name": "orders-service",
+    "contextPath": "/shop"
+  },
+  "endpoints": [
+    {
+      "id": "GET /health#com.shop.HealthController.health()",
+      "method": "GET",
+      "path": "/health",
+      "group": "HealthController",
+      "name": "health",
+      "produces": ["text/plain"],
+      "handler": {
+        "className": "com.shop.HealthController",
+        "methodName": "health"
+      }
+    },
+    {
+      "id": "POST /orders/{customerId}#com.shop.OrderController.create(long,boolean,String,CreateOrder)",
+      "method": "POST",
+      "path": "/orders/{customerId}",
+      "group": "OrderController",
+      "name": "create",
+      "consumes": ["application/json"],
+      "produces": ["application/json"],
+      "parameters": [
+        {
+          "name": "customerId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "integer", "format": "int64" }
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "defaultValue": "false",
+          "schema": { "type": "boolean" }
+        },
+        {
+          "name": "X-Trace",
+          "in": "header",
+          "schema": { "type": "string" }
+        }
+      ],
+      "body": {
+        "contentType": "application/json",
+        "required": true,
+        "schema": { "ref": "CreateOrder" }
+      },
+      "security": {
+        "required": true,
+        "schemes": ["bearer"]
+      },
+      "handler": {
+        "className": "com.shop.OrderController",
+        "methodName": "create",
+        "parameterTypes": ["long", "boolean", "java.lang.String", "com.shop.CreateOrder"]
+      }
+    },
+    {
+      "id": "GET /orders/{id}#com.shop.OrderController.get(long)",
+      "method": "GET",
+      "path": "/orders/{id}",
+      "group": "OrderController",
+      "name": "get",
+      "deprecated": true,
+      "produces": ["application/json"],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "integer", "format": "int64" }
+        }
+      ],
+      "security": {
+        "required": true,
+        "schemes": ["bearer"]
+      },
+      "handler": {
+        "className": "com.shop.OrderController",
+        "methodName": "get",
+        "parameterTypes": ["long"]
+      }
+    }
+  ],
+  "schemas": {
+    "CreateOrder": {
+      "type": "object",
+      "properties": {
+        "items": { "type": "array", "items": { "ref": "OrderLine" }, "minItems": 1 },
+        "note": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["items"]
+    },
+    "OrderLine": {
+      "type": "object",
+      "properties": {
+        "sku": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "quantity": { "type": "integer", "format": "int32", "minimum": 1 }
+      },
+      "required": ["sku", "quantity"]
+    }
+  }
+}

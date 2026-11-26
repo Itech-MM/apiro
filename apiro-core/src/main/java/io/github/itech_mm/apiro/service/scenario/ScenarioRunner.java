@@ -104,7 +104,7 @@ public final class ScenarioRunner {
         PreparedRequest prepared;
         try {
             prepared = RequestPreparer.prepare(project, environmentId, step.requestId(),
-                    scenario.variables(), literal(extracted), step.headers());
+                    scenario.variables(), literal(extracted), step.headers(), step.bodyOverride());
         } catch (RuntimeException error) {
             return failed(step, messageOf(error), started);
         }

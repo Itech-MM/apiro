@@ -15,11 +15,15 @@ public final class EditorStyle {
     private static final String LISTENER_KEY = "apiro.editor.theme.listener";
     private static final String LIGHT_ID = "apiro-light";
     private static final String DARK_ID = "apiro-dark";
+    private static final String INSET_LIGHT_ID = "apiro-light-inset";
+    private static final String INSET_DARK_ID = "apiro-dark-inset";
 
     private static final BooleanProperty DARK = new SimpleBooleanProperty(storedDark());
 
     private static boolean lightRegistered;
     private static boolean darkRegistered;
+    private static boolean insetLightRegistered;
+    private static boolean insetDarkRegistered;
 
     private EditorStyle() {
     }
@@ -35,6 +39,32 @@ public final class EditorStyle {
         editor.getStylesheets().add(EditorStyle.class.getResource(STYLESHEET).toExternalForm());
     }
 
+    public static void applyInset(CodeEditor editor) {
+        editor.setFontSize(MonoFont.EDITOR_SIZE);
+        editor.setHighlightCurrentLine(false);
+        editor.getStylesheets().add(EditorStyle.class.getResource(STYLESHEET).toExternalForm());
+        selectInset(editor, DARK.get());
+        ChangeListener<Boolean> listener = (obs, was, dark) -> selectInset(editor, dark);
+        editor.getProperties().put(LISTENER_KEY, listener);
+        DARK.addListener(new WeakChangeListener<>(listener));
+    }
+
+    private static void selectInset(CodeEditor editor, boolean dark) {
+        if (dark) {
+            if (insetDarkRegistered) {
+                editor.setTheme(INSET_DARK_ID);
+            } else {
+                editor.setTheme(darkTheme(INSET_DARK_ID, "Apiro Dark Inset", "#171724"));
+                insetDarkRegistered = true;
+            }
+        } else if (insetLightRegistered) {
+            editor.setTheme(INSET_LIGHT_ID);
+        } else {
+            editor.setTheme(lightTheme(INSET_LIGHT_ID, "Apiro Light Inset", "#F5F6F8"));
+            insetLightRegistered = true;
+        }
+    }
+
     public static void follow(CodeEditor editor, String lightThemeId) {
         select(editor, DARK.get(), lightThemeId);
         ChangeListener<Boolean> listener = (obs, was, dark) -> select(editor, dark, lightThemeId);
@@ -47,7 +77,7 @@ public final class EditorStyle {
             if (darkRegistered) {
                 editor.setTheme(DARK_ID);
             } else {
-                editor.setTheme(darkTheme());
+                editor.setTheme(darkTheme(DARK_ID, "Apiro Dark", "#232334"));
                 darkRegistered = true;
             }
         } else if (lightThemeId != null) {
@@ -55,7 +85,7 @@ public final class EditorStyle {
         } else if (lightRegistered) {
             editor.setTheme(LIGHT_ID);
         } else {
-            editor.setTheme(lightTheme());
+            editor.setTheme(lightTheme(LIGHT_ID, "Apiro Light", "#FFFFFF"));
             lightRegistered = true;
         }
     }
@@ -65,10 +95,10 @@ public final class EditorStyle {
         return Boolean.parseBoolean(String.valueOf(stored).replace("\"", ""));
     }
 
-    private static EditorTheme lightTheme() {
-        return EditorTheme.builder(LIGHT_ID, "Apiro Light", false)
+    private static EditorTheme lightTheme(String id, String name, String background) {
+        return EditorTheme.builder(id, name, false)
                 .extending("light-plus")
-                .color("background", "#FFFFFF")
+                .color("background", background)
                 .color("foreground", "#18181B")
                 .color("caret", "#18181B")
                 .color("line-number", "#A1A1AA")
@@ -84,10 +114,10 @@ public final class EditorStyle {
                 .build();
     }
 
-    private static EditorTheme darkTheme() {
-        return EditorTheme.builder(DARK_ID, "Apiro Dark", true)
+    private static EditorTheme darkTheme(String id, String name, String background) {
+        return EditorTheme.builder(id, name, true)
                 .extending("monokai")
-                .color("background", "#232334")
+                .color("background", background)
                 .color("foreground", "#CDD6F4")
                 .color("caret", "#F5E0DC")
                 .color("selection", "rgba(203, 166, 247, 0.25)")

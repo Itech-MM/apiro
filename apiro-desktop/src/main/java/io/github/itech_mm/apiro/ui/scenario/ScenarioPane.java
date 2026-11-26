@@ -309,25 +309,30 @@ public final class ScenarioPane extends BorderPane {
         if (diagramShown) {
             horizontal.getItems().remove(inspector);
             stepFloat.attach();
-            stepFloat.setOpen(floatOpen);
+            syncFloat(floatOpen);
         } else {
             stepFloat.detach();
-            stepFloat.setOpen(false);
+            syncFloat(false);
             if (!horizontal.getItems().contains(inspector)) {
                 horizontal.getItems().add(inspector);
             }
         }
     }
 
+    private void syncFloat(boolean open) {
+        stepFloat.setOpen(open);
+        diagram.setRightInset(open ? StepFloat.WIDTH : 0);
+    }
+
     private void openFloat() {
         floatOpen = true;
-        stepFloat.setOpen(true);
+        syncFloat(true);
         Platform.runLater(inspector::focusName);
     }
 
     private void closeFloat() {
         floatOpen = false;
-        stepFloat.setOpen(false);
+        syncFloat(false);
         diagram.requestFocus();
     }
 
@@ -514,10 +519,11 @@ public final class ScenarioPane extends BorderPane {
             return;
         }
         if (selected == null) {
-            inspector.show(null, "", null);
+            inspector.show(null, "", null, null);
             return;
         }
-        inspector.show(selected, requestLabel(selected), inspectedResult(selected.id()));
+        inspector.show(selected, requestLabel(selected), request(selected.requestId()).orElse(null),
+                inspectedResult(selected.id()));
     }
 
     private String requestLabel(Step step) {

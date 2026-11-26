@@ -1,6 +1,5 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -15,7 +14,7 @@ import javafx.scene.layout.VBox;
 
 final class StepFloat extends VBox {
 
-    private static final double WIDTH = 360;
+    static final double WIDTH = 360;
 
     private final Node content;
     private final Label title = new Label("Step settings");
@@ -28,7 +27,6 @@ final class StepFloat extends VBox {
         setMaxWidth(WIDTH);
         setMaxHeight(Double.MAX_VALUE);
         StackPane.setAlignment(this, Pos.TOP_RIGHT);
-        StackPane.setMargin(this, new Insets(54, 10, 10, 10));
         title.getStyleClass().add("step-float-title");
         Region icon = new Region();
         icon.getStyleClass().addAll("icon", "icon-sm", "icon-close");

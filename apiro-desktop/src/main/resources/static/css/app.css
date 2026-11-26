@@ -991,9 +991,11 @@
 .scenario-list .list-cell:filled:selected { -fx-background-color: -app-tree-selected; }
 
 .code-editor.scenario-log,
-.code-editor.step-response-body {
-    -fx-background-color: -app-layer;
+.code-editor.step-response-body,
+.code-editor.override-editor {
     -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-width: 1;
     -fx-border-radius: 6;
 }
 
@@ -2201,10 +2203,9 @@
 
 .step-float {
     -fx-background-color: -fx-surface;
-    -fx-background-radius: 8;
-    -fx-border-color: -fx-border-base;
-    -fx-border-radius: 8;
-    -fx-effect: dropshadow(gaussian, -dg-shadow, 14, 0, 0, 3);
+    -fx-border-color: transparent transparent transparent -fx-border-base;
+    -fx-border-width: 0 0 0 1;
+    -fx-effect: dropshadow(gaussian, -dg-shadow, 10, 0, -2, 0);
 }
 
 .step-float-head {
@@ -2245,4 +2246,15 @@
 .diagram-warn {
     -fx-text-fill: -fx-warning;
     -fx-font-weight: bold;
+}
+
+.override-error {
+    -fx-text-fill: -fx-danger;
+    -fx-font-size: 11px;
+}
+
+.override-row {
+    -fx-padding: 0 0 6 0;
+    -fx-border-color: transparent transparent -fx-grid-line transparent;
+    -fx-border-width: 0 0 1 0;
 }

@@ -1,0 +1,13 @@
+{
+  "manifestVersion": 1,
+  "generator": {
+    "name": "example"
+  },
+  "endpoints": [
+    {
+      "id": "GET /ping#com.example.PingController.ping()",
+      "method": "GET",
+      "path": "/ping"
+    }
+  ]
+}

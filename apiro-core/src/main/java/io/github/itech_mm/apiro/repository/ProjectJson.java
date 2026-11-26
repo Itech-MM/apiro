@@ -58,6 +58,9 @@ public final class ProjectJson {
                     if (!step.headers().isEmpty()) {
                         version = Math.max(version, Project.HEADERS_VERSION);
                     }
+                    if (step.bodyOverride() != null) {
+                        version = Math.max(version, Project.OVERRIDES_VERSION);
+                    }
                 }
             } else if (item instanceof Folder folder) {
                 version = requiredVersion(folder.items(), version);

@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.service.scenario;
 
 import io.github.itech_mm.apiro.model.AuthConfig;
 import io.github.itech_mm.apiro.model.Extractor;
+import io.github.itech_mm.apiro.model.FieldOverride;
 import io.github.itech_mm.apiro.model.FormPart;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.Project;
@@ -117,6 +118,14 @@ public final class VariableUsage {
             texts.add(auth.keyValue());
         }
         texts.add(request.body().text());
+        if (step.bodyOverride() != null) {
+            texts.add(step.bodyOverride().text());
+            for (FieldOverride field : step.bodyOverride().fields()) {
+                if (field.enabled()) {
+                    texts.add(field.value());
+                }
+            }
+        }
         addPairs(texts, request.body().form());
         for (FormPart part : request.body().parts()) {
             if (part.enabled()) {

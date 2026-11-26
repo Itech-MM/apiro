@@ -48,6 +48,10 @@ public final class JsonPath {
         return new JsonPath(expression.trim(), List.copyOf(segments));
     }
 
+    public List<Object> segments() {
+        return segments;
+    }
+
     public String expression() {
         return expression;
     }

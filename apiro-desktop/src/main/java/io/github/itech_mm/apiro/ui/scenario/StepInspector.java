@@ -2,9 +2,11 @@ package io.github.itech_mm.apiro.ui.scenario;
 
 import io.github.itech_framework.code_editor.CodeEditor;
 import io.github.itech_mm.apiro.model.Assertion;
+import io.github.itech_mm.apiro.model.BodyOverride;
 import io.github.itech_mm.apiro.model.Extractor;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.OnFailure;
+import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
 import io.github.itech_mm.apiro.ui.EditorStyle;
@@ -28,6 +30,7 @@ final class StepInspector extends ScrollPane {
     private List<Extractor> extractorValues = List.of();
     private List<Assertion> assertionValues = List.of();
     private List<KeyValue> headerValues = List.of();
+    private BodyOverride bodyValue;
     private final Consumer<Step> onChange;
     private final Label placeholder = new Label("Select a step to edit it");
     private final Label request = new Label();
@@ -37,6 +40,10 @@ final class StepInspector extends ScrollPane {
             FXCollections.observableArrayList(DEFAULT_POLICY, "Stop", "Continue"));
     private final HeaderEditor headers = new HeaderEditor(list -> {
         headerValues = list;
+        emit();
+    });
+    private final BodyOverrideEditor bodyEditor = new BodyOverrideEditor(override -> {
+        bodyValue = override;
         emit();
     });
     private final ExtractorEditor extractors = new ExtractorEditor(list -> {
@@ -61,7 +68,7 @@ final class StepInspector extends ScrollPane {
         request.getStyleClass().add("muted");
         name.setPromptText("Step name (defaults to the request name)");
         delay.setPromptText("Delay before the step, in ms");
-        EditorStyle.apply(body);
+        EditorStyle.applyInset(body);
         body.setEditable(false);
         body.setShowLineNumbers(false);
         body.setMinHeight(260);
@@ -82,7 +89,7 @@ final class StepInspector extends ScrollPane {
         assertions.getStyleClass().add("section-body");
         VBox response = new VBox(8, responseTitle, status, body);
         response.getStyleClass().add("section-body");
-        content.getChildren().addAll(general, headers, extractors, assertions, response);
+        content.getChildren().addAll(general, headers, bodyEditor, extractors, assertions, response);
         content.setPadding(Insets.EMPTY);
         placeholder.getStyleClass().add("muted");
         placeholder.setPadding(new Insets(16));
@@ -117,7 +124,7 @@ final class StepInspector extends ScrollPane {
         }
     }
 
-    void show(Step next, String requestLabel, StepResult result) {
+    void show(Step next, String requestLabel, RequestItem owner, StepResult result) {
         loading = true;
         step = next;
         if (next == null) {
@@ -134,6 +141,8 @@ final class StepInspector extends ScrollPane {
         extractorValues = next.extractors();
         assertionValues = next.assertions();
         headers.set(next.headers());
+        bodyValue = next.bodyOverride();
+        bodyEditor.set(next.bodyOverride(), owner);
         extractors.set(next.extractors());
         assertions.set(next.assertions());
         setContent(content);
@@ -190,7 +199,7 @@ final class StepInspector extends ScrollPane {
         OnFailure onFailure = DEFAULT_POLICY.equals(chosen) || chosen == null ? null
                 : "Stop".equals(chosen) ? OnFailure.STOP : OnFailure.CONTINUE;
         Step next = new Step(step.id(), step.requestId(), name.getText(), extractorValues, assertionValues,
-                headerValues, delayValue, onFailure, step.x(), step.y());
+                headerValues, delayValue, onFailure, step.x(), step.y(), bodyValue);
         step = next;
         onChange.accept(next);
     }
