@@ -19,6 +19,17 @@
             <version>1.1.0</version>
         </dependency>
         <dependency>
+            <groupId>io.github.itech-framework</groupId>
+            <artifactId>api-client</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.23.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.13.2</version>
