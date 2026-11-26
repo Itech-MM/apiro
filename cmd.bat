@@ -1,0 +1,1 @@
+type nul > apiro-spec\src\main\resources\schema\.gitkeep
