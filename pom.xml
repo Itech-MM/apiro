@@ -1,51 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>io.github.itech_mm.apiro</groupId>
-	<artifactId>Apiro</artifactId>
-	<version>1.0-SNAPSHOT</version>
+    <groupId>io.github.itech-mm.apiro</groupId>
+    <artifactId>apiro-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-	<dependencies>
-		<dependency>
-			<groupId>io.github.itech-framework</groupId>
-			<artifactId>core</artifactId>
-			<version>1.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.itech-framework</groupId>
-			<artifactId>api-client</artifactId>
-			<version>1.1.1</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.itech-framework</groupId>
-			<artifactId>java-fx</artifactId>
-			<version>1.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<version>5.10.2</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.23.1</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.itech-framework</groupId>
-			<artifactId>code-editor</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
+    <modules>
+        <module>apiro-spec</module>
+        <module>apiro-spring-webmvc</module>
+        <module>apiro-spring-boot-starter</module>
+        <module>apiro-core</module>
+        <module>apiro-desktop</module>
+    </modules>
 
-	<properties>
-		<maven.compiler.source>17</maven.compiler.source>
-		<maven.compiler.target>17</maven.compiler.target>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring.framework.version>5.3.39</spring.framework.version>
+        <spring.boot.baseline>2.7.18</spring.boot.baseline>
+    </properties>
 </project>
