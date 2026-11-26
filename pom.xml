@@ -11,6 +11,8 @@
 
     <modules>
         <module>apiro-spec</module>
+        <module>apiro-spring-webmvc</module>
+        <module>apiro-spring-boot-starter</module>
         <module>apiro-core</module>
         <module>apiro-desktop</module>
     </modules>
@@ -19,5 +21,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring.framework.baseline>5.3.39</spring.framework.baseline>
+        <spring.boot.baseline>2.7.18</spring.boot.baseline>
     </properties>
 </project>

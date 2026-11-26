@@ -12,6 +12,10 @@
 
     <artifactId>apiro-spec</artifactId>
 
+    <properties>
+        <maven.compiler.release>8</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -41,7 +45,7 @@
                                         <exclude>com.fasterxml.jackson.core</exclude>
                                         <exclude>org.openjfx</exclude>
                                         <exclude>io.github.itech-framework</exclude>
-                                        <exclude>io.github.itech_mm.apiro</exclude>
+                                        <exclude>io.github.itech-mm.apiro</exclude>
                                     </excludes>
                                     <message>apiro-spec must stay plain Java: no JSON library, JavaFX, framework or other Apiro module.</message>
                                 </bannedDependencies>
