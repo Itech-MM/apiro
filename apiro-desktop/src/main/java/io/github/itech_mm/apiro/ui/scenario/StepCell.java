@@ -1,14 +1,17 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
+import io.github.itech_mm.apiro.model.Edge;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.service.scenario.StepResult;
+import java.util.List;
 import java.util.Optional;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -37,6 +40,20 @@ final class StepCell extends ListCell<Step> {
         void move(String stepId, int index);
 
         void remove(String stepId);
+
+        List<Step> steps();
+
+        String takenEdgeId(String stepId);
+
+        void addBranch(String fromStepId, String toStepId);
+
+        void updateEdge(Edge edge);
+
+        void removeEdge(String edgeId);
+
+        void moveEdge(String fromStepId, String edgeId, int targetRelativeIndex);
+
+        boolean canBranch(String fromStepId, String toStepId);
     }
 
     private final Support support;
@@ -47,6 +64,7 @@ final class StepCell extends ListCell<Step> {
     private final Label time = new Label();
     private final HBox row = new HBox(8);
     private final ContextMenu menu = new ContextMenu();
+    private final Menu branchMenu = new Menu("Add branch to");
 
     StepCell(Support support) {
         this.support = support;
@@ -79,7 +97,8 @@ final class StepCell extends ListCell<Step> {
                 support.remove(getItem().id());
             }
         });
-        menu.getItems().addAll(up, down, remove);
+        menu.getItems().addAll(branchMenu, up, down, remove);
+        menu.setOnShowing(event -> populateBranchMenu());
 
         setOnDragDetected(event -> {
             if (getItem() == null) {
@@ -105,6 +124,27 @@ final class StepCell extends ListCell<Step> {
                 event.consume();
             }
         });
+    }
+
+    private void populateBranchMenu() {
+        branchMenu.getItems().clear();
+        Step current = getItem();
+        if (current == null) {
+            return;
+        }
+        List<Step> all = support.steps();
+        for (int i = 0; i < all.size(); i++) {
+            Step target = all.get(i);
+            if (!target.id().equals(current.id())) {
+                String title = target.name().isBlank() ? target.requestId() : target.name();
+                boolean allowed = support.canBranch(current.id(), target.id());
+                MenuItem item = new MenuItem((i + 1) + ". " + title + (allowed ? "" : " (loop)"));
+                item.setDisable(!allowed);
+                item.setOnAction(e -> support.addBranch(current.id(), target.id()));
+                branchMenu.getItems().add(item);
+            }
+        }
+        branchMenu.setDisable(branchMenu.getItems().isEmpty());
     }
 
     @Override

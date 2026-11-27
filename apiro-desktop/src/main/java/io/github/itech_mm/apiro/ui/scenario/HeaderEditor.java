@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -23,11 +22,8 @@ final class HeaderEditor extends VBox {
     HeaderEditor(Consumer<List<KeyValue>> onChange) {
         super(8);
         this.onChange = onChange;
-        Label title = new Label("Headers");
-        title.getStyleClass().add("section-title");
-        Label hint = new Label("Added to this step only. A header with the same name replaces the request's own.");
-        hint.getStyleClass().add("muted");
-        hint.setWrapText(true);
+        HBox header = InfoTip.header("Headers",
+                "Added to this step only. A header with the same name replaces the request's own.");
         getStyleClass().add("section-body");
         Button add = new Button("Add header");
         add.getStyleClass().add("link-button");
@@ -35,7 +31,7 @@ final class HeaderEditor extends VBox {
             addRow(KeyValue.of("", ""));
             emit();
         });
-        getChildren().addAll(title, hint, rows, add);
+        getChildren().addAll(header, rows, add);
     }
 
     void set(List<KeyValue> headers) {

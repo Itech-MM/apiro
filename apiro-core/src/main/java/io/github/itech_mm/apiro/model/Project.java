@@ -16,7 +16,8 @@ public record Project(String format, int version, String id, String name, String
     public static final int OVERRIDES_VERSION = 4;
     public static final int MANIFEST_VERSION = 5;
     public static final int BRANCHES_VERSION = 6;
-    public static final int CURRENT_VERSION = BRANCHES_VERSION;
+    public static final int STEP_REQUEST_OVERRIDES_VERSION = 7;
+    public static final int CURRENT_VERSION = STEP_REQUEST_OVERRIDES_VERSION;
 
     public Project {
         format = format == null || format.isBlank() ? FORMAT : format;

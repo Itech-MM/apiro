@@ -1,6 +1,7 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,9 @@ import java.util.concurrent.Executors;
 
 import io.github.itech_framework.api_client.utils.CancelToken;
 import io.github.itech_framework.code_editor.CodeEditor;
+import io.github.itech_mm.apiro.model.BranchRule;
+import io.github.itech_mm.apiro.model.Edge;
+import io.github.itech_mm.apiro.model.EdgeCondition;
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Project;
@@ -22,6 +26,7 @@ import io.github.itech_mm.apiro.service.scenario.RunLog;
 import io.github.itech_mm.apiro.service.scenario.RunRecords;
 import io.github.itech_mm.apiro.service.scenario.RunStore;
 import io.github.itech_mm.apiro.service.scenario.ScenarioEdit;
+import io.github.itech_mm.apiro.service.scenario.ScenarioGraph;
 import io.github.itech_mm.apiro.service.scenario.ScenarioHistory;
 import io.github.itech_mm.apiro.service.scenario.ScenarioListener;
 import io.github.itech_mm.apiro.service.scenario.ScenarioResult;
@@ -118,6 +123,8 @@ public final class ScenarioPane extends BorderPane {
     private final DiagramView diagram;
     private final CodeEditor log = new CodeEditor();
     private ScenarioItem current;
+    private ScenarioItem shownScenario;
+    private String selectedEdgeId;
     private boolean loading;
     private boolean syncing;
     private boolean diagramShown = true;
@@ -132,10 +139,45 @@ public final class ScenarioPane extends BorderPane {
     public ScenarioPane(Host host) {
         this.host = host;
         getStyleClass().add("scenario-pane");
-        inspector = new StepInspector(this::onStepEdited);
+        inspector = new StepInspector(new StepInspector.Callbacks() {
+            @Override
+            public void onStepChanged(Step step) {
+                onStepEdited(step);
+            }
+
+            @Override
+            public void onAddBranch(String fromStepId, String toStepId) {
+                addBranch(fromStepId, toStepId);
+            }
+
+            @Override
+            public void onUpdateEdge(Edge edge) {
+                onEdgeEdited(edge);
+            }
+
+            @Override
+            public void onRemoveEdge(String edgeId) {
+                removeEdge(edgeId);
+            }
+
+            @Override
+            public void onMoveEdge(String fromStepId, String edgeId, int targetRelativeIndex) {
+                moveEdge(fromStepId, edgeId, targetRelativeIndex);
+            }
+
+            @Override
+            public void onSelectEdge(String edgeId) {
+                selectEdge(edgeId);
+            }
+
+            @Override
+            public void onSelectStep(String stepId) {
+                selectStep(stepId);
+            }
+        });
         stepFloat = new StepFloat(inspector, this::closeFloat);
         stepFloat.attach();
-        diagram = new DiagramView(support(), this::selectById, new DiagramView.Actions() {
+        diagram = new DiagramView(support(), this::selectStep, new DiagramView.Actions() {
             @Override
             public Optional<RequestItem> dropped(Dragboard board) {
                 return droppedRequest(board);
@@ -175,6 +217,11 @@ public final class ScenarioPane extends BorderPane {
             public void focusInspector() {
                 openFloat();
             }
+
+            @Override
+            public void selectEdge(String edgeId) {
+                ScenarioPane.this.selectEdge(edgeId);
+            }
         });
 
         title.getStyleClass().add("scenario-title");
@@ -201,6 +248,7 @@ public final class ScenarioPane extends BorderPane {
         list.setCellFactory(view -> new StepCell(support()));
         list.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
             if (!syncing) {
+                selectedEdgeId = null;
                 inspectSelected();
             }
         });
@@ -277,6 +325,8 @@ public final class ScenarioPane extends BorderPane {
         stop.setOnAction(event -> cancelRun());
         list.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2 && list.getSelectionModel().getSelectedItem() != null) {
+                selectedEdgeId = null;
+                inspectSelected();
                 Platform.runLater(inspector::focusName);
             }
         });
@@ -327,7 +377,9 @@ public final class ScenarioPane extends BorderPane {
     private void openFloat() {
         floatOpen = true;
         syncFloat(true);
-        Platform.runLater(inspector::focusName);
+        if (selectedEdgeId == null) {
+            Platform.runLater(inspector::focusName);
+        }
     }
 
     private void closeFloat() {
@@ -383,6 +435,10 @@ public final class ScenarioPane extends BorderPane {
             return;
         }
         String keep = same ? selectedId() : null;
+        if (!same) {
+            selectedEdgeId = null;
+            shownScenario = null;
+        }
         current = scenario;
         restoreLastRun();
         if (!same) {
@@ -397,7 +453,7 @@ public final class ScenarioPane extends BorderPane {
         selectById(keep);
         syncing = false;
         inspectSelected();
-        diagram.show(scenario.steps(), selectedId(), !same, usage());
+        diagram.show(scenario, selectedId(), selectedEdgeId, !same, usage());
         refreshRunState();
         refreshLog();
         if (!same) {
@@ -424,9 +480,127 @@ public final class ScenarioPane extends BorderPane {
             }
         }
         syncing = false;
-        diagram.show(current.steps(), selectedId(), false, usage());
+        diagram.show(current, selectedId(), selectedEdgeId, false, usage());
         host.save(next);
         refreshRunState();
+    }
+
+    private void onEdgeEdited(Edge edge) {
+        if (current == null || edge == null) {
+            return;
+        }
+        ScenarioItem next = ScenarioEdit.withEdge(current, edge);
+        if (next == current) {
+            return;
+        }
+        history().record(current, "edge:" + edge.id(), System.currentTimeMillis());
+        current = next;
+        diagram.show(current, selectedId(), selectedEdgeId, false, usage());
+        host.save(next);
+        refreshRunState();
+    }
+
+    private boolean canBranch(String fromStepId, String toStepId) {
+        if (current == null || fromStepId == null || toStepId == null || fromStepId.equals(toStepId)) {
+            return false;
+        }
+        ScenarioItem materialized = ScenarioEdit.withMaterializedEdges(current);
+        return !ScenarioGraph.bestEffortAncestors(materialized, fromStepId).contains(toStepId);
+    }
+
+    private void addBranch(String fromStepId, String toStepId) {
+        if (!canBranch(fromStepId, toStepId)) {
+            return;
+        }
+        ScenarioItem next = ScenarioEdit.withMaterializedEdges(current);
+        List<Edge> outgoing = outgoingEdges(next, fromStepId);
+        Edge created;
+        if (outgoing.isEmpty()) {
+            created = Edge.of(fromStepId, toStepId, EdgeCondition.ALWAYS, "");
+            next = ScenarioEdit.withEdge(next, created);
+        } else if (outgoing.size() == 1 && outgoing.get(0).condition().isUnconditional()) {
+            Edge existing = outgoing.get(0);
+            next = ScenarioEdit.withEdge(next,
+                    new Edge(existing.id(), existing.from(), existing.to(), EdgeCondition.ELSE, existing.label()));
+            created = Edge.of(fromStepId, toStepId,
+                    EdgeCondition.all(BranchRule.status(BranchRule.Operator.EQUALS, "200")), "");
+            next = ScenarioEdit.withEdge(next, created);
+            next = ScenarioEdit.withMovedEdge(next, fromStepId, created.id(), 0);
+        } else {
+            int elseIndex = -1;
+            for (int i = 0; i < outgoing.size(); i++) {
+                if (outgoing.get(i).condition().isElse()) {
+                    elseIndex = i;
+                    break;
+                }
+            }
+            if (elseIndex < 0) {
+                created = Edge.of(fromStepId, toStepId, EdgeCondition.ELSE, "");
+                next = ScenarioEdit.withEdge(next, created);
+            } else {
+                created = Edge.of(fromStepId, toStepId,
+                        EdgeCondition.all(BranchRule.status(BranchRule.Operator.EQUALS, "200")), "");
+                next = ScenarioEdit.withEdge(next, created);
+                next = ScenarioEdit.withMovedEdge(next, fromStepId, created.id(), elseIndex);
+            }
+        }
+        selectedEdgeId = created.id();
+        commit(next, true);
+        if (diagramShown && !floatOpen) {
+            openFloat();
+        }
+    }
+
+    private void removeEdge(String edgeId) {
+        if (current == null || edgeId == null || edgeId.isBlank()) {
+            return;
+        }
+        String fromId = null;
+        for (Edge edge : current.edges()) {
+            if (edge.id().equals(edgeId)) {
+                fromId = edge.from();
+                break;
+            }
+        }
+        ScenarioItem next = ScenarioEdit.withoutEdge(current, edgeId);
+        if (next == current) {
+            return;
+        }
+        if (fromId != null) {
+            List<Edge> remaining = outgoingEdges(next, fromId);
+            if (remaining.size() == 1 && remaining.get(0).condition().isElse() && remaining.get(0).label().isBlank()) {
+                Edge only = remaining.get(0);
+                next = ScenarioEdit.withEdge(next,
+                        new Edge(only.id(), only.from(), only.to(), EdgeCondition.ALWAYS, ""));
+            }
+        }
+        if (edgeId.equals(selectedEdgeId)) {
+            selectedEdgeId = null;
+        }
+        commit(next, true);
+        if (fromId != null) {
+            selectStep(fromId);
+        }
+    }
+
+    private void moveEdge(String fromStepId, String edgeId, int targetRelativeIndex) {
+        if (current == null || fromStepId == null || edgeId == null) {
+            return;
+        }
+        commit(ScenarioEdit.withMovedEdge(current, fromStepId, edgeId, targetRelativeIndex), true);
+    }
+
+    private static List<Edge> outgoingEdges(ScenarioItem scenario, String fromStepId) {
+        List<Edge> out = new ArrayList<>();
+        if (scenario == null || fromStepId == null) {
+            return out;
+        }
+        for (Edge edge : scenario.edges()) {
+            if (edge.from().equals(fromStepId)) {
+                out.add(edge);
+            }
+        }
+        return out;
     }
 
     private void commit(ScenarioItem next, boolean rebuild) {
@@ -448,7 +622,7 @@ public final class ScenarioPane extends BorderPane {
             selectById(keep);
             syncing = false;
             inspectSelected();
-            diagram.show(next.steps(), selectedId(), false, usage());
+            diagram.show(next, selectedId(), selectedEdgeId, false, usage());
         }
         host.save(next);
         refreshRunState();
@@ -458,18 +632,20 @@ public final class ScenarioPane extends BorderPane {
         if (current == null) {
             return;
         }
+        selectedEdgeId = null;
         ScenarioItem next = ScenarioEdit.withAppended(current, requestId, "");
         commit(next, true);
-        selectById(next.steps().get(next.steps().size() - 1).id());
+        selectStep(next.steps().get(next.steps().size() - 1).id());
     }
 
     private void insertAt(String requestId, int index) {
         if (current == null) {
             return;
         }
+        selectedEdgeId = null;
         ScenarioItem next = ScenarioEdit.withInserted(current, requestId, "", index);
         commit(next, true);
-        selectById(next.steps().get(Math.max(0, Math.min(index, next.steps().size() - 1))).id());
+        selectStep(next.steps().get(Math.max(0, Math.min(index, next.steps().size() - 1))).id());
     }
 
     private Optional<RequestItem> droppedRequest(Dragboard board) {
@@ -498,9 +674,27 @@ public final class ScenarioPane extends BorderPane {
     }
 
     public void refreshScope() {
-        Step selected = list.getSelectionModel().getSelectedItem();
         Project project = host.project();
-        if (current == null || selected == null || project == null) {
+        if (current == null || project == null) {
+            VariableScope.update(null);
+            return;
+        }
+        Edge edge = selectedEdge();
+        if (edge != null) {
+            Step from = stepById(edge.from());
+            if (from == null) {
+                VariableScope.update(null);
+                return;
+            }
+            try {
+                VariableScope.update(ScenarioScope.afterStep(project, host.environmentId(), current, from));
+            } catch (RuntimeException error) {
+                VariableScope.update(null);
+            }
+            return;
+        }
+        Step selected = list.getSelectionModel().getSelectedItem();
+        if (selected == null) {
             VariableScope.update(null);
             return;
         }
@@ -511,19 +705,72 @@ public final class ScenarioPane extends BorderPane {
         }
     }
 
+    private void selectStep(String stepId) {
+        selectedEdgeId = null;
+        syncing = true;
+        selectById(stepId);
+        syncing = false;
+        inspectSelected();
+    }
+
+    private void selectEdge(String edgeId) {
+        selectedEdgeId = edgeId;
+        inspectSelected();
+    }
+
+    private Edge selectedEdge() {
+        if (current == null || selectedEdgeId == null) {
+            return null;
+        }
+        for (Edge edge : current.edges()) {
+            if (edge.id().equals(selectedEdgeId)) {
+                return edge;
+            }
+        }
+        return null;
+    }
+
+    private Step stepById(String stepId) {
+        if (current == null || stepId == null) {
+            return null;
+        }
+        for (Step step : current.steps()) {
+            if (step.id().equals(stepId)) {
+                return step;
+            }
+        }
+        return null;
+    }
+
     private void inspectSelected() {
+        Edge edge = selectedEdge();
+        if (edge == null && selectedEdgeId != null) {
+            selectedEdgeId = null;
+        }
         Step selected = list.getSelectionModel().getSelectedItem();
-        diagram.select(selected == null ? null : selected.id());
+        diagram.select(selected == null ? null : selected.id(), selectedEdgeId);
         refreshScope();
-        if (selected != null && selected.equals(inspector.step())) {
+        if (edge != null) {
+            stepFloat.setTitle("Branch condition");
+            if (!edge.equals(inspector.edge()) || current != shownScenario) {
+                inspector.showEdge(edge, current, usage());
+                shownScenario = current;
+            }
+            return;
+        }
+        stepFloat.setTitle("Step settings");
+        if (selected != null && selected.equals(inspector.step()) && inspector.edge() == null
+                && current == shownScenario) {
             return;
         }
         if (selected == null) {
-            inspector.show(null, "", null, null);
+            inspector.show(null, "", null, null, current, usage());
+            shownScenario = current;
             return;
         }
         inspector.show(selected, requestLabel(selected), request(selected.requestId()).orElse(null),
-                inspectedResult(selected.id()));
+                inspectedResult(selected.id()), current, usage());
+        shownScenario = current;
     }
 
     private String requestLabel(Step step) {
@@ -765,11 +1012,48 @@ public final class ScenarioPane extends BorderPane {
                             neighbour = next >= 0 ? before.get(next).id() : null;
                         }
                     }
+                    selectedEdgeId = null;
                     commit(ScenarioEdit.withoutStep(current, stepId), true);
                     if (neighbour != null) {
-                        selectById(neighbour);
+                        selectStep(neighbour);
                     }
                 }
+            }
+
+            @Override
+            public List<Step> steps() {
+                return current == null ? List.of() : current.steps();
+            }
+
+            @Override
+            public String takenEdgeId(String stepId) {
+                StepResult result = resultOf(stepId);
+                return result != null && result.branch() != null ? result.branch().edgeId() : "";
+            }
+
+            @Override
+            public void addBranch(String fromStepId, String toStepId) {
+                ScenarioPane.this.addBranch(fromStepId, toStepId);
+            }
+
+            @Override
+            public void updateEdge(Edge edge) {
+                ScenarioPane.this.onEdgeEdited(edge);
+            }
+
+            @Override
+            public void removeEdge(String edgeId) {
+                ScenarioPane.this.removeEdge(edgeId);
+            }
+
+            @Override
+            public void moveEdge(String fromStepId, String edgeId, int targetRelativeIndex) {
+                ScenarioPane.this.moveEdge(fromStepId, edgeId, targetRelativeIndex);
+            }
+
+            @Override
+            public boolean canBranch(String fromStepId, String toStepId) {
+                return ScenarioPane.this.canBranch(fromStepId, toStepId);
             }
         };
     }
@@ -847,7 +1131,7 @@ public final class ScenarioPane extends BorderPane {
                     String id = result.step().id();
                     view.results.put(id, result);
                     view.states.put(id, result.state());
-                    RunLog.stepLines(result, RunLog.label(result.step()))
+                    RunLog.stepLines(result, labels.getOrDefault(id, RunLog.label(result.step())))
                             .forEach(line -> view.log.append(line).append('\n'));
                     update(scenario);
                 });
@@ -881,7 +1165,7 @@ public final class ScenarioPane extends BorderPane {
         refreshRunState();
         refreshLog();
         Step selected = list.getSelectionModel().getSelectedItem();
-        if (selected != null) {
+        if (selected != null && selectedEdgeId == null) {
             inspector.showResult(inspectedResult(selected.id()));
         }
     }

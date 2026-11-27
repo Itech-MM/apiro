@@ -14,7 +14,7 @@ import javafx.scene.layout.VBox;
 
 final class StepFloat extends VBox {
 
-    static final double WIDTH = 360;
+    static final double WIDTH = 400;
 
     private final Node content;
     private final Label title = new Label("Step settings");
@@ -27,6 +27,7 @@ final class StepFloat extends VBox {
         setMaxWidth(WIDTH);
         setMaxHeight(Double.MAX_VALUE);
         StackPane.setAlignment(this, Pos.TOP_RIGHT);
+
         title.getStyleClass().add("step-float-title");
         Region icon = new Region();
         icon.getStyleClass().addAll("icon", "icon-sm", "icon-close");
@@ -35,12 +36,14 @@ final class StepFloat extends VBox {
         close.getStyleClass().addAll("icon-button", "icon-button-sm");
         close.setTooltip(new Tooltip("Close (Esc)"));
         close.setOnAction(event -> onClose.run());
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox head = new HBox(8, title, spacer, close);
         head.setAlignment(Pos.CENTER_LEFT);
         head.getStyleClass().add("step-float-head");
         getChildren().add(head);
+
         setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
                 onClose.run();
@@ -48,6 +51,10 @@ final class StepFloat extends VBox {
             }
         });
         setOpen(false);
+    }
+
+    void setTitle(String text) {
+        title.setText(text == null || text.isBlank() ? "Step settings" : text);
     }
 
     void attach() {

@@ -65,6 +65,9 @@ public final class ProjectJson {
                     if (step.bodyOverride() != null) {
                         version = Math.max(version, Project.OVERRIDES_VERSION);
                     }
+                    if (!step.query().isEmpty() || !step.urlOverride().isBlank()) {
+                        version = Math.max(version, Project.STEP_REQUEST_OVERRIDES_VERSION);
+                    }
                 }
                 if (usesBranches(scenario)) {
                     version = Math.max(version, Project.BRANCHES_VERSION);

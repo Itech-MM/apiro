@@ -4,6 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.itech_mm.apiro.model.BranchRule;
+import io.github.itech_mm.apiro.model.Edge;
+import io.github.itech_mm.apiro.model.EdgeCondition;
+import io.github.itech_mm.apiro.model.ScenarioItem;
+import io.github.itech_mm.apiro.model.Step;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class DiagramLayoutTest {
@@ -72,5 +78,49 @@ class DiagramLayoutTest {
         assertEquals(2, DiagramLayout.targetAfterRemoval(0, 3));
         assertEquals(0, DiagramLayout.targetAfterRemoval(2, 0));
         assertEquals(1, DiagramLayout.targetAfterRemoval(1, 1));
+    }
+
+    @Test
+    void graphLayoutPlacesBranchesInPriorityOrderAndCentersMerges() {
+        Step a = new Step("a", "r1", "A", null, null, 0, null, 0, 0);
+        Step b = new Step("b", "r2", "B", null, null, 0, null, 0, 0);
+        Step c = new Step("c", "r3", "C", null, null, 0, null, 0, 0);
+        Step d = new Step("d", "r4", "D", null, null, 0, null, 0, 0);
+        ScenarioItem diamond = new ScenarioItem("sc", "Diamond", null, List.of(a, c, b, d),
+                List.of(
+                        Edge.of("a", "b", EdgeCondition.all(BranchRule.status(BranchRule.Operator.EQUALS, "200")), "ok"),
+                        Edge.of("a", "c", EdgeCondition.ELSE, "else"),
+                        Edge.of("b", "d"),
+                        Edge.of("c", "d")),
+                null);
+
+        DiagramLayout.GraphLayout layout = DiagramLayout.graphLayout(diamond, W, H, G, V);
+
+        DiagramLayout.Point pa = layout.positions().get("a");
+        DiagramLayout.Point pb = layout.positions().get("b");
+        DiagramLayout.Point pc = layout.positions().get("c");
+        DiagramLayout.Point pd = layout.positions().get("d");
+
+        assertEquals(0, pa.x());
+        assertEquals(W + G, pb.x());
+        assertEquals(W + G, pc.x());
+        assertEquals(2 * (W + G), pd.x());
+        assertTrue(pb.y() < pc.y());
+        assertEquals(pa.y(), pd.y());
+    }
+
+    @Test
+    void graphLayoutHandlesDisconnectedAndCyclicGraphsSafely() {
+        Step a = new Step("a", "r1", "A", null, null, 0, null, 0, 0);
+        Step b = new Step("b", "r2", "B", null, null, 0, null, 0, 0);
+        Step c = new Step("c", "r3", "C", null, null, 0, null, 0, 0);
+        ScenarioItem cyclic = new ScenarioItem("sc", "Cyclic", null, List.of(a, b, c),
+                List.of(Edge.of("a", "b"), Edge.of("b", "a")), null);
+
+        DiagramLayout.GraphLayout layout = DiagramLayout.graphLayout(cyclic, W, H, G, V);
+
+        assertEquals(3, layout.positions().size());
+        assertFalse(layout.positions().get("a").equals(layout.positions().get("b")));
+        assertFalse(layout.positions().get("a").equals(layout.positions().get("c")));
     }
 }

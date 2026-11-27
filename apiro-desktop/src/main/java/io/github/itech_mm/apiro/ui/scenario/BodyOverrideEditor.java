@@ -46,8 +46,8 @@ final class BodyOverrideEditor extends VBox {
         super(8);
         this.onChange = onChange;
         getStyleClass().add("section-body");
-        Label title = new Label("Request body");
-        title.getStyleClass().add("section-title");
+        HBox header = InfoTip.header("Request body",
+                "Patch individual JSON fields or replace the request body for this step only.");
         mode.getStyleClass().add("field-combo");
         mode.setMaxWidth(Double.MAX_VALUE);
         mode.setValue(USE);
@@ -85,7 +85,7 @@ final class BodyOverrideEditor extends VBox {
         error.setWrapText(true);
         previewBox.getChildren().addAll(previewTitle, preview, error);
 
-        getChildren().addAll(title, mode, patchBox, replaceBox, previewBox);
+        getChildren().addAll(header, mode, patchBox, replaceBox, previewBox);
         mode.valueProperty().addListener((obs, oldValue, newValue) -> {
             if (!loading && REPLACE.equals(newValue) && replaceEditor.getText().isBlank()) {
                 copyFromRequest();

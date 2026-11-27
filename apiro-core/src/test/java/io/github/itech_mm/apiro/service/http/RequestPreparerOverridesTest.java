@@ -124,4 +124,27 @@ class RequestPreparerOverridesTest {
         assertEquals(RequestPreparer.prepare(project, "", "r", List.of(), List.of()),
                 RequestPreparer.prepare(project, "", "r", List.of(), List.of(), List.of()));
     }
+
+    @Test
+    void overridesUrlAndQueryParametersPerStep() {
+        RequestItem req = new RequestItem("r", "r", HttpMethod.GET, "http://api.test/shifts/1",
+                List.of(KeyValue.of("counterId", "1"), KeyValue.of("mode", "full")),
+                null, null, null, null);
+        Project project = project(req, null);
+        PreparedRequest prepared = RequestPreparer.prepare(project, "", "r", List.of(),
+                List.of(Variable.of("shiftId", "42"), Variable.of("counterId", "7")),
+                List.of(), null,
+                List.of(KeyValue.of("counterId", "${counterId}"), KeyValue.of("includeClosed", "false")),
+                "http://api.test/shifts/${shiftId}/summary");
+        assertEquals("http://api.test/shifts/42/summary?counterId=7&mode=full&includeClosed=false", prepared.url());
+        assertTrue(prepared.unresolved().isEmpty());
+    }
+
+    @Test
+    void unresolvedVariableInQueryOverrideIsReported() {
+        RequestItem req = request(null, null);
+        PreparedRequest prepared = RequestPreparer.prepare(project(req, null), "", "r", List.of(), List.of(),
+                List.of(), null, List.of(KeyValue.of("counterId", "${missingCounter}")), "");
+        assertEquals(List.of("missingCounter"), prepared.unresolved());
+    }
 }

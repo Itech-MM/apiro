@@ -198,8 +198,20 @@ public final class VariableUsage {
 
     private static List<String> texts(Project project, RequestItem request, Step step) {
         List<String> texts = new ArrayList<>();
-        texts.add(request.url());
-        addPairs(texts, request.query());
+        texts.add(step.urlOverride().isBlank() ? request.url() : step.urlOverride());
+        Set<String> overriddenQueryKeys = new HashSet<>();
+        for (KeyValue entry : step.query()) {
+            if (entry.enabled() && !entry.key().isBlank()) {
+                overriddenQueryKeys.add(entry.key());
+            }
+        }
+        for (KeyValue entry : request.query()) {
+            if (entry.enabled() && !overriddenQueryKeys.contains(entry.key())) {
+                texts.add(entry.key());
+                texts.add(entry.value());
+            }
+        }
+        addPairs(texts, step.query());
         Optional<Inheritance.Effective> effective = Inheritance.forItem(project, request.id());
         addPairs(texts, effective.map(Inheritance.Effective::headers).orElse(request.headers()));
         addPairs(texts, step.headers());

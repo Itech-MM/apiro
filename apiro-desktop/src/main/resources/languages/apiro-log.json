@@ -16,6 +16,8 @@
       { "match": "^\\s+extract(?= )", "scope": "keyword" },
       { "match": "(?<=extract )[A-Za-z0-9_.\\-]+", "scope": "variable" },
       { "match": "(?<= )failed:", "scope": "invalid" },
+      { "match": "^\\s+branch(?=[: ]|$)", "scope": "keyword" },
+      { "match": "->", "scope": "operator" },
       { "match": "=", "scope": "operator" },
       { "match": "^\\s+pass(?= )", "scope": "string" },
       { "match": "^\\s+fail(?= )", "scope": "invalid" },

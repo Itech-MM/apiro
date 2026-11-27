@@ -250,4 +250,17 @@ class ScenarioPersistenceTest {
         assertEquals("", scenario.edges().get(0).id());
         assertEquals(Project.SCENARIO_VERSION, writtenVersion(ProjectJson.toJson(loaded)));
     }
+
+    @Test
+    void stepQueryAndUrlOverrideWriteVersionSevenAndRoundTrip() {
+        Step s1 = new Step("s1", "r1", "Shift", null, null, List.of(),
+                List.of(KeyValue.of("counterId", "${counterId}")),
+                "${baseUrl}/v1/shifts/${shiftId}/summary",
+                0, null, 0, 0, null);
+        ScenarioItem original = new ScenarioItem("sc1", "Overrides", null, List.of(s1), List.of(), OnFailure.STOP);
+        String json = ProjectJson.toJson(projectWith(original));
+        assertEquals(Project.STEP_REQUEST_OVERRIDES_VERSION, writtenVersion(json));
+        ScenarioItem loaded = (ScenarioItem) ProjectJson.fromJson(json).findItem("sc1").orElseThrow();
+        assertEquals(original, loaded);
+    }
 }

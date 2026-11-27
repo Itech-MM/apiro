@@ -8,7 +8,6 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -25,8 +24,8 @@ final class ExtractorEditor extends VBox {
     ExtractorEditor(Consumer<List<Extractor>> onChange) {
         super(8);
         this.onChange = onChange;
-        Label title = new Label("Extract values");
-        title.getStyleClass().add("section-title");
+        HBox header = InfoTip.header("Extract values",
+                "Capture values from the response into scenario variables for downstream steps and branches.");
         getStyleClass().add("section-body");
         Button add = new Button("Add extractor");
         add.getStyleClass().add("link-button");
@@ -34,7 +33,7 @@ final class ExtractorEditor extends VBox {
             addRow(new Extractor("", Extractor.Source.JSON_PATH, ""));
             emit();
         });
-        getChildren().addAll(title, rows, add);
+        getChildren().addAll(header, rows, add);
     }
 
     void set(List<Extractor> extractors) {

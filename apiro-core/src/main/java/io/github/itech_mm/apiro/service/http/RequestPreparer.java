@@ -53,6 +53,14 @@ public final class RequestPreparer {
     public static PreparedRequest prepare(Project project, String environmentId, String requestId,
                                           List<Variable> runtime, List<Variable> literal,
                                           List<KeyValue> headerOverrides, BodyOverride bodyOverride) {
+        return prepare(project, environmentId, requestId, runtime, literal, headerOverrides, bodyOverride,
+                List.of(), "");
+    }
+
+    public static PreparedRequest prepare(Project project, String environmentId, String requestId,
+                                          List<Variable> runtime, List<Variable> literal,
+                                          List<KeyValue> headerOverrides, BodyOverride bodyOverride,
+                                          List<KeyValue> queryOverrides, String urlOverride) {
         RequestItem original = project.findItem(requestId)
                 .filter(RequestItem.class::isInstance)
                 .map(RequestItem.class::cast)
@@ -61,7 +69,10 @@ public final class RequestPreparer {
         Inheritance.Effective effective = Inheritance.forItem(project, requestId).orElseThrow();
         VariableResolver resolver = VariableResolver.forItem(project, environmentId, requestId, runtime, literal);
 
-        String url = withQuery(resolver.resolve(request.url()), request.query(), resolver);
+        String rawUrl = urlOverride != null && !urlOverride.isBlank() ? urlOverride : request.url();
+        String baseUrl = resolver.resolve(rawUrl);
+        List<KeyValue> query = mergeQuery(request.query(), queryOverrides, resolver);
+        String url = withQuery(baseUrl, query);
         List<KeyValue> headers = new ArrayList<>();
         for (KeyValue header : effective.headers()) {
             headers.add(new KeyValue(resolver.resolve(header.key()), resolver.resolve(header.value()), true));
@@ -70,19 +81,63 @@ public final class RequestPreparer {
         applyAuth(headers, effective.auth(), resolver);
         RequestBody body = resolveBody(request.body(), resolver);
         addContentType(headers, body);
-        List<String> unresolved = unresolved(url, headers, body, effective.auth(), resolver);
+        List<String> unresolved = unresolved(baseUrl, query, headers, body, effective.auth(), resolver);
         return new PreparedRequest(request.method(), url, List.copyOf(headers), body, effective.settings(),
                 unresolved);
     }
 
-    private static String withQuery(String url, List<KeyValue> query, VariableResolver resolver) {
+    private static List<KeyValue> mergeQuery(List<KeyValue> base, List<KeyValue> overrides,
+                                             VariableResolver resolver) {
+        List<KeyValue> merged = new ArrayList<>();
+        if (base != null) {
+            for (KeyValue entry : base) {
+                String key = resolver.resolve(entry.key());
+                if (!entry.enabled() || key.isBlank()) {
+                    continue;
+                }
+                merged.add(new KeyValue(key, resolver.resolve(entry.value()), true));
+            }
+        }
+        if (overrides != null) {
+            for (KeyValue override : overrides) {
+                String key = resolver.resolve(override.key());
+                if (!override.enabled() || key.isBlank()) {
+                    continue;
+                }
+                KeyValue entry = new KeyValue(key, resolver.resolve(override.value()), true);
+                int first = indexOfQuery(merged, key);
+                if (first < 0) {
+                    merged.add(entry);
+                    continue;
+                }
+                merged.set(first, entry);
+                for (int i = merged.size() - 1; i > first; i--) {
+                    if (merged.get(i).key().equals(key)) {
+                        merged.remove(i);
+                    }
+                }
+            }
+        }
+        return merged;
+    }
+
+    private static int indexOfQuery(List<KeyValue> query, String key) {
+        for (int i = 0; i < query.size(); i++) {
+            if (query.get(i).key().equals(key)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String withQuery(String url, List<KeyValue> query) {
         String result = url;
         for (KeyValue entry : query) {
-            String key = resolver.resolve(entry.key());
+            String key = entry.key();
             if (!entry.enabled() || key.isBlank()) {
                 continue;
             }
-            String pair = encode(key) + "=" + encode(resolver.resolve(entry.value()));
+            String pair = encode(key) + "=" + encode(entry.value());
             if (!result.contains("?")) {
                 result = result + "?" + pair;
             } else if (result.endsWith("?") || result.endsWith("&")) {
@@ -199,10 +254,14 @@ public final class RequestPreparer {
         };
     }
 
-    private static List<String> unresolved(String url, List<KeyValue> headers, RequestBody body,
-                                           AuthConfig auth, VariableResolver resolver) {
+    private static List<String> unresolved(String url, List<KeyValue> query, List<KeyValue> headers,
+                                           RequestBody body, AuthConfig auth, VariableResolver resolver) {
         List<String> texts = new ArrayList<>();
         texts.add(url);
+        for (KeyValue entry : query) {
+            texts.add(entry.key());
+            texts.add(entry.value());
+        }
         texts.addAll(authTexts(auth));
         for (KeyValue header : headers) {
             texts.add(header.key());

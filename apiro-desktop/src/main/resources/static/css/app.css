@@ -2258,3 +2258,178 @@
     -fx-border-color: transparent transparent -fx-grid-line transparent;
     -fx-border-width: 0 0 1 0;
 }
+
+.diagram-edge-hit {
+    -fx-stroke: transparent;
+    -fx-stroke-width: 14;
+    -fx-cursor: hand;
+}
+
+.diagram-edge.edge-selected {
+    -fx-stroke: -fx-primary;
+    -fx-stroke-width: 2.8;
+}
+
+.diagram-arrow.edge-selected {
+    -fx-fill: -fx-primary;
+}
+
+.diagram-edge-label {
+    -fx-background-color: -app-layer;
+    -fx-max-width: 148px;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-text-fill: -fx-text-color;
+    -fx-font-size: 11px;
+    -fx-padding: 2 7 2 7;
+    -fx-cursor: hand;
+}
+
+.diagram-edge-label:hover {
+    -fx-border-color: -fx-primary;
+}
+
+.diagram-edge-label.selected {
+    -fx-border-color: -fx-primary;
+    -fx-text-fill: -fx-primary;
+    -fx-font-weight: bold;
+}
+
+.diagram-edge-label.edge-done {
+    -fx-border-color: -fx-success;
+    -fx-text-fill: -fx-success;
+}
+
+.diagram-edge-label.edge-failed {
+    -fx-border-color: -fx-danger;
+    -fx-text-fill: -fx-danger;
+}
+
+.diagram-edge-label.edge-dim {
+    -fx-opacity: 0.45;
+}
+
+.diagram-edge-label.warn {
+    -fx-border-color: -fx-warning;
+    -fx-text-fill: -fx-warning;
+}
+
+.diagram-wire-preview {
+    -fx-stroke: -fx-primary;
+    -fx-stroke-width: 2.2;
+    -fx-stroke-dash-array: 6 5;
+}
+
+.diagram-wire-preview.wire-invalid {
+    -fx-stroke: -fx-danger;
+}
+
+.diagram-node.drop-target .diagram-card {
+    -fx-border-color: -fx-primary;
+    -fx-effect: dropshadow(gaussian, -dg-select-glow, 10, 0.25, 0, 0);
+}
+
+.diagram-port-out {
+    -fx-cursor: crosshair;
+}
+
+.diagram-port-out:hover {
+    -fx-stroke: -fx-primary;
+}
+
+.diagram-validation-banner {
+    -fx-background-color: -dg-pill-failed;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-danger;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-text-fill: -fx-danger;
+    -fx-font-size: 12px;
+    -fx-padding: 5 10 5 10;
+}
+
+.branch-list-row {
+    -fx-background-color: -app-layer;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 6 8 6 8;
+}
+
+.branch-list-row.selected {
+    -fx-border-color: -fx-primary;
+}
+
+.inspector-scroll,
+.inspector-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.inspector-tabs {
+    -fx-tab-min-height: 28;
+    -fx-tab-max-height: 28;
+}
+
+.inspector-tabs > .tab-header-area {
+    -fx-padding: 0 12 0 12;
+}
+
+.inspector-tabs > .tab-header-area > .headers-region > .tab {
+    -fx-padding: 6 10 5 10;
+}
+
+.inspector-tabs .tab .tab-label {
+    -fx-padding: 0;
+}
+
+.inspector-subtabs {
+    -fx-tab-min-height: 26;
+    -fx-tab-max-height: 26;
+}
+
+.inspector-subtabs > .tab-header-area {
+    -fx-padding: 0 10 0 10;
+}
+
+.inspector-subtabs > .tab-header-area > .headers-region > .tab {
+    -fx-padding: 4 6 4 6;
+}
+
+.inspector-subtabs .tab .tab-label {
+    -fx-padding: 0;
+    -fx-font-size: 12px;
+}
+
+.info-tip {
+    -fx-min-width: 16;
+    -fx-pref-width: 16;
+    -fx-max-width: 16;
+    -fx-min-height: 16;
+    -fx-pref-height: 16;
+    -fx-max-height: 16;
+    -fx-alignment: center;
+    -fx-background-color: transparent;
+    -fx-background-radius: 999;
+    -fx-border-color: -fx-border-base;
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-text-fill: -app-muted;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.info-tip:hover {
+    -fx-border-color: -fx-primary;
+    -fx-text-fill: -fx-primary;
+    -fx-background-color: -app-accent-wash;
+}
+
+.step-log-details {
+    -fx-font-family: "JetBrains Mono", "Cascadia Mono", "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -app-muted;
+}

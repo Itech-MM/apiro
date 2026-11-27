@@ -9,7 +9,6 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -26,8 +25,8 @@ final class AssertionEditor extends VBox {
     AssertionEditor(Consumer<List<Assertion>> onChange) {
         super(8);
         this.onChange = onChange;
-        Label title = new Label("Assertions");
-        title.getStyleClass().add("section-title");
+        HBox header = InfoTip.header("Assertions",
+                "Checks evaluated against this step's response after it completes.");
         getStyleClass().add("section-body");
         Button add = new Button("Add assertion");
         add.getStyleClass().add("link-button");
@@ -35,7 +34,7 @@ final class AssertionEditor extends VBox {
             addRow(new Assertion(Assertion.Source.STATUS, "", Assertion.Operator.EQUALS, "200"));
             emit();
         });
-        getChildren().addAll(title, rows, add);
+        getChildren().addAll(header, rows, add);
     }
 
     void set(List<Assertion> assertions) {
