@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.spring.webmvc;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,7 @@ public final class RequestMappings {
 
     private static MappingDescription describe(RequestMappingInfo info, HandlerMethod handler) {
         MappingDescription description = new MappingDescription(handler);
-        description.getPatterns().addAll(info.getPatternValues());
+        description.getPatterns().addAll(patterns(info));
         for (RequestMethod method : info.getMethodsCondition().getMethods()) {
             description.getMethods().add(method.name());
         }
@@ -48,6 +49,31 @@ public final class RequestMappings {
             description.getUnsupported().add(version.getClass().getSimpleName());
         }
         return description;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> patterns(RequestMappingInfo info) {
+        try {
+            Method direct = optional(RequestMappingInfo.class, "getPatternValues");
+            if (direct != null) {
+                return (Set<String>) direct.invoke(info);
+            }
+            Object condition = RequestMappingInfo.class.getMethod("getPatternsCondition").invoke(info);
+            if (condition == null) {
+                return Collections.emptySet();
+            }
+            return (Set<String>) condition.getClass().getMethod("getPatterns").invoke(condition);
+        } catch (ReflectiveOperationException error) {
+            throw new IllegalStateException("Cannot read the path patterns of " + info, error);
+        }
+    }
+
+    private static Method optional(Class<?> type, String name) {
+        try {
+            return type.getMethod(name);
+        } catch (NoSuchMethodException absent) {
+            return null;
+        }
     }
 
     private static void media(String name, Set<MediaTypeExpression> expressions, Set<String> types,
