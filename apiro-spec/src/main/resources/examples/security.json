@@ -1,0 +1,129 @@
+{
+  "manifestVersion": 1,
+  "source": "runtime",
+  "generator": {
+    "name": "apiro-spring-webmvc"
+  },
+  "endpoints": [
+    {
+      "id": "GET /authentication#com.shop.SecurityController.authentication()",
+      "method": "GET",
+      "path": "/authentication",
+      "group": "SecurityController",
+      "name": "authentication",
+      "security": {
+        "authentication": {
+          "status": "declared",
+          "schemes": [
+            "basic",
+            "bearer"
+          ],
+          "source": "configuration"
+        }
+      },
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "authentication"
+      }
+    },
+    {
+      "id": "GET /both-open#com.shop.SecurityController.bothOpen()",
+      "method": "GET",
+      "path": "/both-open",
+      "group": "SecurityController",
+      "name": "bothOpen",
+      "security": {
+        "authentication": {
+          "status": "declared",
+          "schemes": [
+            "basic",
+            "bearer"
+          ],
+          "source": "configuration"
+        },
+        "authorization": {
+          "status": "declared",
+          "access": "open",
+          "source": "method-annotation"
+        }
+      },
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "bothOpen"
+      }
+    },
+    {
+      "id": "GET /both-restricted#com.shop.SecurityController.bothRestricted()",
+      "method": "GET",
+      "path": "/both-restricted",
+      "group": "SecurityController",
+      "name": "bothRestricted",
+      "security": {
+        "authentication": {
+          "status": "declared",
+          "schemes": [
+            "basic",
+            "bearer"
+          ],
+          "source": "configuration"
+        },
+        "authorization": {
+          "status": "declared",
+          "access": "restricted",
+          "source": "method-annotation"
+        }
+      },
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "bothRestricted"
+      }
+    },
+    {
+      "id": "GET /none#com.shop.SecurityController.none()",
+      "method": "GET",
+      "path": "/none",
+      "group": "SecurityController",
+      "name": "none",
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "none"
+      }
+    },
+    {
+      "id": "GET /open#com.shop.SecurityController.open()",
+      "method": "GET",
+      "path": "/open",
+      "group": "SecurityController",
+      "name": "open",
+      "security": {
+        "authorization": {
+          "status": "declared",
+          "access": "open",
+          "source": "method-annotation"
+        }
+      },
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "open"
+      }
+    },
+    {
+      "id": "GET /restricted#com.shop.SecurityController.restricted()",
+      "method": "GET",
+      "path": "/restricted",
+      "group": "SecurityController",
+      "name": "restricted",
+      "security": {
+        "authorization": {
+          "status": "declared",
+          "access": "restricted",
+          "source": "method-annotation"
+        }
+      },
+      "handler": {
+        "className": "com.shop.SecurityController",
+        "methodName": "restricted"
+      }
+    }
+  ]
+}

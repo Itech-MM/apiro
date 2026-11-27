@@ -21,6 +21,7 @@ final class CanonicalTree {
     static Map<String, Object> of(Manifest manifest) {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("manifestVersion", whole(manifest.getManifestVersion()));
+        put(root, "source", manifest.getSource());
         put(root, "generator", generator(manifest.getGenerator()));
         put(root, "generatedAt", manifest.getGeneratedAt());
         put(root, "application", application(manifest.getApplication()));
@@ -138,12 +139,14 @@ final class CanonicalTree {
         put(map, "id", endpoint.getId());
         put(map, "method", endpoint.getMethod());
         put(map, "path", endpoint.getPath());
+        put(map, "pattern", endpoint.getPattern());
         put(map, "group", endpoint.getGroup());
         put(map, "name", endpoint.getName());
         put(map, "summary", endpoint.getSummary());
         put(map, "deprecated", endpoint.isDeprecated());
         put(map, "consumes", endpoint.getConsumes());
         put(map, "produces", endpoint.getProduces());
+        put(map, "conditions", conditions(endpoint.getConditions()));
         List<Object> parameters = new ArrayList<>();
         for (Parameter parameter : endpoint.getParameters()) {
             parameters.add(parameter(parameter));
@@ -161,8 +164,8 @@ final class CanonicalTree {
         put(map, "in", parameter.getIn());
         put(map, "required", parameter.isRequired());
         put(map, "defaultValue", parameter.getDefaultValue());
-        put(map, "schema", parameter.getSchema() == null ? null : schema(parameter.getSchema()));
         put(map, "description", parameter.getDescription());
+        put(map, "schema", parameter.getSchema() == null ? null : schema(parameter.getSchema()));
         return map;
     }
 
@@ -177,15 +180,46 @@ final class CanonicalTree {
         return map;
     }
 
+    private static Map<String, Object> conditions(Conditions conditions) {
+        if (conditions == null) {
+            return null;
+        }
+        Map<String, Object> map = new LinkedHashMap<>();
+        put(map, "params", conditions.getParams());
+        put(map, "headers", conditions.getHeaders());
+        put(map, "unsupported", conditions.getUnsupported());
+        return map;
+    }
+
     private static Map<String, Object> security(Security security) {
         if (security == null) {
             return null;
         }
         Map<String, Object> map = new LinkedHashMap<>();
-        if (security.getRequired() != null) {
-            map.put("required", security.getRequired());
+        put(map, "authentication", authentication(security.getAuthentication()));
+        put(map, "authorization", authorization(security.getAuthorization()));
+        return map;
+    }
+
+    private static Map<String, Object> authentication(Authentication authentication) {
+        if (authentication == null) {
+            return null;
         }
-        put(map, "schemes", security.getSchemes());
+        Map<String, Object> map = new LinkedHashMap<>();
+        put(map, "status", authentication.getStatus());
+        put(map, "schemes", authentication.getSchemes());
+        put(map, "source", authentication.getSource());
+        return map;
+    }
+
+    private static Map<String, Object> authorization(Authorization authorization) {
+        if (authorization == null) {
+            return null;
+        }
+        Map<String, Object> map = new LinkedHashMap<>();
+        put(map, "status", authorization.getStatus());
+        put(map, "access", authorization.getAccess());
+        put(map, "source", authorization.getSource());
         return map;
     }
 
@@ -211,6 +245,7 @@ final class CanonicalTree {
     private static Map<String, Object> schema(Schema schema) {
         Map<String, Object> map = new LinkedHashMap<>();
         put(map, "type", schema.getType());
+        put(map, "title", schema.getTitle());
         put(map, "format", schema.getFormat());
         put(map, "ref", schema.getRef());
         put(map, "items", schema.getItems() == null ? null : schema(schema.getItems()));

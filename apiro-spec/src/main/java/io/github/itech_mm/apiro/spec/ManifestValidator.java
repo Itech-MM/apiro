@@ -14,29 +14,20 @@ import java.util.regex.Pattern;
 
 public final class ManifestValidator {
     private static final Set<String> METHODS = Collections.unmodifiableSet(new LinkedHashSet<>(
-            Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")));
+            Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS",
+                    Endpoint.ANY_METHOD)));
 
     private static final Pattern PATH_VARIABLE = Pattern.compile("\\{([^/{}]+)}");
 
-    /** Most named schemas a producer may write into one manifest (design section 11, question 4). */
     public static final int MAX_SCHEMAS = 500;
 
     private ManifestValidator() {
     }
 
-    /**
-     * Structural validation: everything a reader needs to trust the manifest. Style rules that only
-     * producers must follow are left out on purpose, so manifests from other producers still load.
-     */
     public static List<String> validate(Manifest manifest) {
         return run(manifest, false);
     }
 
-    /**
-     * {@link #validate(Manifest)} plus the canonical-form rules a producer must satisfy: endpoints
-     * sorted by path then method, {@code ref} schemas carrying no other fields, and the schema cap.
-     * Use it in golden-file and producer tests.
-     */
     public static List<String> validateCanonical(Manifest manifest) {
         return run(manifest, true);
     }
@@ -59,11 +50,9 @@ public final class ManifestValidator {
 
         Map<String, Schema> schemas = manifest.getSchemas();
         Set<String> seenIds = new HashSet<>();
-        Set<String> seenRoutes = new HashSet<>();
         List<Endpoint> endpoints = manifest.getEndpoints();
         for (int i = 0; i < endpoints.size(); i++) {
-            checkEndpoint("endpoints[" + i + "]", endpoints.get(i), schemas, seenIds, seenRoutes, problems,
-                    canonical);
+            checkEndpoint("endpoints[" + i + "]", endpoints.get(i), schemas, seenIds, problems, canonical);
         }
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             checkSchema("schemas." + entry.getKey(), entry.getValue(), schemas, problems,
@@ -81,17 +70,102 @@ public final class ManifestValidator {
             Endpoint previous = endpoints.get(i - 1);
             Endpoint current = endpoints.get(i);
             if (previous != null && current != null && compareRoute(previous, current) > 0) {
-                problems.add("endpoints[" + i + "] is out of order: endpoints must be sorted by path, then method");
+                problems.add("endpoints[" + i + "] is out of order: endpoints must be sorted by path, then method, then id");
             }
         }
+        for (int i = 0; i < endpoints.size(); i++) {
+            if (endpoints.get(i) != null) {
+                checkCanonicalEndpoint("endpoints[" + i + "]", endpoints.get(i), problems);
+            }
+        }
+        if (manifest.getSource() != null && !ManifestSource.ALL.contains(manifest.getSource())) {
+            problems.add("source must be one of " + ManifestSource.ALL + " but was " + manifest.getSource());
+        }
+        Application application = manifest.getApplication();
+        if (application != null && isBlank(application.getName()) && isBlank(application.getContextPath())
+                && isBlank(application.getServletPath())) {
+            problems.add("application is empty and must be omitted");
+        }
+        checkSorted("schemas", new ArrayList<>(manifest.getSchemas().keySet()), problems);
         if (manifest.getSchemas().size() > MAX_SCHEMAS) {
             problems.add("schemas has " + manifest.getSchemas().size() + " entries but the limit is " + MAX_SCHEMAS);
         }
     }
 
+    private static void checkCanonicalEndpoint(String where, Endpoint endpoint, List<String> problems) {
+        if (endpoint.getPattern() != null && endpoint.getPattern().equals(endpoint.getPath())) {
+            problems.add(where + ".pattern equals path and must be omitted");
+        }
+        checkSorted(where + ".consumes", endpoint.getConsumes(), problems);
+        checkSorted(where + ".produces", endpoint.getProduces(), problems);
+        Conditions conditions = endpoint.getConditions();
+        if (conditions != null) {
+            if (conditions.getParams().isEmpty() && conditions.getHeaders().isEmpty()
+                    && conditions.getUnsupported().isEmpty()) {
+                problems.add(where + ".conditions is empty and must be omitted");
+            }
+            checkSorted(where + ".conditions.params", conditions.getParams(), problems);
+            checkSorted(where + ".conditions.headers", conditions.getHeaders(), problems);
+            checkSorted(where + ".conditions.unsupported", conditions.getUnsupported(), problems);
+        }
+        if (endpoint.getSecurity() != null) {
+            checkSecurity(where + ".security", endpoint.getSecurity(), problems);
+        }
+    }
+
+    private static void checkSecurity(String where, Security security, List<String> problems) {
+        Authentication authentication = security.getAuthentication();
+        Authorization authorization = security.getAuthorization();
+        if (authentication == null && authorization == null) {
+            problems.add(where + " is empty and must be omitted");
+        }
+        if (authentication != null) {
+            if (!SecurityStatus.DECLARED.equals(authentication.getStatus())) {
+                problems.add(where + ".authentication must be omitted unless its status is 'declared'");
+            }
+            checkSorted(where + ".authentication.schemes", authentication.getSchemes(), problems);
+        }
+        if (authorization != null) {
+            if (!SecurityStatus.DECLARED.equals(authorization.getStatus())) {
+                problems.add(where + ".authorization must be omitted unless its status is 'declared'");
+            } else if (authorization.getAccess() == null || !AccessLevel.ALL.contains(authorization.getAccess())) {
+                problems.add(where + ".authorization.access must be one of " + AccessLevel.ALL
+                        + " but was " + authorization.getAccess());
+            }
+        }
+    }
+
+    private static void checkSorted(String where, List<String> values, List<String> problems) {
+        for (int i = 1; i < values.size(); i++) {
+            if (compareCodePoints(values.get(i - 1), values.get(i)) > 0) {
+                problems.add(where + " is not sorted");
+                return;
+            }
+        }
+    }
+
+    private static int compareCodePoints(String a, String b) {
+        String left = nullToEmpty(a);
+        String right = nullToEmpty(b);
+        int i = 0;
+        while (i < left.length() && i < right.length()) {
+            int x = left.codePointAt(i);
+            int y = right.codePointAt(i);
+            if (x != y) {
+                return x < y ? -1 : 1;
+            }
+            i += Character.charCount(x);
+        }
+        return left.length() - right.length();
+    }
+
     private static int compareRoute(Endpoint a, Endpoint b) {
-        int byPath = nullToEmpty(a.getPath()).compareTo(nullToEmpty(b.getPath()));
-        return byPath != 0 ? byPath : nullToEmpty(a.getMethod()).compareTo(nullToEmpty(b.getMethod()));
+        int byPath = compareCodePoints(a.getPath(), b.getPath());
+        if (byPath != 0) {
+            return byPath;
+        }
+        int byMethod = compareCodePoints(a.getMethod(), b.getMethod());
+        return byMethod != 0 ? byMethod : compareCodePoints(a.getId(), b.getId());
     }
 
     private static String nullToEmpty(String value) {
@@ -99,7 +173,7 @@ public final class ManifestValidator {
     }
 
     private static void checkEndpoint(String where, Endpoint endpoint, Map<String, Schema> schemas,
-                                      Set<String> seenIds, Set<String> seenRoutes, List<String> problems,
+                                      Set<String> seenIds, List<String> problems,
                                       boolean canonical) {
         if (endpoint == null) {
             problems.add(where + " is null");
@@ -117,13 +191,6 @@ public final class ManifestValidator {
         if (isBlank(path) || !path.startsWith("/")) {
             problems.add(where + ".path must start with '/' but was " + path);
         }
-        if (endpoint.getMethod() != null && path != null) {
-            String route = endpoint.getMethod() + " " + path;
-            if (!seenRoutes.add(route)) {
-                problems.add(where + " duplicates the route " + route + ": one endpoint is one method and one path");
-            }
-        }
-
         Set<String> templateNames = new LinkedHashSet<>();
         if (path != null) {
             Matcher matcher = PATH_VARIABLE.matcher(path);
@@ -249,6 +316,7 @@ public final class ManifestValidator {
 
     private static boolean hasFieldsBesidesRef(Schema schema) {
         return schema.getType() != null
+                || schema.getTitle() != null
                 || schema.getFormat() != null
                 || schema.getItems() != null
                 || !schema.getProperties().isEmpty()

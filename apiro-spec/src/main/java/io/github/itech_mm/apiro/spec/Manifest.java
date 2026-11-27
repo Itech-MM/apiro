@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public final class Manifest {
     private int manifestVersion;
+    private String source;
     private Generator generator;
     private String generatedAt;
     private Application application;
@@ -20,6 +21,15 @@ public final class Manifest {
 
     public Manifest setManifestVersion(int manifestVersion) {
         this.manifestVersion = manifestVersion;
+        return this;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public Manifest setSource(String source) {
+        this.source = source;
         return this;
     }
 
@@ -78,6 +88,7 @@ public final class Manifest {
         }
         Manifest other = (Manifest) o;
         return manifestVersion == other.manifestVersion
+                && Objects.equals(source, other.source)
                 && Objects.equals(generator, other.generator)
                 && Objects.equals(generatedAt, other.generatedAt)
                 && Objects.equals(application, other.application)
@@ -87,13 +98,14 @@ public final class Manifest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(manifestVersion, generator, generatedAt, application, endpoints, schemas);
+        return Objects.hash(manifestVersion, source, generator, generatedAt, application, endpoints, schemas);
     }
 
     @Override
     public String toString() {
         return "Manifest{" +
                 "manifestVersion=" + manifestVersion +
+                ", source=" + source +
                 ", generator=" + generator +
                 ", generatedAt=" + generatedAt +
                 ", application=" + application +

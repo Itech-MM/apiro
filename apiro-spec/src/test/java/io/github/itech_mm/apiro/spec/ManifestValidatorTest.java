@@ -134,10 +134,31 @@ class ManifestValidatorTest {
     }
 
     @Test
-    void duplicateRouteIsReportedEvenWithDifferentIds() {
+    void sameRouteWithDifferentIdsIsAllowed() {
         Manifest manifest = valid().setEndpoints(Arrays.asList(
                 endpoint("a", "GET", "/a"), endpoint("b", "GET", "/a")));
-        assertTrue(mentions(ManifestValidator.validate(manifest), "duplicates the route GET /a"));
+        assertEquals(0, ManifestValidator.validateCanonical(manifest).size());
+    }
+
+    @Test
+    void sameRouteIsOrderedById() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(
+                endpoint("b", "GET", "/a"), endpoint("a", "GET", "/a")));
+        assertTrue(mentions(ManifestValidator.validateCanonical(manifest), "out of order"));
+    }
+
+    @Test
+    void anyMethodIsAccepted() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(endpoint("a", "ANY", "/a")));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+    }
+
+    @Test
+    void unknownAuthenticationIsNotCanonical() {
+        Manifest manifest = valid().setEndpoints(Arrays.asList(endpoint("a", "GET", "/a")
+                .setSecurity(new Security().setAuthentication(new Authentication().setStatus("unknown")))));
+        assertEquals(0, ManifestValidator.validate(manifest).size());
+        assertTrue(mentions(ManifestValidator.validateCanonical(manifest), "authentication must be omitted"));
     }
 
     @Test

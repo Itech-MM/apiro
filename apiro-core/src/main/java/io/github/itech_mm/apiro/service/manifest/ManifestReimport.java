@@ -3,6 +3,7 @@ package io.github.itech_mm.apiro.service.manifest;
 import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.FormPart;
+import io.github.itech_mm.apiro.model.HttpMethod;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
@@ -90,7 +91,8 @@ public final class ManifestReimport {
             RequestItem old = existing.get(pair.getKey());
             Fresh next = fresh.get(pair.getValue());
             List<String> changes = new ArrayList<>();
-            RequestItem refreshed = refreshed(old, next.request(), changes, warnings);
+            boolean anyMethod = imported.anyMethodIds().contains(next.request().manifestEndpointId());
+            RequestItem refreshed = refreshed(old, next.request(), anyMethod, changes, warnings);
             if (changes.isEmpty()) {
                 unchanged++;
             } else {
@@ -236,10 +238,11 @@ public final class ManifestReimport {
         return id.substring(0, space) + id.substring(hash);
     }
 
-    private static RequestItem refreshed(RequestItem old, RequestItem next, List<String> changes,
-            List<String> warnings) {
-        if (old.method() != next.method()) {
-            changes.add("Method " + old.method() + " to " + next.method());
+    private static RequestItem refreshed(RequestItem old, RequestItem next, boolean anyMethod,
+            List<String> changes, List<String> warnings) {
+        HttpMethod method = anyMethod ? old.method() : next.method();
+        if (old.method() != method) {
+            changes.add("Method " + old.method() + " to " + method);
         }
         if (!old.url().equals(next.url())) {
             changes.add("URL " + old.url() + " to " + next.url());
@@ -250,7 +253,7 @@ public final class ManifestReimport {
         if (!old.manifestEndpointId().equals(next.manifestEndpointId())) {
             changes.add("Linked endpoint is now " + next.manifestEndpointId());
         }
-        return new RequestItem(old.id(), old.name(), next.method(), next.url(), query, headers, old.auth(), body,
+        return new RequestItem(old.id(), old.name(), method, next.url(), query, headers, old.auth(), body,
                 old.settings(), next.manifestEndpointId());
     }
 

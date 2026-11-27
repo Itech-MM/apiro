@@ -1,5 +1,6 @@
 {
   "manifestVersion": 1,
+  "source": "runtime",
   "generator": {
     "name": "apiro-spring-webmvc",
     "version": "1.0.0",
@@ -25,7 +26,7 @@
       }
     },
     {
-      "id": "POST /orders/{customerId}#com.shop.OrderController.create(long,boolean,String,CreateOrder)",
+      "id": "POST /orders/{customerId}#com.shop.OrderController.create(long,boolean,java.lang.String,com.shop.CreateOrder)",
       "method": "POST",
       "path": "/orders/{customerId}",
       "group": "OrderController",
@@ -54,11 +55,11 @@
       "body": {
         "contentType": "application/json",
         "required": true,
-        "schema": { "ref": "CreateOrder" }
+        "schema": { "ref": "com.shop.CreateOrder" }
       },
       "security": {
-        "required": true,
-        "schemes": ["bearer"]
+        "authentication": { "status": "declared", "schemes": ["bearer"], "source": "configuration" },
+        "authorization": { "status": "declared", "access": "restricted", "source": "method-annotation" }
       },
       "handler": {
         "className": "com.shop.OrderController",
@@ -83,7 +84,8 @@
         }
       ],
       "security": {
-        "required": true
+        "authentication": { "status": "declared", "schemes": ["bearer"], "source": "configuration" },
+        "authorization": { "status": "declared", "access": "restricted", "source": "class-annotation" }
       },
       "handler": {
         "className": "com.shop.OrderController",
@@ -93,16 +95,18 @@
     }
   ],
   "schemas": {
-    "CreateOrder": {
+    "com.shop.CreateOrder": {
       "type": "object",
+      "title": "CreateOrder",
       "properties": {
-        "items": { "type": "array", "items": { "ref": "OrderLine" }, "minItems": 1 },
+        "items": { "type": "array", "items": { "ref": "com.shop.OrderLine" }, "minItems": 1 },
         "note": { "type": "string", "maxLength": 200 }
       },
       "required": ["items"]
     },
-    "OrderLine": {
+    "com.shop.OrderLine": {
       "type": "object",
+      "title": "OrderLine",
       "properties": {
         "sku": { "type": "string", "minLength": 1, "maxLength": 40 },
         "quantity": { "type": "integer", "format": "int32", "minimum": 1 }

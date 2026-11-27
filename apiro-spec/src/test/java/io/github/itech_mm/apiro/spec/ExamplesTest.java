@@ -24,7 +24,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Test;
 
 class ExamplesTest {
-    private static final List<String> EXAMPLES = Arrays.asList("minimal.json", "orders.json");
+    private static final List<String> EXAMPLES = Arrays.asList(
+            "minimal.json", "orders.json", "conditions.json", "methodless.json", "generics.json", "security.json");
 
     static Stream<String> examples() {
         return EXAMPLES.stream();
@@ -41,11 +42,6 @@ class ExamplesTest {
             }
             return new String(out.toByteArray(), StandardCharsets.UTF_8);
         }
-    }
-
-    private static String simpleName(String typeName) {
-        String name = typeName.substring(typeName.lastIndexOf('.') + 1);
-        return name.substring(name.lastIndexOf('$') + 1);
     }
 
     @Test
@@ -91,12 +87,9 @@ class ExamplesTest {
             if (handler == null) {
                 continue;
             }
-            List<String> simple = new ArrayList<>();
-            for (String type : handler.getParameterTypes()) {
-                simple.add(simpleName(type));
-            }
-            String expected = endpoint.getMethod() + " " + endpoint.getPath() + "#" + handler.getClassName() + "."
-                    + handler.getMethodName() + "(" + String.join(",", simple) + ")";
+            String pattern = endpoint.getPattern() == null ? endpoint.getPath() : endpoint.getPattern();
+            String expected = endpoint.getMethod() + " " + pattern + "#" + handler.getClassName() + "."
+                    + handler.getMethodName() + "(" + String.join(",", handler.getParameterTypes()) + ")";
             assertEquals(expected, endpoint.getId());
         }
     }
@@ -106,21 +99,20 @@ class ExamplesTest {
         Manifest manifest = ManifestJsonReader.read(read("orders.json"));
         assertEquals("/shop", manifest.getApplication().getContextPath());
         assertEquals(3, manifest.getEndpoints().size());
-        assertEquals(new LinkedHashSet<>(Arrays.asList("CreateOrder", "OrderLine")), manifest.getSchemas().keySet());
+        assertEquals(new LinkedHashSet<>(Arrays.asList("com.shop.CreateOrder", "com.shop.OrderLine")), manifest.getSchemas().keySet());
 
         Endpoint health = manifest.getEndpoints().get(0);
         assertNull(health.getSecurity());
 
         Endpoint create = manifest.getEndpoints().get(1);
         assertEquals("POST", create.getMethod());
-        assertEquals(Boolean.TRUE, create.getSecurity().getRequired());
-        assertEquals(Collections.singletonList("bearer"), create.getSecurity().getSchemes());
-        assertEquals("CreateOrder", create.getBody().getSchema().getRef());
+        assertEquals(Collections.singletonList("bearer"), create.getSecurity().getAuthentication().getSchemes());
+        assertEquals("com.shop.CreateOrder", create.getBody().getSchema().getRef());
         assertEquals(4, create.getHandler().getParameterTypes().size());
 
         Endpoint get = manifest.getEndpoints().get(2);
         assertTrue(get.isDeprecated());
-        assertEquals(Boolean.TRUE, get.getSecurity().getRequired());
-        assertTrue(get.getSecurity().getSchemes().isEmpty());
+        assertEquals("configuration", get.getSecurity().getAuthentication().getSource());
+        assertEquals("restricted", get.getSecurity().getAuthorization().getAccess());
     }
 }

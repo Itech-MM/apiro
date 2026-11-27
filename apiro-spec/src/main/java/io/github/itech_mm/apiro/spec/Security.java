@@ -1,28 +1,26 @@
 package io.github.itech_mm.apiro.spec;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public final class Security {
-    private Boolean required;
-    private List<String> schemes = new ArrayList<>();
+    private Authentication authentication;
+    private Authorization authorization;
 
-    public Boolean getRequired() {
-        return required;
+    public Authentication getAuthentication() {
+        return authentication;
     }
 
-    public Security setRequired(Boolean required) {
-        this.required = required;
+    public Security setAuthentication(Authentication authentication) {
+        this.authentication = authentication;
         return this;
     }
 
-    public List<String> getSchemes() {
-        return schemes;
+    public Authorization getAuthorization() {
+        return authorization;
     }
 
-    public Security setSchemes(List<String> schemes) {
-        this.schemes = schemes == null ? new ArrayList<>() : new ArrayList<>(schemes);
+    public Security setAuthorization(Authorization authorization) {
+        this.authorization = authorization;
         return this;
     }
 
@@ -35,20 +33,19 @@ public final class Security {
             return false;
         }
         Security other = (Security) o;
-        return Objects.equals(required, other.required)
-                && Objects.equals(schemes, other.schemes);
+        return Objects.equals(authentication, other.authentication)
+                && Objects.equals(authorization, other.authorization);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(required, schemes);
+        return Objects.hash(authentication, authorization);
     }
 
     @Override
     public String toString() {
-        return "Security{" +
-                "required=" + required +
-                ", schemes=" + schemes +
+        return "Security{authentication=" + authentication +
+                ", authorization=" + authorization +
                 "}";
     }
 }

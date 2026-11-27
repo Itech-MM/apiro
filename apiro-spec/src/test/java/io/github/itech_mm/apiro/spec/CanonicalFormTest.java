@@ -51,8 +51,9 @@ class CanonicalFormTest {
     }
 
     @Test
-    void securityRequiredFalseIsWritten() {
-        assertNull(CanonicalTree.drift(manifest(",\"security\":{\"required\":false}")));
+    void nestedSecurityIsWritten() {
+        assertNull(CanonicalTree.drift(manifest(
+                ",\"security\":{\"authorization\":{\"status\":\"declared\",\"access\":\"open\"}}")));
     }
 
     @Test

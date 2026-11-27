@@ -42,7 +42,9 @@ class ModelTest {
     }
 
     private static Security security() {
-        return new Security().setRequired(Boolean.TRUE).setSchemes(Arrays.asList("bearer"));
+        return new Security()
+                .setAuthentication(new Authentication().setStatus("declared").setSchemes(Arrays.asList("bearer")))
+                .setAuthorization(new Authorization().setStatus("declared").setAccess("restricted"));
     }
 
     private static Generator generator() {
@@ -92,10 +94,9 @@ class ModelTest {
     }
 
     @Test
-    void securityKeepsUnknownApartFromFalse() {
-        assertNull(new Security().getRequired());
-        assertDiffers(new Security(), new Security().setRequired(Boolean.FALSE));
-        assertDiffers(new Security().setRequired(Boolean.TRUE), new Security().setRequired(Boolean.FALSE));
+    void securityKeepsAuthenticationApartFromAuthorization() {
+        assertNull(new Security().getAuthentication());
+        assertNull(new Security().getAuthorization());
     }
 
     @Test
@@ -116,7 +117,7 @@ class ModelTest {
         assertTrue(manifest.getEndpoints().isEmpty());
         assertTrue(manifest.getSchemas().isEmpty());
         assertTrue(new Handler().getParameterTypes().isEmpty());
-        assertTrue(new Security().getSchemes().isEmpty());
+        assertTrue(new Authentication().getSchemes().isEmpty());
     }
 
     @Test
@@ -170,8 +171,8 @@ class ModelTest {
     @Test
     void securityEqualsCoversEveryField() {
         assertEqualAndSameHash(security(), security());
-        assertDiffers(security(), security().setRequired(null));
-        assertDiffers(security(), security().setSchemes(Arrays.asList("basic")));
+        assertDiffers(security(), security().setAuthentication(new Authentication()));
+        assertDiffers(security(), security().setAuthorization(new Authorization()));
     }
 
     @Test
@@ -200,6 +201,8 @@ class ModelTest {
         assertDiffers(endpoint(), endpoint().setGroup("h"));
         assertDiffers(endpoint(), endpoint().setName("o"));
         assertDiffers(endpoint(), endpoint().setSummary("t"));
+        assertDiffers(endpoint(), endpoint().setPattern("/q"));
+        assertDiffers(endpoint(), endpoint().setConditions(new Conditions()));
         assertDiffers(endpoint(), endpoint().setDeprecated(false));
         assertDiffers(endpoint(), endpoint().setConsumes(null));
         assertDiffers(endpoint(), endpoint().setProduces(null));

@@ -1,0 +1,104 @@
+{
+  "manifestVersion": 1,
+  "source": "runtime",
+  "generator": {
+    "name": "apiro-spring-webmvc"
+  },
+  "endpoints": [
+    {
+      "id": "GET /files/{id:\\d+}#com.shop.FileController.download(long)",
+      "method": "GET",
+      "path": "/files/{id}",
+      "pattern": "/files/{id:\\d+}",
+      "group": "FileController",
+      "name": "download",
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "format": "int64",
+            "pattern": "\\d+"
+          }
+        }
+      ],
+      "handler": {
+        "className": "com.shop.FileController",
+        "methodName": "download",
+        "parameterTypes": [
+          "long"
+        ]
+      }
+    },
+    {
+      "id": "GET /reports#com.shop.ReportController.listV1()",
+      "method": "GET",
+      "path": "/reports",
+      "group": "ReportController",
+      "name": "listV1",
+      "conditions": {
+        "params": [
+          "version=1"
+        ]
+      },
+      "handler": {
+        "className": "com.shop.ReportController",
+        "methodName": "listV1"
+      }
+    },
+    {
+      "id": "GET /reports#com.shop.ReportController.listV2()",
+      "method": "GET",
+      "path": "/reports",
+      "group": "ReportController",
+      "name": "listV2",
+      "conditions": {
+        "params": [
+          "version=2"
+        ]
+      },
+      "handler": {
+        "className": "com.shop.ReportController",
+        "methodName": "listV2"
+      }
+    },
+    {
+      "id": "POST /reports#com.shop.ReportController.importJson()",
+      "method": "POST",
+      "path": "/reports",
+      "group": "ReportController",
+      "name": "importJson",
+      "consumes": [
+        "application/json"
+      ],
+      "handler": {
+        "className": "com.shop.ReportController",
+        "methodName": "importJson"
+      }
+    },
+    {
+      "id": "POST /reports#com.shop.ReportController.importXml()",
+      "method": "POST",
+      "path": "/reports",
+      "group": "ReportController",
+      "name": "importXml",
+      "consumes": [
+        "application/xml"
+      ],
+      "conditions": {
+        "headers": [
+          "X-Client=mobile"
+        ],
+        "unsupported": [
+          "ApiVersionRequestCondition"
+        ]
+      },
+      "handler": {
+        "className": "com.shop.ReportController",
+        "methodName": "importXml"
+      }
+    }
+  ]
+}

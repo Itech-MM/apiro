@@ -1,0 +1,138 @@
+{
+  "manifestVersion": 1,
+  "source": "runtime",
+  "generator": {
+    "name": "apiro-spring-webmvc"
+  },
+  "endpoints": [
+    {
+      "id": "POST /admins#com.admin.AdminController.create(com.admin.dto.User)",
+      "method": "POST",
+      "path": "/admins",
+      "group": "AdminController",
+      "name": "create",
+      "body": {
+        "required": true,
+        "schema": {
+          "ref": "com.admin.dto.User"
+        }
+      },
+      "handler": {
+        "className": "com.admin.AdminController",
+        "methodName": "create",
+        "parameterTypes": [
+          "com.admin.dto.User"
+        ]
+      }
+    },
+    {
+      "id": "POST /users#com.shop.UserController.create(com.shop.dto.User)",
+      "method": "POST",
+      "path": "/users",
+      "group": "UserController",
+      "name": "create",
+      "body": {
+        "required": true,
+        "schema": {
+          "ref": "com.shop.dto.User"
+        }
+      },
+      "handler": {
+        "className": "com.shop.UserController",
+        "methodName": "create",
+        "parameterTypes": [
+          "com.shop.dto.User"
+        ]
+      }
+    },
+    {
+      "id": "POST /wrapped/order#com.shop.WrapperController.order(com.shop.ApiResponse)",
+      "method": "POST",
+      "path": "/wrapped/order",
+      "group": "WrapperController",
+      "name": "order",
+      "body": {
+        "required": true,
+        "schema": {
+          "ref": "com.shop.ApiResponse<com.shop.Order>"
+        }
+      },
+      "handler": {
+        "className": "com.shop.WrapperController",
+        "methodName": "order",
+        "parameterTypes": [
+          "com.shop.ApiResponse"
+        ]
+      }
+    },
+    {
+      "id": "POST /wrapped/user#com.shop.WrapperController.user(com.shop.ApiResponse)",
+      "method": "POST",
+      "path": "/wrapped/user",
+      "group": "WrapperController",
+      "name": "user",
+      "body": {
+        "required": true,
+        "schema": {
+          "ref": "com.shop.ApiResponse<com.shop.dto.User>"
+        }
+      },
+      "handler": {
+        "className": "com.shop.WrapperController",
+        "methodName": "user",
+        "parameterTypes": [
+          "com.shop.ApiResponse"
+        ]
+      }
+    }
+  ],
+  "schemas": {
+    "com.admin.dto.User": {
+      "type": "object",
+      "title": "User",
+      "properties": {
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "com.shop.ApiResponse<com.shop.Order>": {
+      "type": "object",
+      "title": "ApiResponse<Order>",
+      "properties": {
+        "data": {
+          "ref": "com.shop.Order"
+        }
+      }
+    },
+    "com.shop.ApiResponse<com.shop.dto.User>": {
+      "type": "object",
+      "title": "ApiResponse<User>",
+      "properties": {
+        "data": {
+          "ref": "com.shop.dto.User"
+        }
+      }
+    },
+    "com.shop.Order": {
+      "type": "object",
+      "title": "Order",
+      "properties": {
+        "total": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "com.shop.dto.User": {
+      "type": "object",
+      "title": "User",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
+      }
+    }
+  }
+}

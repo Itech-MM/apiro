@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.Objects;
 
 public final class Endpoint {
+    public static final String ANY_METHOD = "ANY";
+
     private String id;
     private String method;
     private String path;
+    private String pattern;
     private String group;
     private String name;
     private String summary;
     private boolean deprecated;
     private List<String> consumes = new ArrayList<>();
     private List<String> produces = new ArrayList<>();
+    private Conditions conditions;
     private List<Parameter> parameters = new ArrayList<>();
     private Body body;
     private Security security;
@@ -43,6 +47,15 @@ public final class Endpoint {
 
     public Endpoint setPath(String path) {
         this.path = path;
+        return this;
+    }
+
+    public String getPattern() {
+        return pattern;
+    }
+
+    public Endpoint setPattern(String pattern) {
+        this.pattern = pattern;
         return this;
     }
 
@@ -100,6 +113,15 @@ public final class Endpoint {
         return this;
     }
 
+    public Conditions getConditions() {
+        return conditions;
+    }
+
+    public Endpoint setConditions(Conditions conditions) {
+        this.conditions = conditions;
+        return this;
+    }
+
     public List<Parameter> getParameters() {
         return parameters;
     }
@@ -148,12 +170,14 @@ public final class Endpoint {
         return Objects.equals(id, other.id)
                 && Objects.equals(method, other.method)
                 && Objects.equals(path, other.path)
+                && Objects.equals(pattern, other.pattern)
                 && Objects.equals(group, other.group)
                 && Objects.equals(name, other.name)
                 && Objects.equals(summary, other.summary)
                 && deprecated == other.deprecated
                 && Objects.equals(consumes, other.consumes)
                 && Objects.equals(produces, other.produces)
+                && Objects.equals(conditions, other.conditions)
                 && Objects.equals(parameters, other.parameters)
                 && Objects.equals(body, other.body)
                 && Objects.equals(security, other.security)
@@ -162,7 +186,7 @@ public final class Endpoint {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, method, path, group, name, summary, deprecated, consumes, produces, parameters, body, security, handler);
+        return Objects.hash(id, method, path, pattern, group, name, summary, deprecated, consumes, produces, conditions, parameters, body, security, handler);
     }
 
     @Override
@@ -171,12 +195,14 @@ public final class Endpoint {
                 "id=" + id +
                 ", method=" + method +
                 ", path=" + path +
+                ", pattern=" + pattern +
                 ", group=" + group +
                 ", name=" + name +
                 ", summary=" + summary +
                 ", deprecated=" + deprecated +
                 ", consumes=" + consumes +
                 ", produces=" + produces +
+                ", conditions=" + conditions +
                 ", parameters=" + parameters +
                 ", body=" + body +
                 ", security=" + security +

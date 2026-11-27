@@ -113,13 +113,14 @@ final class ManifestJsonReader {
     }
 
     private static Manifest manifest(Object value, String path) {
-        Map<String, Object> map = object(value, path, "manifestVersion", "generator", "generatedAt",
+        Map<String, Object> map = object(value, path, "manifestVersion", "source", "generator", "generatedAt",
                 "application", "endpoints", "schemas");
         Manifest manifest = new Manifest();
         Integer version = whole(map, "manifestVersion", path);
         if (version != null) {
             manifest.setManifestVersion(version);
         }
+        manifest.setSource(text(map, "source", path));
         if (map.containsKey("generator")) {
             manifest.setGenerator(generator(map.get("generator"), path + ".generator"));
         }
@@ -159,12 +160,14 @@ final class ManifestJsonReader {
     }
 
     private static Endpoint endpoint(Object value, String path) {
-        Map<String, Object> map = object(value, path, "id", "method", "path", "group", "name", "summary",
-                "deprecated", "consumes", "produces", "parameters", "body", "security", "handler");
+        Map<String, Object> map = object(value, path, "id", "method", "path", "pattern", "group", "name", "summary",
+                "deprecated", "consumes", "produces", "conditions",
+                "parameters", "body", "security", "handler");
         Endpoint endpoint = new Endpoint()
                 .setId(text(map, "id", path))
                 .setMethod(text(map, "method", path))
                 .setPath(text(map, "path", path))
+                .setPattern(text(map, "pattern", path))
                 .setGroup(text(map, "group", path))
                 .setName(text(map, "name", path))
                 .setSummary(text(map, "summary", path))
@@ -173,6 +176,9 @@ final class ManifestJsonReader {
         Boolean deprecated = flag(map, "deprecated", path);
         if (deprecated != null) {
             endpoint.setDeprecated(deprecated);
+        }
+        if (map.containsKey("conditions")) {
+            endpoint.setConditions(conditions(map.get("conditions"), path + ".conditions"));
         }
         if (map.containsKey("parameters")) {
             List<Object> items = list(map.get("parameters"), path + ".parameters");
@@ -225,11 +231,40 @@ final class ManifestJsonReader {
         return body;
     }
 
+    private static Conditions conditions(Object value, String path) {
+        Map<String, Object> map = object(value, path, "params", "headers", "unsupported");
+        return new Conditions()
+                .setParams(texts(map, "params", path))
+                .setHeaders(texts(map, "headers", path))
+                .setUnsupported(texts(map, "unsupported", path));
+    }
+
     private static Security security(Object value, String path) {
-        Map<String, Object> map = object(value, path, "required", "schemes");
-        return new Security()
-                .setRequired(flag(map, "required", path))
-                .setSchemes(texts(map, "schemes", path));
+        Map<String, Object> map = object(value, path, "authentication", "authorization");
+        Security security = new Security();
+        if (map.containsKey("authentication")) {
+            security.setAuthentication(authentication(map.get("authentication"), path + ".authentication"));
+        }
+        if (map.containsKey("authorization")) {
+            security.setAuthorization(authorization(map.get("authorization"), path + ".authorization"));
+        }
+        return security;
+    }
+
+    private static Authentication authentication(Object value, String path) {
+        Map<String, Object> map = object(value, path, "status", "schemes", "source");
+        return new Authentication()
+                .setStatus(text(map, "status", path))
+                .setSchemes(texts(map, "schemes", path))
+                .setSource(text(map, "source", path));
+    }
+
+    private static Authorization authorization(Object value, String path) {
+        Map<String, Object> map = object(value, path, "status", "access", "source");
+        return new Authorization()
+                .setStatus(text(map, "status", path))
+                .setAccess(text(map, "access", path))
+                .setSource(text(map, "source", path));
     }
 
     private static Handler handler(Object value, String path) {
@@ -250,11 +285,12 @@ final class ManifestJsonReader {
     }
 
     private static Schema schema(Object value, String path) {
-        Map<String, Object> map = object(value, path, "type", "format", "ref", "items", "properties", "required",
+        Map<String, Object> map = object(value, path, "type", "title", "format", "ref", "items", "properties", "required",
                 "enumValues", "nullable", "minimum", "maximum", "minLength", "maxLength", "pattern", "minItems",
                 "maxItems", "example");
         Schema schema = new Schema()
                 .setType(text(map, "type", path))
+                .setTitle(text(map, "title", path))
                 .setFormat(text(map, "format", path))
                 .setRef(text(map, "ref", path))
                 .setRequired(texts(map, "required", path))

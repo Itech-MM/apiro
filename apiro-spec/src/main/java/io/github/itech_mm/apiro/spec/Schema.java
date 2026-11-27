@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public final class Schema {
     private String type;
+    private String title;
     private String format;
     private String ref;
     private Schema items;
@@ -30,6 +31,15 @@ public final class Schema {
 
     public Schema setType(String type) {
         this.type = type;
+        return this;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public Schema setTitle(String title) {
+        this.title = title;
         return this;
     }
 
@@ -178,6 +188,7 @@ public final class Schema {
         }
         Schema other = (Schema) o;
         return Objects.equals(type, other.type)
+                && Objects.equals(title, other.title)
                 && Objects.equals(format, other.format)
                 && Objects.equals(ref, other.ref)
                 && Objects.equals(items, other.items)
@@ -197,13 +208,14 @@ public final class Schema {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, format, ref, items, properties, required, enumValues, nullable, minimum, maximum, minLength, maxLength, pattern, minItems, maxItems, example);
+        return Objects.hash(type, title, format, ref, items, properties, required, enumValues, nullable, minimum, maximum, minLength, maxLength, pattern, minItems, maxItems, example);
     }
 
     @Override
     public String toString() {
         return "Schema{" +
                 "type=" + type +
+                ", title=" + title +
                 ", format=" + format +
                 ", ref=" + ref +
                 ", items=" + items +

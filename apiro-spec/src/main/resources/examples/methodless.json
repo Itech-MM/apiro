@@ -1,0 +1,32 @@
+{
+  "manifestVersion": 1,
+  "source": "runtime",
+  "generator": {
+    "name": "apiro-spring-webmvc"
+  },
+  "endpoints": [
+    {
+      "id": "ANY /webhook#com.shop.WebhookController.receive(java.lang.String)",
+      "method": "ANY",
+      "path": "/webhook",
+      "group": "WebhookController",
+      "name": "receive",
+      "parameters": [
+        {
+          "name": "event",
+          "in": "query",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "handler": {
+        "className": "com.shop.WebhookController",
+        "methodName": "receive",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      }
+    }
+  ]
+}

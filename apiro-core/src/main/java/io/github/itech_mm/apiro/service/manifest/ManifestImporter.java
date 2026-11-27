@@ -14,7 +14,10 @@ import io.github.itech_mm.apiro.model.RequestBody;
 import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.Variable;
 import io.github.itech_mm.apiro.service.project.ProjectTree;
+import io.github.itech_mm.apiro.spec.AccessLevel;
 import io.github.itech_mm.apiro.spec.Application;
+import io.github.itech_mm.apiro.spec.Authentication;
+import io.github.itech_mm.apiro.spec.Authorization;
 import io.github.itech_mm.apiro.spec.Endpoint;
 import io.github.itech_mm.apiro.spec.Manifest;
 import io.github.itech_mm.apiro.spec.Parameter;
@@ -22,6 +25,7 @@ import io.github.itech_mm.apiro.spec.ParameterLocation;
 import io.github.itech_mm.apiro.spec.Schema;
 import io.github.itech_mm.apiro.spec.SchemaType;
 import io.github.itech_mm.apiro.spec.Security;
+import io.github.itech_mm.apiro.spec.SecurityStatus;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -41,11 +45,12 @@ public final class ManifestImporter {
     private static final Pattern VARIABLE_NAME = Pattern.compile("[A-Za-z0-9_.\\-]+");
     private static final String DEFAULT_GROUP = "Endpoints";
 
-    public record Result(List<Folder> folders, List<String> warnings, int requestCount) {
+    public record Result(List<Folder> folders, List<String> warnings, int requestCount, Set<String> anyMethodIds) {
 
         public Result {
             folders = List.copyOf(folders);
             warnings = List.copyOf(warnings);
+            anyMethodIds = Set.copyOf(anyMethodIds);
         }
     }
 
@@ -56,11 +61,18 @@ public final class ManifestImporter {
         List<String> warnings = new ArrayList<>();
         Map<String, List<Endpoint>> groups = new LinkedHashMap<>();
         String fallbackGroup = fallbackGroup(manifest.getApplication());
+        Set<String> anyMethodIds = new HashSet<>();
         for (Endpoint endpoint : manifest.getEndpoints()) {
             String problem = unusable(endpoint);
             if (problem != null) {
                 warnings.add("Skipped " + label(endpoint) + ": " + problem);
                 continue;
+            }
+            if (isAnyMethod(endpoint)) {
+                warnings.add("ANY " + endpoint.getPath() + ": accepts any method, imported as GET");
+                if (!isBlank(endpoint.getId())) {
+                    anyMethodIds.add(endpoint.getId());
+                }
             }
             String group = isBlank(endpoint.getGroup()) ? fallbackGroup : endpoint.getGroup();
             groups.computeIfAbsent(group, key -> new ArrayList<>()).add(endpoint);
@@ -73,7 +85,7 @@ public final class ManifestImporter {
             folders.add(folder);
             count += group.getValue().size();
         }
-        return new Result(folders, warnings, count);
+        return new Result(folders, warnings, count, anyMethodIds);
     }
 
     public static boolean hasBaseUrl(Project project) {
@@ -113,7 +125,7 @@ public final class ManifestImporter {
                     .filter(p -> ParameterLocation.COOKIE.equals(p.getIn())).count();
             String url = "${" + BASE_URL_VARIABLE + "}" + prefix + url(endpoint.getPath(), variables, warnings, endpoint);
             items.add(new RequestItem(null, uniqueName(endpoint, usedNames),
-                    HttpMethod.valueOf(endpoint.getMethod().toUpperCase(Locale.ROOT)),
+                    method(endpoint),
                     url, pairs(endpoint, ParameterLocation.QUERY), pairs(endpoint, ParameterLocation.HEADER),
                     requestAuth(endpoint, folderAuth), body(endpoint, schemas), null,
                     isBlank(endpoint.getId()) ? null : endpoint.getId()));
@@ -136,11 +148,20 @@ public final class ManifestImporter {
             return "no method";
         }
         try {
-            HttpMethod.valueOf(endpoint.getMethod().toUpperCase(Locale.ROOT));
+            method(endpoint);
         } catch (IllegalArgumentException error) {
             return "unsupported method " + endpoint.getMethod();
         }
         return null;
+    }
+
+    private static boolean isAnyMethod(Endpoint endpoint) {
+        return Endpoint.ANY_METHOD.equalsIgnoreCase(endpoint.getMethod());
+    }
+
+    private static HttpMethod method(Endpoint endpoint) {
+        return isAnyMethod(endpoint) ? HttpMethod.GET
+                : HttpMethod.valueOf(endpoint.getMethod().toUpperCase(Locale.ROOT));
     }
 
     private static String label(Endpoint endpoint) {
@@ -229,13 +250,13 @@ public final class ManifestImporter {
         Map<AuthType, Integer> counts = new LinkedHashMap<>();
         Set<String> unknown = new LinkedHashSet<>();
         for (Endpoint endpoint : endpoints) {
-            Security security = endpoint.getSecurity();
-            if (security == null || !Boolean.TRUE.equals(security.getRequired()) || security.getSchemes().isEmpty()) {
+            List<String> schemes = declaredSchemes(endpoint.getSecurity());
+            if (isOpen(endpoint.getSecurity()) || schemes.isEmpty()) {
                 continue;
             }
-            AuthType type = authType(security.getSchemes().get(0));
+            AuthType type = authType(schemes.get(0));
             if (type == null) {
-                unknown.add(security.getSchemes().get(0));
+                unknown.add(schemes.get(0));
             } else {
                 counts.merge(type, 1, Integer::sum);
             }
@@ -269,15 +290,26 @@ public final class ManifestImporter {
     }
 
     private static AuthConfig requestAuth(Endpoint endpoint, AuthType folderAuth) {
-        Security security = endpoint.getSecurity();
-        if (security == null) {
-            return null;
-        }
-        if (Boolean.FALSE.equals(security.getRequired())) {
+        if (isOpen(endpoint.getSecurity())) {
             return folderAuth == null ? null : AuthConfig.none();
         }
-        AuthType own = security.getSchemes().isEmpty() ? null : authType(security.getSchemes().get(0));
+        List<String> schemes = declaredSchemes(endpoint.getSecurity());
+        AuthType own = schemes.isEmpty() ? null : authType(schemes.get(0));
         return own != null && own != folderAuth ? placeholder(own) : null;
+    }
+
+    private static List<String> declaredSchemes(Security security) {
+        Authentication authentication = security == null ? null : security.getAuthentication();
+        if (authentication == null || !SecurityStatus.DECLARED.equals(authentication.getStatus())) {
+            return List.of();
+        }
+        return authentication.getSchemes();
+    }
+
+    private static boolean isOpen(Security security) {
+        Authorization authorization = security == null ? null : security.getAuthorization();
+        return authorization != null && SecurityStatus.DECLARED.equals(authorization.getStatus())
+                && AccessLevel.OPEN.equals(authorization.getAccess());
     }
 
     private static AuthConfig placeholder(AuthType type) {
