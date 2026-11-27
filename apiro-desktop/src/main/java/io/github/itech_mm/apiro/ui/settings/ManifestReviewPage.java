@@ -68,7 +68,8 @@ public final class ManifestReviewPage {
         boxes.clear();
         rows.getChildren().clear();
         summary.setText(diff.added().size() + " new, " + diff.updated().size() + " changed, "
-                + diff.removed().size() + " no longer in code, " + diff.unchanged() + " unchanged");
+                + diff.removed().size() + " no longer in code, " + diff.unchanged() + " unchanged"
+                + scopeNote(diff));
         if (!diff.added().isEmpty()) {
             rows.getChildren().add(section("New requests (" + diff.added().size() + ")"));
             for (Added entry : diff.added()) {
@@ -98,6 +99,14 @@ public final class ManifestReviewPage {
         if (rows.getChildren().isEmpty()) {
             rows.getChildren().add(detail("Everything is up to date."));
         }
+    }
+
+    private static String scopeNote(ManifestDiff diff) {
+        if (diff.scope() == null) {
+            return "";
+        }
+        int folders = diff.scope().size();
+        return " (compared with " + folders + (folders == 1 ? " folder" : " folders") + ")";
     }
 
     private void showEmpty() {

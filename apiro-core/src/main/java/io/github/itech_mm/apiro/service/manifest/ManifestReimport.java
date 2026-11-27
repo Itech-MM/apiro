@@ -33,10 +33,40 @@ public final class ManifestReimport {
     private record Fresh(Folder folder, RequestItem request) {
     }
 
+    /**
+     * A folder that directly holds requests linked to a manifest. {@code id} is the folder id, or the empty
+     * string for requests that sit at the project root. {@code path} is the folder names from the root,
+     * joined with " / ".
+     */
+    public record LinkedFolder(String id, String path, int requests) {
+    }
+
     private ManifestReimport() {
     }
 
+    /** Folders that directly hold manifest-linked requests, in project order. Used to let the user pick a scope. */
+    public static List<LinkedFolder> linkedFolders(Project project) {
+        List<LinkedFolder> result = new ArrayList<>();
+        int atRoot = linkedCount(project.items());
+        if (atRoot > 0) {
+            result.add(new LinkedFolder("", "(project root)", atRoot));
+        }
+        collectFolders(project.items(), "", result);
+        return result;
+    }
+
+    /** Compares the whole project: every linked request is a candidate for matching and for "removed". */
     public static ManifestDiff diff(Project project, Manifest manifest) {
+        return diff(project, manifest, null);
+    }
+
+    /**
+     * Compares the manifest with the linked requests whose direct parent is in {@code scope} (folder ids, with the
+     * empty string for the project root). Linked requests in other folders are left out completely: they are not
+     * matched, never reported as removed, and new requests are never placed into those folders. A null scope
+     * means the whole project.
+     */
+    public static ManifestDiff diff(Project project, Manifest manifest, Set<String> scope) {
         ManifestImporter.Result imported = ManifestImporter.importManifest(manifest);
         List<String> warnings = new ArrayList<>(imported.warnings());
         List<Fresh> fresh = new ArrayList<>();
@@ -46,7 +76,7 @@ public final class ManifestReimport {
             }
         }
         List<RequestItem> existing = new ArrayList<>();
-        collect(project.items(), existing);
+        collect("", project.items(), scope, existing);
 
         Map<Integer, Integer> pairs = new LinkedHashMap<>();
         Map<Integer, Match> kinds = new LinkedHashMap<>();
@@ -83,10 +113,11 @@ public final class ManifestReimport {
                 removed.add(new Removed(old.id(), old.name(), old.manifestEndpointId()));
             }
         }
-        return new ManifestDiff(updated, added, removed, unchanged, warnings);
+        return new ManifestDiff(updated, added, removed, unchanged, warnings, scope);
     }
 
     public static Project apply(Project project, ManifestDiff diff, Set<String> accepted) {
+        Set<String> outside = outsideScope(project, diff.scope());
         Project result = project;
         for (Updated entry : diff.updated()) {
             if (accepted.contains(entry.key()) && result.findItem(entry.requestId()).isPresent()) {
@@ -99,7 +130,7 @@ public final class ManifestReimport {
             if (!accepted.contains(entry.key())) {
                 continue;
             }
-            Optional<String> target = linkedFolder(result.items(), entry.folderName());
+            Optional<String> target = linkedFolder(result.items(), entry.folderName(), outside);
             if (target.isEmpty()) {
                 Folder folder = new Folder(null, entry.folderName(), entry.folderAuth(), null, entry.variables(), null,
                         List.of(entry.request()));
@@ -116,14 +147,52 @@ public final class ManifestReimport {
         return apply(project, diff, diff.applicableKeys());
     }
 
-    private static void collect(List<ProjectItem> items, List<RequestItem> into) {
+    private static void collect(String folderId, List<ProjectItem> items, Set<String> scope, List<RequestItem> into) {
         for (ProjectItem item : items) {
             if (item instanceof RequestItem request && request.manifestEndpointId() != null) {
-                into.add(request);
+                if (scope == null || scope.contains(folderId)) {
+                    into.add(request);
+                }
             } else if (item instanceof Folder folder) {
-                collect(folder.items(), into);
+                collect(folder.id(), folder.items(), scope, into);
             }
         }
+    }
+
+    private static int linkedCount(List<ProjectItem> items) {
+        int count = 0;
+        for (ProjectItem item : items) {
+            if (item instanceof RequestItem request && request.manifestEndpointId() != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static void collectFolders(List<ProjectItem> items, String prefix, List<LinkedFolder> into) {
+        for (ProjectItem item : items) {
+            if (item instanceof Folder folder) {
+                String path = prefix.isEmpty() ? folder.name() : prefix + " / " + folder.name();
+                int own = linkedCount(folder.items());
+                if (own > 0) {
+                    into.add(new LinkedFolder(folder.id(), path, own));
+                }
+                collectFolders(folder.items(), path, into);
+            }
+        }
+    }
+
+    /** Ids of folders that hold linked requests but are not in the scope. Empty when the scope is the whole project. */
+    private static Set<String> outsideScope(Project project, Set<String> scope) {
+        Set<String> outside = new HashSet<>();
+        if (scope != null) {
+            for (LinkedFolder folder : linkedFolders(project)) {
+                if (!scope.contains(folder.id())) {
+                    outside.add(folder.id());
+                }
+            }
+        }
+        return outside;
     }
 
     private static void pass(List<RequestItem> existing, List<Fresh> fresh, Function<String, String> key, Match match,
@@ -253,15 +322,15 @@ public final class ManifestReimport {
         return result;
     }
 
-    private static Optional<String> linkedFolder(List<ProjectItem> items, String name) {
+    private static Optional<String> linkedFolder(List<ProjectItem> items, String name, Set<String> outside) {
         for (ProjectItem item : items) {
             if (item instanceof Folder folder) {
                 boolean linked = folder.items().stream()
                         .anyMatch(child -> child instanceof RequestItem r && r.manifestEndpointId() != null);
-                if (linked && folder.name().equals(name)) {
+                if (linked && !outside.contains(folder.id()) && folder.name().equals(name)) {
                     return Optional.of(folder.id());
                 }
-                Optional<String> nested = linkedFolder(folder.items(), name);
+                Optional<String> nested = linkedFolder(folder.items(), name, outside);
                 if (nested.isPresent()) {
                     return nested;
                 }

@@ -7,8 +7,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * The result of comparing a manifest with a project. {@code scope} is the set of folder ids that were compared
+ * (the empty string stands for the project root), or null when the whole project was compared.
+ */
 public record ManifestDiff(List<Updated> updated, List<Added> added, List<Removed> removed, int unchanged,
-                           List<String> warnings) {
+                           List<String> warnings, Set<String> scope) {
 
     public enum Match {
         ID, ROUTE, HANDLER
@@ -47,6 +51,7 @@ public record ManifestDiff(List<Updated> updated, List<Added> added, List<Remove
         added = List.copyOf(added);
         removed = List.copyOf(removed);
         warnings = List.copyOf(warnings);
+        scope = scope == null ? null : Set.copyOf(scope);
     }
 
     public boolean hasChanges() {
