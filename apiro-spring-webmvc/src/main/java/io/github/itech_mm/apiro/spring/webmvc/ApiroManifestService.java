@@ -46,7 +46,7 @@ public final class ApiroManifestService {
             Files.write(path, json().getBytes(StandardCharsets.UTF_8));
             restrict(path);
             LOG.info("Apiro manifest written to " + path);
-        } catch (IOException | RuntimeException error) {
+        } catch (IOException | RuntimeException | LinkageError error) {
             LOG.warn("Apiro manifest export to " + file + " failed: " + error);
         }
     }

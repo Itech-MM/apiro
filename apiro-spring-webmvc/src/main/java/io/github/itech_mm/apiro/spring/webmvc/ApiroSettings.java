@@ -11,7 +11,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 import org.springframework.core.env.Environment;
+import org.springframework.util.StringValueResolver;
 
 public final class ApiroSettings {
     private static final Set<String> DEVELOPMENT_PROFILES = new LinkedHashSet<>(
@@ -27,22 +29,27 @@ public final class ApiroSettings {
     private final boolean tokenGenerated;
     private final List<String> activeProfiles;
 
-    private ApiroSettings(Environment environment) {
-        this.applicationName = text(environment.getProperty("spring.application.name"));
-        this.contextPath = path(first(environment, "apiro.context-path", "server.servlet.context-path",
+    private ApiroSettings(Environment environment, StringValueResolver resolver) {
+        Function<String, String> properties = key -> property(environment, resolver, key);
+        this.applicationName = text(properties.apply("spring.application.name"));
+        this.contextPath = path(first(properties, "apiro.context-path", "server.servlet.context-path",
                 "server.context-path"));
-        this.servletPath = path(first(environment, "apiro.servlet-path", "spring.mvc.servlet.path"));
-        this.excludePackages = packages(list(environment, "apiro.exclude-packages"));
-        this.authentication = list(environment, "apiro.security.authentication");
-        this.exportFile = text(environment.getProperty("apiro.export-file"));
-        String configured = text(environment.getProperty("apiro.token"));
+        this.servletPath = path(first(properties, "apiro.servlet-path", "spring.mvc.servlet.path"));
+        this.excludePackages = packages(list(properties, "apiro.exclude-packages"));
+        this.authentication = list(properties, "apiro.security.authentication");
+        this.exportFile = text(properties.apply("apiro.export-file"));
+        String configured = text(properties.apply("apiro.token"));
         this.tokenGenerated = configured == null;
         this.token = configured != null ? configured : generate();
         this.activeProfiles = Collections.unmodifiableList(Arrays.asList(environment.getActiveProfiles()));
     }
 
     public static ApiroSettings from(Environment environment) {
-        return new ApiroSettings(environment);
+        return new ApiroSettings(environment, null);
+    }
+
+    public static ApiroSettings from(Environment environment, StringValueResolver resolver) {
+        return new ApiroSettings(environment, resolver);
     }
 
     public String getApplicationName() {
@@ -101,15 +108,24 @@ public final class ApiroSettings {
                 candidate.getBytes(StandardCharsets.UTF_8));
     }
 
+    private static String property(Environment environment, StringValueResolver resolver, String key) {
+        String value = environment.getProperty(key);
+        if (value != null || resolver == null) {
+            return value;
+        }
+        String resolved = resolver.resolveStringValue("${" + key + ":}");
+        return resolved == null || resolved.isEmpty() ? null : resolved;
+    }
+
     private static String generate() {
         byte[] bytes = new byte[24];
         new SecureRandom().nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    private static String first(Environment environment, String... keys) {
+    private static String first(Function<String, String> properties, String... keys) {
         for (String key : keys) {
-            String value = environment.getProperty(key);
+            String value = properties.apply(key);
             if (value != null) {
                 return value;
             }
@@ -142,16 +158,16 @@ public final class ApiroSettings {
         return trimmed.startsWith("/") ? trimmed : "/" + trimmed;
     }
 
-    private static List<String> list(Environment environment, String key) {
+    private static List<String> list(Function<String, String> properties, String key) {
         Set<String> values = new LinkedHashSet<>();
-        String joined = environment.getProperty(key);
+        String joined = properties.apply(key);
         if (joined != null) {
             for (String part : joined.split(",")) {
                 add(values, part);
             }
         }
         for (int index = 0; ; index++) {
-            String item = environment.getProperty(key + "[" + index + "]");
+            String item = properties.apply(key + "[" + index + "]");
             if (item == null) {
                 break;
             }

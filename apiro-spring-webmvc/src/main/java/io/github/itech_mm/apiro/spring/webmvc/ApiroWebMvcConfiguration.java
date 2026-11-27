@@ -1,15 +1,24 @@
 package io.github.itech_mm.apiro.spring.webmvc;
 
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.util.StringValueResolver;
 
 @Configuration
-public class ApiroWebMvcConfiguration {
+public class ApiroWebMvcConfiguration implements EmbeddedValueResolverAware {
+    private StringValueResolver resolver;
+
+    @Override
+    public void setEmbeddedValueResolver(StringValueResolver resolver) {
+        this.resolver = resolver;
+    }
+
     @Bean
     public ApiroSettings apiroSettings(Environment environment) {
-        return ApiroSettings.from(environment);
+        return ApiroSettings.from(environment, resolver);
     }
 
     @Bean
