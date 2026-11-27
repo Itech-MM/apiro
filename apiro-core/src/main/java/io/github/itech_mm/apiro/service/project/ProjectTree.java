@@ -146,7 +146,8 @@ public final class ProjectTree {
         }
         RequestItem request = (RequestItem) item;
         return new RequestItem(request.id(), name, request.method(), request.url(), request.query(),
-                request.headers(), request.auth(), request.body(), request.settings(), request.manifestEndpointId());
+                request.headers(), request.auth(), request.body(), request.settings(), request.manifestEndpointId(),
+                request.imported());
     }
 
     private static ProjectItem copy(ProjectItem item, boolean top) {

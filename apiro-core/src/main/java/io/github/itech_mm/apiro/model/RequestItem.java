@@ -5,7 +5,8 @@ import java.util.UUID;
 
 public record RequestItem(String id, String name, HttpMethod method, String url, List<KeyValue> query,
                           List<KeyValue> headers, AuthConfig auth, RequestBody body,
-                          RequestSettings settings, String manifestEndpointId) implements ProjectItem {
+                          RequestSettings settings, String manifestEndpointId, ImportedSnapshot imported)
+        implements ProjectItem {
 
     public RequestItem {
         id = id == null || id.isBlank() ? UUID.randomUUID().toString() : id;
@@ -20,7 +21,7 @@ public record RequestItem(String id, String name, HttpMethod method, String url,
 
     public RequestItem(String id, String name, HttpMethod method, String url, List<KeyValue> query,
                        List<KeyValue> headers, AuthConfig auth, RequestBody body, RequestSettings settings) {
-        this(id, name, method, url, query, headers, auth, body, settings, null);
+        this(id, name, method, url, query, headers, auth, body, settings, null, null);
     }
 
     public static RequestItem of(String name, HttpMethod method, String url) {

@@ -6,6 +6,7 @@ import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.FormPart;
 import io.github.itech_mm.apiro.model.HttpMethod;
+import io.github.itech_mm.apiro.model.ImportedSnapshot;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.PartKind;
 import io.github.itech_mm.apiro.model.Project;
@@ -128,13 +129,30 @@ public final class ManifestImporter {
                     method(endpoint),
                     url, pairs(endpoint, ParameterLocation.QUERY), pairs(endpoint, ParameterLocation.HEADER),
                     requestAuth(endpoint, folderAuth), body(endpoint, schemas), null,
-                    isBlank(endpoint.getId()) ? null : endpoint.getId()));
+                    isBlank(endpoint.getId()) ? null : endpoint.getId(),
+                    isBlank(endpoint.getId()) ? null : snapshot(endpoint, url, schemas)));
         }
         if (skippedCookies > 0) {
             warnings.add(name + ": " + skippedCookies + " cookie parameter(s) were not imported");
         }
         AuthConfig auth = folderAuth == null ? null : placeholder(folderAuth);
         return new Folder(null, name, auth, null, new ArrayList<>(variables.values()), null, items);
+    }
+
+    private static ImportedSnapshot snapshot(Endpoint endpoint, String url, Map<String, Schema> schemas) {
+        List<ImportedSnapshot.Parameter> parameters = new ArrayList<>();
+        for (Parameter parameter : endpoint.getParameters()) {
+            parameters.add(new ImportedSnapshot.Parameter(parameter.getName(), parameter.getIn(),
+                    parameter.isRequired(), SchemaFingerprint.of(parameter.getSchema(), schemas)));
+        }
+        ImportedSnapshot.Handler handler = endpoint.getHandler() == null ? null
+                : new ImportedSnapshot.Handler(endpoint.getHandler().getClassName(),
+                        endpoint.getHandler().getMethodName(), endpoint.getHandler().getParameterTypes());
+        String bodyContentType = endpoint.getBody() == null ? null : endpoint.getBody().getContentType();
+        String bodySchemaHash = endpoint.getBody() == null ? null
+                : SchemaFingerprint.of(endpoint.getBody().getSchema(), schemas);
+        return new ImportedSnapshot(endpoint.getMethod().toUpperCase(Locale.ROOT), endpoint.getPath(), url, handler,
+                parameters, bodyContentType, bodySchemaHash);
     }
 
     private static String unusable(Endpoint endpoint) {

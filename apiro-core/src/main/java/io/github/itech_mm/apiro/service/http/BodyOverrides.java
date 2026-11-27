@@ -40,7 +40,7 @@ public final class BodyOverrides {
                     : withText(body, patch(body, override.fields()));
         };
         return new RequestItem(request.id(), request.name(), request.method(), request.url(), request.query(),
-                request.headers(), request.auth(), next, request.settings(), request.manifestEndpointId());
+                request.headers(), request.auth(), next, request.settings(), request.manifestEndpointId(), request.imported());
     }
 
     public static String patch(RequestBody body, List<FieldOverride> fields) {

@@ -4,6 +4,7 @@ import io.github.itech_mm.apiro.model.BodyType;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.FormPart;
 import io.github.itech_mm.apiro.model.HttpMethod;
+import io.github.itech_mm.apiro.model.ImportedSnapshot;
 import io.github.itech_mm.apiro.model.KeyValue;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -81,7 +83,7 @@ public final class ManifestReimport {
 
         Map<Integer, Integer> pairs = new LinkedHashMap<>();
         Map<Integer, Match> kinds = new LinkedHashMap<>();
-        pass(existing, fresh, id -> id, Match.ID, pairs, kinds);
+        pass(existing, fresh, RequestItem::manifestEndpointId, Match.ID, pairs, kinds);
         pass(existing, fresh, ManifestReimport::route, Match.ROUTE, pairs, kinds);
         pass(existing, fresh, ManifestReimport::handler, Match.HANDLER, pairs, kinds);
 
@@ -91,8 +93,7 @@ public final class ManifestReimport {
             RequestItem old = existing.get(pair.getKey());
             Fresh next = fresh.get(pair.getValue());
             List<String> changes = new ArrayList<>();
-            boolean anyMethod = imported.anyMethodIds().contains(next.request().manifestEndpointId());
-            RequestItem refreshed = refreshed(old, next.request(), anyMethod, changes, warnings);
+            RequestItem refreshed = refreshed(old, next.request(), changes, warnings);
             if (changes.isEmpty()) {
                 unchanged++;
             } else {
@@ -197,11 +198,11 @@ public final class ManifestReimport {
         return outside;
     }
 
-    private static void pass(List<RequestItem> existing, List<Fresh> fresh, Function<String, String> key, Match match,
+    private static void pass(List<RequestItem> existing, List<Fresh> fresh, Function<RequestItem, String> key, Match match,
             Map<Integer, Integer> pairs, Map<Integer, Match> kinds) {
         Map<String, List<Integer>> olds = new LinkedHashMap<>();
         for (int i = 0; i < existing.size(); i++) {
-            String k = pairs.containsKey(i) ? null : key.apply(existing.get(i).manifestEndpointId());
+            String k = pairs.containsKey(i) ? null : key.apply(existing.get(i));
             if (k != null) {
                 olds.computeIfAbsent(k, x -> new ArrayList<>()).add(i);
             }
@@ -209,8 +210,7 @@ public final class ManifestReimport {
         Map<String, List<Integer>> news = new LinkedHashMap<>();
         Set<Integer> taken = new HashSet<>(pairs.values());
         for (int i = 0; i < fresh.size(); i++) {
-            String id = fresh.get(i).request().manifestEndpointId();
-            String k = taken.contains(i) || id == null ? null : key.apply(id);
+            String k = taken.contains(i) ? null : key.apply(fresh.get(i).request());
             if (k != null) {
                 news.computeIfAbsent(k, x -> new ArrayList<>()).add(i);
             }
@@ -224,37 +224,44 @@ public final class ManifestReimport {
         }
     }
 
-    private static String route(String id) {
-        int hash = id.indexOf('#');
-        return hash < 0 ? id : id.substring(0, hash);
+    private static String route(RequestItem request) {
+        return request.imported() == null ? null : request.imported().routeKey();
     }
 
-    private static String handler(String id) {
-        int hash = id.indexOf('#');
-        int space = id.indexOf(' ');
-        if (hash < 0 || space < 0 || space > hash) {
-            return null;
-        }
-        return id.substring(0, space) + id.substring(hash);
+    private static String handler(RequestItem request) {
+        return request.imported() == null ? null : request.imported().handlerKey();
     }
 
-    private static RequestItem refreshed(RequestItem old, RequestItem next, boolean anyMethod,
-            List<String> changes, List<String> warnings) {
-        HttpMethod method = anyMethod ? old.method() : next.method();
+    private static RequestItem refreshed(RequestItem old, RequestItem next, List<String> changes,
+            List<String> warnings) {
+        ImportedSnapshot before = old.imported();
+        ImportedSnapshot after = next.imported();
+        boolean tracked = before != null && after != null;
+        boolean anyMethod = after != null && ImportedSnapshot.ANY.equals(after.method());
+        boolean sameMethod = tracked && before.method().equals(after.method());
+        HttpMethod method = anyMethod || sameMethod ? old.method() : next.method();
         if (old.method() != method) {
             changes.add("Method " + old.method() + " to " + method);
         }
-        if (!old.url().equals(next.url())) {
-            changes.add("URL " + old.url() + " to " + next.url());
+        String url = tracked && before.url().equals(after.url()) ? old.url() : next.url();
+        if (!old.url().equals(url)) {
+            changes.add("URL " + old.url() + " to " + url);
         }
         List<KeyValue> query = withMissing(old.query(), next.query(), "query parameter", changes);
         List<KeyValue> headers = withMissing(old.headers(), next.headers(), "header", changes);
         RequestBody body = body(old, next.body(), changes, warnings);
-        if (!old.manifestEndpointId().equals(next.manifestEndpointId())) {
+        if (tracked && body.equals(old.body())
+                && !Objects.equals(before.bodySchemaHash(), after.bodySchemaHash())) {
+            changes.add("Body schema changed, your body text was kept");
+        }
+        if (!Objects.equals(old.manifestEndpointId(), next.manifestEndpointId())) {
             changes.add("Linked endpoint is now " + next.manifestEndpointId());
         }
-        return new RequestItem(old.id(), old.name(), method, next.url(), query, headers, old.auth(), body,
-                old.settings(), next.manifestEndpointId());
+        if (before == null && changes.isEmpty()) {
+            changes.add("Recorded the imported endpoint details");
+        }
+        return new RequestItem(old.id(), old.name(), method, url, query, headers, old.auth(), body,
+                old.settings(), next.manifestEndpointId(), after);
     }
 
     private static List<KeyValue> withMissing(List<KeyValue> current, List<KeyValue> wanted, String what,

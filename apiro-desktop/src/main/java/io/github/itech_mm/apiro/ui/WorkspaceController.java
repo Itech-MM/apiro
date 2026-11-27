@@ -1173,7 +1173,7 @@ public class WorkspaceController implements Routable {
 		}
 		return new RequestItem(original.id(), original.name(), method, urlField.getText(), queryTable.getItems(),
 				headersTable.getItems(), auth, keepStored ? original.body() : edited, original.settings(),
-				original.manifestEndpointId());
+				original.manifestEndpointId(), original.imported());
 	}
 
 	private static boolean sameContent(RequestItem a, RequestItem b) {
@@ -1184,7 +1184,7 @@ public class WorkspaceController implements Routable {
 
 	private static RequestItem withName(RequestItem item, String name) {
 		return new RequestItem(item.id(), name, item.method(), item.url(), item.query(), item.headers(), item.auth(),
-				item.body(), item.settings(), item.manifestEndpointId());
+				item.body(), item.settings(), item.manifestEndpointId(), item.imported());
 	}
 
 	private Optional<RequestItem> find(String id) {

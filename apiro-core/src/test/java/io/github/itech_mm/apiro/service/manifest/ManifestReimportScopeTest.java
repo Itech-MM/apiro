@@ -163,7 +163,7 @@ class ManifestReimportScopeTest {
     private static RequestItem linked(String name, String endpointId) {
         RequestItem plain = RequestItem.of(name, HttpMethod.GET, "${baseUrl}/x");
         return new RequestItem(plain.id(), plain.name(), plain.method(), plain.url(), plain.query(), plain.headers(),
-                plain.auth(), plain.body(), plain.settings(), endpointId);
+                plain.auth(), plain.body(), plain.settings(), endpointId, null);
     }
 
     @Test

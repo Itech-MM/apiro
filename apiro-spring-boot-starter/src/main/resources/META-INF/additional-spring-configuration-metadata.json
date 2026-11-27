@@ -1,0 +1,40 @@
+{
+  "properties": [
+    {
+      "name": "apiro.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Expose the endpoint manifest at /apiro/manifest."
+    },
+    {
+      "name": "apiro.token",
+      "type": "java.lang.String",
+      "description": "Token expected in the X-Apiro-Token header. A random token is generated and logged once when unset."
+    },
+    {
+      "name": "apiro.context-path",
+      "type": "java.lang.String",
+      "description": "Context path written to the manifest. Falls back to server.servlet.context-path."
+    },
+    {
+      "name": "apiro.servlet-path",
+      "type": "java.lang.String",
+      "description": "Dispatcher servlet path written to the manifest. Falls back to spring.mvc.servlet.path."
+    },
+    {
+      "name": "apiro.exclude-packages",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Packages whose controllers are left out of the manifest."
+    },
+    {
+      "name": "apiro.security.authentication",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Authentication schemes (bearer, basic, apiKey) the application uses. Applied to restricted endpoints only."
+    },
+    {
+      "name": "apiro.export-file",
+      "type": "java.lang.String",
+      "description": "File the manifest is written to at startup."
+    }
+  ]
+}

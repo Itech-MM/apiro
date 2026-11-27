@@ -28,6 +28,7 @@ public final class ManifestBuilder {
     private final Set<String> excludedPackages = new LinkedHashSet<>();
     private String applicationName;
     private String contextPath;
+    private String servletPath;
     private final Set<String> authenticationSchemes = new TreeSet<>(CodePoints.ORDER);
 
     public static final class Result {
@@ -55,6 +56,11 @@ public final class ManifestBuilder {
 
     public ManifestBuilder contextPath(String path) {
         this.contextPath = path;
+        return this;
+    }
+
+    public ManifestBuilder servletPath(String path) {
+        this.servletPath = path;
         return this;
     }
 
@@ -107,8 +113,9 @@ public final class ManifestBuilder {
                 .setGeneratedAt(Instant.now().truncatedTo(ChronoUnit.SECONDS).toString())
                 .setEndpoints(sorted)
                 .setSchemas(schemas.schemas());
-        if (applicationName != null || contextPath != null) {
-            manifest.setApplication(new Application().setName(applicationName).setContextPath(contextPath));
+        if (applicationName != null || contextPath != null || servletPath != null) {
+            manifest.setApplication(new Application().setName(applicationName).setContextPath(contextPath)
+                    .setServletPath(servletPath));
         }
         return new Result(manifest, new ArrayList<>(warnings));
     }
