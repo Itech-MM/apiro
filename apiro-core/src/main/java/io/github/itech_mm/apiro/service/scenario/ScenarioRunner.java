@@ -1,33 +1,40 @@
 package io.github.itech_mm.apiro.service.scenario;
 
-import io.github.itech_framework.api_client.utils.CancelToken;
+import io.github.itech_mm.apiro.model.Edge;
+import io.github.itech_mm.apiro.model.EdgeCondition;
 import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Step;
 import io.github.itech_mm.apiro.model.Variable;
+import io.github.itech_framework.api_client.utils.CancelToken;
 import io.github.itech_mm.apiro.service.http.ExchangeResult;
-import io.github.itech_mm.apiro.service.http.RequestPreparer;
 import io.github.itech_mm.apiro.service.http.RequestPreparer.PreparedRequest;
+import io.github.itech_mm.apiro.service.http.RequestPreparer;
 import io.github.itech_mm.apiro.service.http.SendOutcome;
 import io.github.itech_mm.apiro.service.variables.VariableResolver;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public final class ScenarioRunner {
 
     @FunctionalInterface
     public interface Sleeper {
-
         void sleep(long millis) throws InterruptedException;
     }
 
+    private record Route(Step next, StepResult.BranchDecision decision, boolean recovered) {
+    }
+
     private static final long SLICE_MILLIS = 50;
-    private static final String CANCELLED = "Run cancelled";
     private static final String AFTER_FAILURE = "Skipped after an earlier failure";
+    private static final String BRANCH_NOT_TAKEN = "Branch not taken";
+    private static final String CANCELLED = "Run cancelled";
 
     private final StepSender sender;
     private final Sleeper sleeper;
@@ -52,44 +59,120 @@ public final class ScenarioRunner {
         Objects.requireNonNull(token);
         Objects.requireNonNull(listener);
         long started = System.nanoTime();
-        ScenarioChain.Result chain = ScenarioChain.order(scenario);
-        if (!chain.valid()) {
-            return finish(listener, new ScenarioResult(scenario.id(), ScenarioResult.State.INVALID, chain.problem(),
+        ScenarioGraph.Plan plan = ScenarioGraph.plan(scenario);
+        if (!plan.valid()) {
+            return finish(listener, new ScenarioResult(scenario.id(), ScenarioResult.State.INVALID, plan.problem(),
                     List.of(), elapsed(started)));
         }
-        listener.onStarted(chain.steps());
+        listener.onStarted(plan.steps());
         Map<String, String> extracted = new LinkedHashMap<>();
         List<StepResult> results = new ArrayList<>();
+        Set<String> executed = new LinkedHashSet<>();
         String stopReason = null;
+        Set<String> stopReachable = Set.of();
         boolean cancelled = false;
         StepResult firstFailure = null;
-        for (Step step : chain.steps()) {
-            if (stopReason != null) {
-                StepResult skipped = StepResult.of(step, StepResult.State.SKIPPED, stopReason);
-                results.add(skipped);
-                listener.onStepFinished(skipped);
-                continue;
-            }
-            listener.onStepStarted(step);
-            StepResult result = execute(project, environmentId, scenario, step, extracted, token);
+        Step current = plan.root();
+        while (current != null && executed.add(current.id())) {
+            listener.onStepStarted(current);
+            StepResult raw = execute(project, environmentId, scenario, current, extracted, token);
+            Route route = selectRoute(project, environmentId, scenario, current, raw, plan, extracted);
+            StepResult result = route.decision() == null
+                    ? raw
+                    : new StepResult(raw.step(), raw.state(), raw.message(), raw.millis(), raw.exchange(),
+                            raw.extractions(), raw.assertions(), route.decision());
             results.add(result);
             listener.onStepFinished(result);
-            if (result.state() == StepResult.State.CANCELLED) {
+            if (route.decision() != null) {
+                listener.onBranchTaken(route.decision());
+            }
+            if (raw.state() == StepResult.State.CANCELLED) {
                 cancelled = true;
                 stopReason = CANCELLED;
-            } else if (result.state() == StepResult.State.FAILED) {
+                stopReachable = plan.reachableAfter(current.id());
+                break;
+            }
+            if (raw.state() == StepResult.State.FAILED && !route.recovered()) {
                 if (firstFailure == null) {
                     firstFailure = result;
                 }
-                if (policyOf(scenario, step) == OnFailure.STOP) {
+                if (policyOf(scenario, current) == OnFailure.STOP) {
                     stopReason = AFTER_FAILURE;
+                    stopReachable = plan.reachableAfter(current.id());
+                    break;
                 }
+            }
+            current = route.next();
+        }
+        for (Step step : plan.steps()) {
+            if (!executed.contains(step.id())) {
+                String reason = stopReason != null && stopReachable.contains(step.id())
+                        ? stopReason
+                        : BRANCH_NOT_TAKEN;
+                StepResult skipped = StepResult.of(step, StepResult.State.SKIPPED, reason);
+                results.add(skipped);
+                listener.onStepFinished(skipped);
             }
         }
         ScenarioResult.State state = cancelled ? ScenarioResult.State.CANCELLED
                 : firstFailure != null ? ScenarioResult.State.FAILED : ScenarioResult.State.PASSED;
         String message = cancelled ? CANCELLED : firstFailure == null ? "" : describe(firstFailure);
         return finish(listener, new ScenarioResult(scenario.id(), state, message, results, elapsed(started)));
+    }
+
+    private static Route selectRoute(Project project, String environmentId, ScenarioItem scenario, Step current,
+                                     StepResult stepResult, ScenarioGraph.Plan plan,
+                                     Map<String, String> extracted) {
+        if (stepResult.state() == StepResult.State.CANCELLED) {
+            return new Route(null, null, false);
+        }
+        List<Edge> outgoing = plan.outgoingOf(current.id());
+        if (outgoing.isEmpty()) {
+            return new Route(null, null, false);
+        }
+        VariableResolver resolver = VariableResolver.forItem(project, environmentId, current.requestId(),
+                scenario.variables(), literal(extracted));
+        if (stepResult.state() == StepResult.State.FAILED) {
+            for (Edge edge : outgoing) {
+                if (BranchEvaluator.usesStepOutcome(edge.condition())
+                        && BranchEvaluator.evaluate(edge.condition(), stepResult, resolver).matched()) {
+                    Step next = plan.byId().get(edge.to());
+                    return new Route(next, decision(current, edge, next, "recovered failure"), true);
+                }
+            }
+            if (policyOf(scenario, current) == OnFailure.STOP) {
+                return new Route(null, null, false);
+            }
+        }
+        if (outgoing.size() == 1 && outgoing.get(0).condition().isUnconditional()) {
+            Edge edge = outgoing.get(0);
+            Step next = plan.byId().get(edge.to());
+            StepResult.BranchDecision info = edge.label().isBlank() ? null : decision(current, edge, next, "matched");
+            return new Route(next, info, false);
+        }
+        for (Edge edge : outgoing) {
+            EdgeCondition.MatchMode mode = edge.condition().mode();
+            if (mode == EdgeCondition.MatchMode.ALL || mode == EdgeCondition.MatchMode.ANY) {
+                BranchEvaluator.Evaluation evaluation = BranchEvaluator.evaluate(edge.condition(), stepResult, resolver);
+                if (evaluation.matched()) {
+                    Step next = plan.byId().get(edge.to());
+                    return new Route(next, decision(current, edge, next, evaluation.reason()), false);
+                }
+            }
+        }
+        for (Edge edge : outgoing) {
+            if (edge.condition().isElse()) {
+                Step next = plan.byId().get(edge.to());
+                return new Route(next, decision(current, edge, next, "else"), false);
+            }
+        }
+        return new Route(null, new StepResult.BranchDecision(current.id(), "", "", "", "", "no condition matched"),
+                false);
+    }
+
+    private static StepResult.BranchDecision decision(Step from, Edge edge, Step next, String reason) {
+        return new StepResult.BranchDecision(from.id(), edge.id(), next.id(), RunLog.label(next),
+                edge.displayLabel(), reason);
     }
 
     private StepResult execute(Project project, String environmentId, ScenarioItem scenario, Step step,

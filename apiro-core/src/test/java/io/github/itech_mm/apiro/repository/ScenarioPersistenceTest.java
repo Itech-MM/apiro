@@ -12,7 +12,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.github.itech_mm.apiro.model.Assertion;
 import io.github.itech_mm.apiro.model.BodyOverride;
+import io.github.itech_mm.apiro.model.BranchRule;
 import io.github.itech_mm.apiro.model.Edge;
+import io.github.itech_mm.apiro.model.EdgeCondition;
 import io.github.itech_mm.apiro.model.Extractor;
 import io.github.itech_mm.apiro.model.FieldOverride;
 import io.github.itech_mm.apiro.model.Folder;
@@ -213,5 +215,39 @@ class ScenarioPersistenceTest {
     void unknownItemTypeIsStillRefused() {
         String json = "{\"format\":\"apiro-project\",\"version\":2,\"items\":[{\"type\":\"chart\",\"id\":\"x\"}]}";
         assertThrows(JsonParseException.class, () -> ProjectJson.fromJson(json));
+    }
+
+    @Test
+    void branchedScenarioWritesVersionSixAndRoundTripsConditions() {
+        Step s1 = new Step("s1", "r1", "Check", null, null, 0, null, 0, 0);
+        Step s2 = new Step("s2", "r2", "Admin", null, null, 0, null, 0, 0);
+        Step s3 = new Step("s3", "r2", "Guest", null, null, 0, null, 0, 0);
+        Edge cond = new Edge("e1", "s1", "s2",
+                EdgeCondition.all(BranchRule.status(BranchRule.Operator.EQUALS, "200"),
+                        BranchRule.jsonPath("$.role", BranchRule.Operator.MATCHES_REGEX, "ADMIN|OWNER")),
+                "admin");
+        Edge fallback = new Edge("e2", "s1", "s3", EdgeCondition.ELSE, "guest");
+        ScenarioItem original = new ScenarioItem("sc1", "Branched", null, List.of(s1, s2, s3),
+                List.of(cond, fallback), OnFailure.STOP);
+
+        String json = ProjectJson.toJson(projectWith(original));
+
+        assertEquals(Project.BRANCHES_VERSION, writtenVersion(json));
+        ScenarioItem loaded = (ScenarioItem) ProjectJson.fromJson(json).findItem("sc1").orElseThrow();
+        assertEquals(original, loaded);
+    }
+
+    @Test
+    void versionTwoLinearEdgesLoadWithAlwaysConditionAndStayVersionTwo() {
+        String json = "{\"format\":\"apiro-project\",\"version\":2,\"items\":[{\"type\":\"scenario\",\"id\":\"sc\","
+                + "\"steps\":[{\"id\":\"s1\",\"requestId\":\"r1\"},{\"id\":\"s2\",\"requestId\":\"r2\"}],"
+                + "\"edges\":[{\"from\":\"s1\",\"to\":\"s2\"}]}]}";
+
+        Project loaded = ProjectJson.fromJson(json);
+        ScenarioItem scenario = (ScenarioItem) loaded.findItem("sc").orElseThrow();
+
+        assertEquals(EdgeCondition.ALWAYS, scenario.edges().get(0).condition());
+        assertEquals("", scenario.edges().get(0).id());
+        assertEquals(Project.SCENARIO_VERSION, writtenVersion(ProjectJson.toJson(loaded)));
     }
 }

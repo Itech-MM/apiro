@@ -37,6 +37,15 @@ public final class RunLog {
         for (Assertions.Result assertion : result.assertions()) {
             lines.add("    " + (assertion.passed() ? "pass " : "fail ") + assertion.message());
         }
+        if (result.branch() != null) {
+            StepResult.BranchDecision branch = result.branch();
+            if (branch.taken()) {
+                String suffix = branch.condition().isBlank() ? "" : " (" + branch.condition() + ")";
+                lines.add("    branch -> " + branch.targetName() + suffix);
+            } else if (!branch.reason().isBlank()) {
+                lines.add("    branch: " + branch.reason());
+            }
+        }
         return lines;
     }
 
