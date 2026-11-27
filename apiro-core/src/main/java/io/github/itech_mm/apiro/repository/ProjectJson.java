@@ -6,6 +6,7 @@ import com.google.gson.JsonParseException;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.Project;
 import io.github.itech_mm.apiro.model.ProjectItem;
+import io.github.itech_mm.apiro.model.RequestItem;
 import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Step;
 import java.util.List;
@@ -64,6 +65,8 @@ public final class ProjectJson {
                 }
             } else if (item instanceof Folder folder) {
                 version = requiredVersion(folder.items(), version);
+            } else if (item instanceof RequestItem request && request.manifestEndpointId() != null) {
+                version = Math.max(version, Project.MANIFEST_VERSION);
             }
         }
         return version;

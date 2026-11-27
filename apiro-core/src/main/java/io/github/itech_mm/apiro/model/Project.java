@@ -14,7 +14,8 @@ public record Project(String format, int version, String id, String name, String
     public static final int SCENARIO_VERSION = 2;
     public static final int HEADERS_VERSION = 3;
     public static final int OVERRIDES_VERSION = 4;
-    public static final int CURRENT_VERSION = OVERRIDES_VERSION;
+    public static final int MANIFEST_VERSION = 5;
+    public static final int CURRENT_VERSION = MANIFEST_VERSION;
 
     public Project {
         format = format == null || format.isBlank() ? FORMAT : format;

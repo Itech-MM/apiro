@@ -11,7 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.github.itech_framework.core.annotations.dependency.Use;
@@ -177,6 +179,9 @@ public class WorkspaceController implements Routable {
 	private RunCommand runCommand;
 
 	@Use
+	private OpenRequests openRequests;
+
+	@Use
 	private OpenProjectsStore tabStore;
 
 	private List<String> savedOrder = new ArrayList<>();
@@ -285,6 +290,7 @@ public class WorkspaceController implements Routable {
 			}
 		});
 		runCommand.register(this::send);
+		openRequests.register(this::dirtyRequestIds, this::reloadRequests);
 		session.registerFlush(this::commit);
 
 		savedOrder = new ArrayList<>(tabStore.loadTabs());
@@ -1084,6 +1090,36 @@ public class WorkspaceController implements Routable {
 		}
 	}
 
+	private Set<String> dirtyRequestIds() {
+		refreshEdits();
+		Set<String> ids = new HashSet<>();
+		for (OpenRequest state : open.values()) {
+			if (state.dirty) {
+				ids.add(state.id);
+			}
+		}
+		return ids;
+	}
+
+	private void reloadRequests(Set<String> ids) {
+		for (String id : ids) {
+			OpenRequest state = open.get(id);
+			if (state == null || state.dirty) {
+				continue;
+			}
+			Optional<RequestItem> item = find(state);
+			if (item.isEmpty()) {
+				continue;
+			}
+			state.baseline = null;
+			state.draft = item.get();
+			state.showMethod(item.get().method());
+			if (state == active) {
+				populate(state);
+			}
+		}
+	}
+
 	private void markSaved() {
 		for (OpenRequest state : open.values()) {
 			if (state.dirty && find(state).map(item -> sameContent(item, state.draft)).orElse(false)) {
@@ -1136,7 +1172,8 @@ public class WorkspaceController implements Routable {
 			auth = null;
 		}
 		return new RequestItem(original.id(), original.name(), method, urlField.getText(), queryTable.getItems(),
-				headersTable.getItems(), auth, keepStored ? original.body() : edited, original.settings());
+				headersTable.getItems(), auth, keepStored ? original.body() : edited, original.settings(),
+				original.manifestEndpointId());
 	}
 
 	private static boolean sameContent(RequestItem a, RequestItem b) {
@@ -1147,7 +1184,7 @@ public class WorkspaceController implements Routable {
 
 	private static RequestItem withName(RequestItem item, String name) {
 		return new RequestItem(item.id(), name, item.method(), item.url(), item.query(), item.headers(), item.auth(),
-				item.body(), item.settings());
+				item.body(), item.settings(), item.manifestEndpointId());
 	}
 
 	private Optional<RequestItem> find(String id) {

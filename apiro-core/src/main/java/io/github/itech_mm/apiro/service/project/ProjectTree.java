@@ -24,6 +24,10 @@ public final class ProjectTree {
         return withItem(project, updated);
     }
 
+    public static Project withFolder(Project project, Folder updated) {
+        return withItem(project, updated);
+    }
+
     private static Project withItem(Project project, ProjectItem updated) {
         return rebuilt(project, replace(project.items(), updated));
     }
@@ -142,7 +146,7 @@ public final class ProjectTree {
         }
         RequestItem request = (RequestItem) item;
         return new RequestItem(request.id(), name, request.method(), request.url(), request.query(),
-                request.headers(), request.auth(), request.body(), request.settings());
+                request.headers(), request.auth(), request.body(), request.settings(), request.manifestEndpointId());
     }
 
     private static ProjectItem copy(ProjectItem item, boolean top) {

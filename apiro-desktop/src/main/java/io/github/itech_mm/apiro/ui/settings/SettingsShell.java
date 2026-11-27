@@ -36,6 +36,8 @@ public final class SettingsShell extends VBox {
 	/** Framework open animation is 300 ms; keep the bitmap cache a little longer, then drop it for crisp text. */
 	private static final Duration CACHE_HOLD = Duration.millis(450);
 
+	private final String section;
+
 	private final ToggleGroup group = new ToggleGroup();
 
 	private final StackPane content = new StackPane();
@@ -47,6 +49,11 @@ public final class SettingsShell extends VBox {
 	private double dragOffsetY;
 
 	public SettingsShell(String title, String subtitle, List<SettingsPage> pages) {
+		this(title, subtitle, NAV_SECTION, pages);
+	}
+
+	public SettingsShell(String title, String subtitle, String section, List<SettingsPage> pages) {
+		this.section = section;
 		getStyleClass().add("settings-shell");
 		setPrefSize(WIDTH, HEIGHT);
 		HBox body = new HBox(navigation(pages), pageArea(title));
@@ -157,9 +164,9 @@ public final class SettingsShell extends VBox {
 	private VBox navigation(List<SettingsPage> pages) {
 		VBox nav = new VBox(2);
 		nav.getStyleClass().add("settings-nav");
-		Label section = new Label(NAV_SECTION);
-		section.getStyleClass().add("settings-nav-section");
-		nav.getChildren().add(section);
+		Label heading = new Label(section);
+		heading.getStyleClass().add("settings-nav-section");
+		nav.getChildren().add(heading);
 		for (SettingsPage page : pages) {
 			ToggleButton item = new ToggleButton(page.title());
 			item.getStyleClass().add("settings-nav-item");

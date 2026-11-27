@@ -104,6 +104,16 @@
     -fx-opacity: 0.7;
 }
 
+.settings-review-section {
+    -fx-font-weight: bold;
+    -fx-padding: 8 0 2 0;
+}
+
+.settings-review-detail {
+    -fx-font-size: 12px;
+    -fx-padding: 0 0 0 24;
+}
+
 .settings-scroll,
 .settings-scroll:focused {
     -fx-background-color: transparent;

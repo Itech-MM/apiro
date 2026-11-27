@@ -37,9 +37,11 @@ import io.github.itech_mm.apiro.session.ProjectSlot;
 import io.github.itech_mm.apiro.ui.AppCommands;
 import io.github.itech_mm.apiro.ui.AppCommands.Command;
 import io.github.itech_mm.apiro.ui.EditorStyle;
+import io.github.itech_mm.apiro.ui.OpenRequests;
 import io.github.itech_mm.apiro.ui.RunCommand;
 import io.github.itech_mm.apiro.ui.component.AuthEditorView;
 import io.github.itech_mm.apiro.ui.component.KeyValueTableView;
+import io.github.itech_mm.apiro.ui.settings.ImportManifestDialog;
 import io.github.itech_mm.apiro.ui.settings.NewProjectDialog;
 import io.github.itech_mm.apiro.ui.settings.ProjectSettingsDialog;
 import javafx.application.Platform;
@@ -239,6 +241,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	@Use
 	private RunCommand runCommand;
+
+	@Use
+	private OpenRequests openRequests;
 
 	@Use
 	private AppCommands commands;
@@ -708,6 +713,11 @@ public class MainLayoutController extends LayoutController implements Routable {
 		});
 	}
 
+	private void importFromManifest(TreeItem<ProjectItem> node) {
+		activateOwner(node);
+		ImportManifestDialog.open(rootPane.getScene().getWindow(), session, openRequests, statusLabel::setText);
+	}
+
 	private void openProjectSettings(TreeItem<ProjectItem> node) {
 		activateOwner(node);
 		ProjectSettingsDialog.open(rootPane.getScene().getWindow(), session, authEditors, keyValueTables);
@@ -1077,6 +1087,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 		private final MenuItem removeFromWorkspace = new MenuItem("Remove project from workspace");
 
 		private final SeparatorMenuItem settingsSeparator = new SeparatorMenuItem();
+		private final MenuItem importEndpoints = new MenuItem("Import endpoints...");
 		private final MenuItem projectSettings = new MenuItem("Project settings");
 		private final SeparatorMenuItem deleteSeparator = new SeparatorMenuItem();
 		private final MenuItem deleteProject = new MenuItem("Delete project...");
@@ -1089,6 +1100,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			duplicate.setOnAction(event -> duplicateItem(getTreeItem()));
 			delete.setOnAction(event -> deleteItem(getTreeItem()));
 			projectSettings.setOnAction(event -> openProjectSettings(getTreeItem()));
+			importEndpoints.setOnAction(event -> importFromManifest(getTreeItem()));
 			deleteProject.setOnAction(event -> deleteProject(getTreeItem()));
 			removeFromWorkspace.setOnAction(event -> removePlaceholder(getTreeItem()));
 			newRequest.setGraphic(menuIcon("icon-plus"));
@@ -1098,13 +1110,14 @@ public class MainLayoutController extends LayoutController implements Routable {
 			duplicate.setGraphic(menuIcon("icon-copy"));
 			delete.setGraphic(menuIcon("icon-trash"));
 			projectSettings.setGraphic(menuIcon("icon-settings"));
+			importEndpoints.setGraphic(menuIcon("icon-folder-plus"));
 			deleteProject.setGraphic(menuIcon("icon-trash"));
 			removeFromWorkspace.setGraphic(menuIcon("icon-close"));
 			rename.setAccelerator(new KeyCodeCombination(KeyCode.F2));
 			duplicate.setAccelerator(DUPLICATE_KEYS);
 			delete.setAccelerator(new KeyCodeCombination(KeyCode.DELETE));
 			menu.getItems().addAll(newRequest, newScenario, newFolder, separator, rename, duplicate, delete, settingsSeparator,
-					projectSettings, deleteSeparator, deleteProject, removeFromWorkspace);
+					importEndpoints, projectSettings, deleteSeparator, deleteProject, removeFromWorkspace);
 			setOnDragDetected(this::onDragDetected);
 			setOnDragOver(this::onDragOver);
 			setOnDragDropped(this::onDragDropped);
@@ -1143,6 +1156,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			delete.setVisible(!root);
 			settingsSeparator.setVisible(root);
 			projectSettings.setVisible(root);
+			importEndpoints.setVisible(root);
 			deleteSeparator.setVisible(root);
 			deleteProject.setVisible(root);
 			setContextMenu(menu);
@@ -1179,6 +1193,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 			delete.setVisible(false);
 			settingsSeparator.setVisible(false);
 			projectSettings.setVisible(false);
+			importEndpoints.setVisible(false);
 			deleteSeparator.setVisible(false);
 			deleteProject.setVisible(false);
 			removeFromWorkspace.setVisible(true);
