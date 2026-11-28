@@ -14,6 +14,7 @@
         <module>apiro-spring-webmvc</module>
         <module>apiro-spring-boot-starter</module>
         <module>apiro-core</module>
+        <module>apiro-cli</module>
         <module>apiro-desktop</module>
     </modules>
 
