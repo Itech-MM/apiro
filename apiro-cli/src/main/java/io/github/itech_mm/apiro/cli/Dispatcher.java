@@ -20,6 +20,8 @@ public class Dispatcher {
     }
 
     int dispatch(List<String> raw, PrintStream out, PrintStream err) {
+        Banner.printIfWanted(raw, err);
+        raw = Banner.withoutGlobalFlags(raw);
         if (raw.isEmpty()) {
             err.print(Usage.general(commands));
             return 2;

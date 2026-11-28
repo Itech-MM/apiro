@@ -37,6 +37,22 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>apiro-cli.properties</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>apiro-cli.properties</exclude>
+				</excludes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -105,39 +121,20 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>io.github.itech-framework</groupId>
+				<artifactId>flexitech-packager-maven-plugin</artifactId>
+				<version>0.1.0</version>
+				<configuration>
+					<name>apiro</name>
+					<vendor>Flexitech</vendor>
+					<version>1.0.0</version>
+					<mainClass>io.github.itech_mm.apiro.cli.ApiroCli</mainClass>
+					<cli>true</cli>
+					<copyLibs>false</copyLibs>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>native-package</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>io.github.itech-framework</groupId>
-						<artifactId>flexitech-packager-maven-plugin</artifactId>
-						<version>0.1.0</version>
-						<executions>
-							<execution>
-								<id>package-cli</id>
-								<phase>package</phase>
-								<goals>
-									<goal>publish</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<name>apiro</name>
-							<vendor>Flexitech</vendor>
-							<version>1.0.0</version>
-							<mainClass>io.github.itech_mm.apiro.cli.ApiroCli</mainClass>
-							<cli>true</cli>
-							<copyLibs>false</copyLibs>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 </project>
