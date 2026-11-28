@@ -109,10 +109,8 @@ final class StepInspector extends StackPane {
     private final Label extractAssertTabLabel = new Label("Extract & Assert");
     private final Label branchesTabLabel = new Label("Branches");
     private final Label logsTabLabel = new Label("Logs");
-    private final Tab settingsTab = tab(new Label("Settings"));
     private final Tab logsTab = tab(logsTabLabel);
     private final Tab generalTab = tab(new Label("General"));
-    private final TabPane subTabs;
     private final TabPane mainTabs;
     private final BranchConditionEditor edgeEditor;
     private final ScrollPane edgeScroll;
@@ -187,10 +185,6 @@ final class StepInspector extends StackPane {
         Tab branchesTab = tab(branchesTabLabel);
         branchesTab.setContent(scrollPane(branchesPane));
 
-        subTabs = tabPane(overridesTab, extractAssertTab, branchesTab, generalTab);
-        subTabs.getStyleClass().add("inspector-subtabs");
-        settingsTab.setContent(subTabs);
-
         EditorStyle.applyInset(body);
         body.setEditable(false);
         body.setShowLineNumbers(false);
@@ -219,8 +213,8 @@ final class StepInspector extends StackPane {
         logsRoot.setFillWidth(true);
         logsTab.setContent(logsRoot);
 
-        mainTabs = tabPane(settingsTab, logsTab);
-        mainTabs.getStyleClass().add("inspector-tabs");
+        mainTabs = tabPane(generalTab, logsTab, overridesTab, extractAssertTab, branchesTab);
+        mainTabs.getStyleClass().add("inspector-subtabs");
 
         edgeEditor = new BranchConditionEditor(
                 updated -> {
@@ -297,12 +291,11 @@ final class StepInspector extends StackPane {
 
     void focusName() {
         if (step != null && selectedEdge == null) {
-            mainTabs.getSelectionModel().select(settingsTab);
-            if (subTabs.getSelectionModel().getSelectedItem() == generalTab) {
+            if (mainTabs.getSelectionModel().getSelectedItem() == generalTab) {
                 name.requestFocus();
                 name.selectAll();
             } else {
-                subTabs.requestFocus();
+                mainTabs.requestFocus();
             }
         }
     }

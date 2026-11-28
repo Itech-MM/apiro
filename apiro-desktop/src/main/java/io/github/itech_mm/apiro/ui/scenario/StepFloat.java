@@ -1,5 +1,6 @@
 package io.github.itech_mm.apiro.ui.scenario;
 
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -23,8 +24,17 @@ final class StepFloat extends VBox {
         this.content = content;
         getStyleClass().add("step-float");
         setPrefWidth(WIDTH);
-        setMinWidth(WIDTH);
+        setMinWidth(0);
         setMaxWidth(WIDTH);
+        setMinHeight(0);
+        parentProperty().addListener((obs, oldParent, newParent) -> {
+            maxWidthProperty().unbind();
+            if (newParent instanceof Region host) {
+                maxWidthProperty().bind(Bindings.min(WIDTH, host.widthProperty()));
+            } else {
+                setMaxWidth(WIDTH);
+            }
+        });
         setMaxHeight(Double.MAX_VALUE);
         StackPane.setAlignment(this, Pos.TOP_RIGHT);
 
@@ -69,7 +79,13 @@ final class StepFloat extends VBox {
     }
 
     void setOpen(boolean open) {
+        if (open) {
+            attach();
+        }
         setVisible(open);
         setManaged(open);
+        if (open) {
+            toFront();
+        }
     }
 }

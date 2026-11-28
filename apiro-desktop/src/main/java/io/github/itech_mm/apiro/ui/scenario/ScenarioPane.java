@@ -370,11 +370,15 @@ public final class ScenarioPane extends BorderPane {
     }
 
     private void syncFloat(boolean open) {
-        stepFloat.setOpen(open);
-        diagram.setRightInset(open ? StepFloat.WIDTH : 0);
+        boolean shown = open && diagramShown;
+        stepFloat.setOpen(shown);
+        diagram.setRightInset(shown ? StepFloat.WIDTH : 0);
     }
 
     private void openFloat() {
+        if (!diagramShown) {
+            return;
+        }
         floatOpen = true;
         syncFloat(true);
         if (selectedEdgeId == null) {

@@ -88,7 +88,7 @@ public final class ProjectJson {
         Map<String, Integer> outgoing = new HashMap<>();
         Map<String, Integer> incoming = new HashMap<>();
         for (Edge edge : scenario.edges()) {
-            if (edge.isConditional() || !edge.label().isBlank() || !edge.id().isBlank()) {
+            if (edge.isConditional() || !edge.label().isBlank()) {
                 return true;
             }
             if (outgoing.merge(edge.from(), 1, Integer::sum) > 1) {

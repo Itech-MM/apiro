@@ -309,9 +309,10 @@ final class DiagramView extends StackPane {
             validationBanner.setVisible(true);
             validationBanner.setManaged(true);
         } else {
-            validationBanner.setText("");
-            validationBanner.setVisible(false);
-            validationBanner.setManaged(false);
+            List<String> warnings = nextScenario == null ? List.of() : ScenarioGraph.warnings(nextScenario);
+            validationBanner.setText(warnings.isEmpty() ? "" : "Warning: " + String.join(" | ", warnings));
+            validationBanner.setVisible(!warnings.isEmpty());
+            validationBanner.setManaged(!warnings.isEmpty());
         }
 
         for (int i = 0; i < steps.size(); i++) {
@@ -1450,9 +1451,18 @@ final class DiagramView extends StackPane {
             }
             pill.setText(text);
             List<String> missing = usage.unresolvedFor(step.id());
-            warn.setVisible(!missing.isEmpty());
-            warn.setManaged(!missing.isEmpty());
-            warnTip.setText(missing.isEmpty() ? "" : "Not defined before this step: " + String.join(", ", missing));
+            List<String> partial = usage.partialFor(step.id());
+            boolean warned = !missing.isEmpty() || !partial.isEmpty();
+            warn.setVisible(warned);
+            warn.setManaged(warned);
+            List<String> tips = new ArrayList<>();
+            if (!missing.isEmpty()) {
+                tips.add("Not defined before this step: " + String.join(", ", missing));
+            }
+            if (!partial.isEmpty()) {
+                tips.add("Only set on some paths into this step: " + String.join(", ", partial));
+            }
+            warnTip.setText(String.join("\n", tips));
             if (state == StepResult.State.RUNNING) {
                 pulse.play();
             } else {

@@ -110,7 +110,10 @@ public final class BranchEvaluator {
                 break;
         }
         if (reading.text().isEmpty()) {
-            return new RuleResult(rule, false, "", "value not found");
+            boolean negated = rule.operator() == BranchRule.Operator.NOT_EQUALS
+                    || rule.operator() == BranchRule.Operator.NOT_CONTAINS;
+            return new RuleResult(rule, negated, "", negated ? rule.describe() + " (value not found)"
+                    : "value not found");
         }
         return compare(rule, reading, actual, expected);
     }

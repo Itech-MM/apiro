@@ -41,7 +41,8 @@ public final class RunLog {
             StepResult.BranchDecision branch = result.branch();
             if (branch.taken()) {
                 String suffix = branch.condition().isBlank() ? "" : " (" + branch.condition() + ")";
-                lines.add("    branch -> " + branch.targetName() + suffix);
+                String recovered = "recovered failure".equals(branch.reason()) ? " [recovered from failure]" : "";
+                lines.add("    branch -> " + branch.targetName() + suffix + recovered);
             } else if (!branch.reason().isBlank()) {
                 lines.add("    branch: " + branch.reason());
             }

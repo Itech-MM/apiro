@@ -35,18 +35,28 @@ public final class VariableUsage {
     }
 
     public record Result(List<Link> links, Map<String, List<String>> unresolved,
-                         Map<String, List<String>> unresolvedEdges) {
+                         Map<String, List<String>> unresolvedEdges, Map<String, List<String>> partial) {
 
-        public static final Result EMPTY = new Result(List.of(), Map.of(), Map.of());
+        public static final Result EMPTY = new Result(List.of(), Map.of(), Map.of(), Map.of());
 
         public Result(List<Link> links, Map<String, List<String>> unresolved) {
-            this(links, unresolved, Map.of());
+            this(links, unresolved, Map.of(), Map.of());
+        }
+
+        public Result(List<Link> links, Map<String, List<String>> unresolved,
+                      Map<String, List<String>> unresolvedEdges) {
+            this(links, unresolved, unresolvedEdges, Map.of());
         }
 
         public Result {
             links = List.copyOf(links);
             unresolved = Map.copyOf(unresolved);
             unresolvedEdges = unresolvedEdges == null ? Map.of() : Map.copyOf(unresolvedEdges);
+            partial = partial == null ? Map.of() : Map.copyOf(partial);
+        }
+
+        public List<String> partialFor(String stepId) {
+            return partial.getOrDefault(stepId, List.of());
         }
 
         public List<String> unresolvedFor(String stepId) {
@@ -68,6 +78,7 @@ public final class VariableUsage {
         List<Link> links = new ArrayList<>();
         Map<String, List<String>> unresolved = new LinkedHashMap<>();
         Map<String, List<String>> unresolvedEdges = new LinkedHashMap<>();
+        Map<String, List<String>> partial = new LinkedHashMap<>();
         List<Step> steps = scenario.steps();
         Map<String, Step> byId = new LinkedHashMap<>();
         for (Step step : steps) {
@@ -83,9 +94,16 @@ public final class VariableUsage {
             VariableResolver scope = ScenarioScope.forStep(project, environmentId, scenario, step);
             Map<String, Set<String>> byProducer = new LinkedHashMap<>();
             Set<String> missing = new LinkedHashSet<>();
+            Set<String> somePaths = new LinkedHashSet<>();
+            VariableResolver baseline = VariableResolver.forItem(project, environmentId, step.requestId(),
+                    scenario.variables());
             for (String name : referencedNames(project, request.get(), step, scope)) {
                 List<String> producers = nearestProducers(step.id(), parentsOf, byId, name);
                 if (!producers.isEmpty()) {
+                    if (!baseline.isDefined(name)
+                            && !definedOnEveryPath(step.id(), name, parentsOf, byId, new HashMap<>(), new HashSet<>())) {
+                        somePaths.add(name);
+                    }
                     for (String producer : producers) {
                         byProducer.computeIfAbsent(producer, key -> new LinkedHashSet<>()).add(name);
                     }
@@ -96,6 +114,9 @@ public final class VariableUsage {
             byProducer.forEach((from, names) -> links.add(new Link(from, step.id(), new ArrayList<>(names))));
             if (!missing.isEmpty()) {
                 unresolved.put(step.id(), new ArrayList<>(missing));
+            }
+            if (!somePaths.isEmpty()) {
+                partial.put(step.id(), new ArrayList<>(somePaths));
             }
         }
         for (Edge edge : scenario.edges()) {
@@ -126,7 +147,34 @@ public final class VariableUsage {
                 unresolvedEdges.put(edge.id(), new ArrayList<>(missing));
             }
         }
-        return new Result(links, unresolved, unresolvedEdges);
+        return new Result(links, unresolved, unresolvedEdges, partial);
+    }
+
+    private static boolean definedOnEveryPath(String stepId, String name, Map<String, List<String>> parentsOf,
+                                              Map<String, Step> byId, Map<String, Boolean> memo,
+                                              Set<String> visiting) {
+        Boolean known = memo.get(stepId);
+        if (known != null) {
+            return known;
+        }
+        List<String> parents = parentsOf.getOrDefault(stepId, List.of());
+        if (parents.isEmpty() || !visiting.add(stepId)) {
+            return !parents.isEmpty();
+        }
+        boolean all = true;
+        for (String parent : parents) {
+            Step candidate = byId.get(parent);
+            if (candidate != null && extracts(candidate, name)) {
+                continue;
+            }
+            if (!definedOnEveryPath(parent, name, parentsOf, byId, memo, visiting)) {
+                all = false;
+                break;
+            }
+        }
+        visiting.remove(stepId);
+        memo.put(stepId, all);
+        return all;
     }
 
     private static Map<String, List<String>> parentsMap(ScenarioItem scenario, List<Step> steps) {

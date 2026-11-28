@@ -1,7 +1,9 @@
 package io.github.itech_mm.apiro.service.scenario;
 
+import io.github.itech_mm.apiro.model.BranchRule;
 import io.github.itech_mm.apiro.model.Edge;
 import io.github.itech_mm.apiro.model.EdgeCondition;
+import io.github.itech_mm.apiro.model.OnFailure;
 import io.github.itech_mm.apiro.model.ScenarioItem;
 import io.github.itech_mm.apiro.model.Step;
 import java.util.ArrayDeque;
@@ -118,6 +120,42 @@ public final class ScenarioGraph {
             return linearPlan(steps, byId);
         }
         return graphPlan(steps, byId, scenario.edges());
+    }
+
+    public static List<String> warnings(ScenarioItem scenario) {
+        if (scenario == null || scenario.edges().isEmpty()) {
+            return List.of();
+        }
+        Map<String, List<Edge>> outgoing = new LinkedHashMap<>();
+        for (Edge edge : scenario.edges()) {
+            outgoing.computeIfAbsent(edge.from(), k -> new ArrayList<>()).add(edge);
+        }
+        List<String> warnings = new ArrayList<>();
+        for (Step step : scenario.steps()) {
+            List<Edge> out = outgoing.getOrDefault(step.id(), List.of());
+            if (out.isEmpty()) {
+                continue;
+            }
+            boolean hasElse = out.stream().anyMatch(edge -> edge.condition().isElse());
+            boolean handlesFailure = out.stream().anyMatch(edge -> BranchEvaluator.usesStepOutcome(edge.condition()));
+            boolean routesOnData = out.stream().anyMatch(edge -> {
+                EdgeCondition.MatchMode mode = edge.condition().mode();
+                return (mode == EdgeCondition.MatchMode.ALL || mode == EdgeCondition.MatchMode.ANY)
+                        && edge.condition().rules().stream()
+                        .anyMatch(rule -> rule.source() != BranchRule.Source.STEP_OUTCOME);
+            });
+            if (routesOnData && !hasElse) {
+                warnings.add("Step " + RunLog.label(step) + " has conditional branches but no Else, "
+                        + "the flow stops there if none match");
+            }
+            OnFailure policy = step.onFailure() == null ? scenario.onFailure() : step.onFailure();
+            if (routesOnData && !handlesFailure && policy == OnFailure.STOP && !step.assertions().isEmpty()) {
+                warnings.add("Step " + RunLog.label(step) + " stops the scenario when an assertion fails, so its "
+                        + "branches never run for that response. Add a Step outcome branch or set On failure "
+                        + "to Continue");
+            }
+        }
+        return warnings;
     }
 
     public static Set<String> bestEffortAncestors(ScenarioItem scenario, String stepId) {

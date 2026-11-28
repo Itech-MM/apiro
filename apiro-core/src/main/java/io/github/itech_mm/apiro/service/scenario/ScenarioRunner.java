@@ -72,6 +72,7 @@ public final class ScenarioRunner {
         Set<String> stopReachable = Set.of();
         boolean cancelled = false;
         StepResult firstFailure = null;
+        List<String> warnings = new ArrayList<>();
         Step current = plan.root();
         while (current != null && executed.add(current.id())) {
             listener.onStepStarted(current);
@@ -85,6 +86,14 @@ public final class ScenarioRunner {
             listener.onStepFinished(result);
             if (route.decision() != null) {
                 listener.onBranchTaken(route.decision());
+                if (route.recovered()) {
+                    warnings.add("Note: step " + RunLog.label(current) + " failed and was handled by a branch to "
+                            + route.decision().targetName());
+                }
+                if (!route.decision().taken()) {
+                    warnings.add("Warning: no branch condition matched after step " + RunLog.label(current)
+                            + ", the flow ended there");
+                }
             }
             if (raw.state() == StepResult.State.CANCELLED) {
                 cancelled = true;
@@ -116,7 +125,8 @@ public final class ScenarioRunner {
         }
         ScenarioResult.State state = cancelled ? ScenarioResult.State.CANCELLED
                 : firstFailure != null ? ScenarioResult.State.FAILED : ScenarioResult.State.PASSED;
-        String message = cancelled ? CANCELLED : firstFailure == null ? "" : describe(firstFailure);
+        String message = cancelled ? CANCELLED
+                : firstFailure != null ? describe(firstFailure) : String.join("; ", warnings);
         return finish(listener, new ScenarioResult(scenario.id(), state, message, results, elapsed(started)));
     }
 
