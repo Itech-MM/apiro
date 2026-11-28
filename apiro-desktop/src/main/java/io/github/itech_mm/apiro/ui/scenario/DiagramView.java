@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.prefs.Preferences;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -29,6 +30,8 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -47,6 +50,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.CubicCurveTo;
@@ -101,6 +105,9 @@ final class DiagramView extends StackPane {
     private final Rectangle marker = new Rectangle(4, NODE_HEIGHT + 24);
     private final CubicCurve wirePreview = new CubicCurve();
     private final Pane viewport = new Pane();
+    private final Canvas grid = new Canvas();
+    private final Button gridButton = tool("");
+    private GridMode gridMode = loadGridMode();
     private final Group world = new Group();
     private final Group edgeLayer = new Group();
     private final Group nodeLayer = new Group();
@@ -122,6 +129,22 @@ final class DiagramView extends StackPane {
     private List<Step> steps = List.of();
     private boolean graphMode;
     private final Button arrangeButton;
+
+    private enum GridMode {
+        OFF("Grid: Off"), DOTS("Grid: Dots"), LINES("Grid: Lines");
+
+        private final String label;
+
+        GridMode(String label) {
+            this.label = label;
+        }
+    }
+
+    private static final String GRID_KEY = "diagramGrid";
+    private static final double GRID_SIZE = 20;
+    private static final Color GRID_DOT = Color.rgb(128, 128, 128, 0.42);
+    private static final Color GRID_LINE = Color.rgb(128, 128, 128, 0.16);
+    private static final Color GRID_LINE_MAJOR = Color.rgb(128, 128, 128, 0.28);
     private VariableUsage.Result usage = VariableUsage.Result.EMPTY;
     private String selectedId;
     private String selectedEdgeId;
@@ -159,7 +182,20 @@ final class DiagramView extends StackPane {
         dataLayer.setMouseTransparent(true);
         world.getChildren().addAll(edgeLayer, nodeLayer, dataLayer, badgeLayer, marker, wirePreview);
         world.getTransforms().add(view);
-        viewport.getChildren().add(world);
+        grid.setMouseTransparent(true);
+        grid.widthProperty().bind(viewport.widthProperty());
+        grid.heightProperty().bind(viewport.heightProperty());
+        grid.widthProperty().addListener((obs, oldValue, newValue) -> drawGrid());
+        grid.heightProperty().addListener((obs, oldValue, newValue) -> drawGrid());
+        viewport.getChildren().addAll(grid, world);
+        gridButton.setText(gridMode.label);
+        gridButton.setTooltip(new Tooltip("Background grid: click to switch between dots, lines and off"));
+        gridButton.setOnAction(event -> {
+            gridMode = GridMode.values()[(gridMode.ordinal() + 1) % GridMode.values().length];
+            gridButton.setText(gridMode.label);
+            saveGridMode();
+            drawGrid();
+        });
 
         empty.getStyleClass().add("muted");
         empty.setMouseTransparent(true);
@@ -185,7 +221,7 @@ final class DiagramView extends StackPane {
         arrangeButton.setOnAction(event -> support.autoArrange());
         arrangeButton.setVisible(false);
         arrangeButton.setManaged(false);
-        zoomTools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit, arrangeButton);
+        zoomTools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit, gridButton, arrangeButton);
         HBox tools = zoomTools;
         tools.setAlignment(Pos.CENTER);
         tools.getStyleClass().add("diagram-tools");
@@ -732,8 +768,68 @@ final class DiagramView extends StackPane {
         apply();
     }
 
+    private static GridMode loadGridMode() {
+        try {
+            return GridMode.valueOf(Preferences.userNodeForPackage(DiagramView.class).get(GRID_KEY, "DOTS"));
+        } catch (RuntimeException error) {
+            return GridMode.DOTS;
+        }
+    }
+
+    private void saveGridMode() {
+        try {
+            Preferences.userNodeForPackage(DiagramView.class).put(GRID_KEY, gridMode.name());
+        } catch (RuntimeException error) {
+            // the choice just is not remembered
+        }
+    }
+
+    private void drawGrid() {
+        GraphicsContext g = grid.getGraphicsContext2D();
+        double width = grid.getWidth();
+        double height = grid.getHeight();
+        g.clearRect(0, 0, width, height);
+        if (gridMode == GridMode.OFF || width <= 0 || height <= 0) {
+            return;
+        }
+        int factor = 1;
+        while (GRID_SIZE * zoom * factor < 12) {
+            factor *= 5;
+        }
+        double spacing = GRID_SIZE * zoom * factor;
+        int firstCol = (int) Math.floor(-panX / spacing);
+        int firstRow = (int) Math.floor(-panY / spacing);
+        int cols = (int) Math.ceil(width / spacing) + 2;
+        int rows = (int) Math.ceil(height / spacing) + 2;
+        if (gridMode == GridMode.DOTS) {
+            g.setFill(GRID_DOT);
+            for (int c = 0; c < cols; c++) {
+                double x = panX + (firstCol + c) * spacing;
+                for (int r = 0; r < rows; r++) {
+                    double y = panY + (firstRow + r) * spacing;
+                    g.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
+                }
+            }
+            return;
+        }
+        g.setLineWidth(1);
+        for (int c = 0; c < cols; c++) {
+            int index = firstCol + c;
+            g.setStroke(index % 5 == 0 ? GRID_LINE_MAJOR : GRID_LINE);
+            double x = Math.round(panX + index * spacing) + 0.5;
+            g.strokeLine(x, 0, x, height);
+        }
+        for (int r = 0; r < rows; r++) {
+            int index = firstRow + r;
+            g.setStroke(index % 5 == 0 ? GRID_LINE_MAJOR : GRID_LINE);
+            double y = Math.round(panY + index * spacing) + 0.5;
+            g.strokeLine(0, y, width, y);
+        }
+    }
+
     private void apply() {
         view.setToTransform(zoom, 0, panX, 0, zoom, panY);
+        drawGrid();
         zoomLabel.setText(Math.round(zoom * 100) + "%");
     }
 
