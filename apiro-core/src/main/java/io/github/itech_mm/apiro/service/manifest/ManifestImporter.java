@@ -254,10 +254,14 @@ public final class ManifestImporter {
         List<KeyValue> result = new ArrayList<>();
         for (Parameter parameter : endpoint.getParameters()) {
             if (location.equals(parameter.getIn()) && !isBlank(parameter.getName())) {
-                result.add(new KeyValue(parameter.getName(), valueOf(parameter), parameter.isRequired()));
+                result.add(new KeyValue(parameter.getName(), valueOf(parameter), startsEnabled(parameter)));
             }
         }
         return result;
+    }
+
+    private static boolean startsEnabled(Parameter parameter) {
+        return parameter.isRequired() || parameter.getDefaultValue() != null;
     }
 
     private static String valueOf(Parameter parameter) {
@@ -400,7 +404,7 @@ public final class ManifestImporter {
     private static List<KeyValue> form(List<Parameter> fields, Schema schema) {
         List<KeyValue> result = new ArrayList<>();
         for (Parameter field : fields) {
-            result.add(new KeyValue(field.getName(), valueOf(field), field.isRequired()));
+            result.add(new KeyValue(field.getName(), valueOf(field), startsEnabled(field)));
         }
         if (result.isEmpty() && schema != null) {
             for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
@@ -414,7 +418,7 @@ public final class ManifestImporter {
         List<FormPart> result = new ArrayList<>();
         for (Parameter field : fields) {
             result.add(isFile(field.getSchema(), schemas) ? new FormPart(field.getName(), PartKind.FILE, "", "", field.isRequired())
-                    : new FormPart(field.getName(), PartKind.TEXT, valueOf(field), "", field.isRequired()));
+                    : new FormPart(field.getName(), PartKind.TEXT, valueOf(field), "", startsEnabled(field)));
         }
         if (result.isEmpty() && schema != null) {
             for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
