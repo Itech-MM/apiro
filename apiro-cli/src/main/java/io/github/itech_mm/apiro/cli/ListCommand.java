@@ -2,6 +2,7 @@ package io.github.itech_mm.apiro.cli;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.github.itech_framework.core.annotations.components.levels.Presentation;
 import io.github.itech_mm.apiro.model.Environment;
 import io.github.itech_mm.apiro.model.Folder;
 import io.github.itech_mm.apiro.model.Project;
@@ -13,7 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-final class ListCommand implements Command {
+@Presentation
+public final class ListCommand implements Command {
 
     private static final String JSON = "--json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
