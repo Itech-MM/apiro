@@ -91,6 +91,7 @@ import javafx.util.StringConverter;
 public class MainLayoutController extends LayoutController implements Routable {
 
 	private static final String RAIL_ACTIVE = "rail-active";
+	private static final String SAVE_FAILED = "save-failed";
 	private static final String EXTENSION = ".apiro.json";
 
 	private static final String DANGER_BUTTON = "alert-danger-button";
@@ -130,6 +131,9 @@ public class MainLayoutController extends LayoutController implements Routable {
 
 	@FXML
 	private Label statusLabel;
+
+	@FXML
+	private Label saveStateLabel;
 
 	@FXML
 	private Label cursorLabel;
@@ -292,6 +296,7 @@ public class MainLayoutController extends LayoutController implements Routable {
 		runService.runningIds().addListener((SetChangeListener<String>) change -> refreshRunState());
 		session.selectedRequestIdProperty().addListener((obs, oldId, newId) -> refreshRunState());
 		setupMenu();
+		setupSaveState();
 
 		recents.items().addListener((ListChangeListener<Path>) change -> rebuildRecentMenu());
 		rebuildRecentMenu();
@@ -336,6 +341,30 @@ public class MainLayoutController extends LayoutController implements Routable {
 	private void refreshProjectTitle() {
 		Project project = session.project();
 		projectTitleLabel.setText(project == null ? "No project open" : project.name());
+	}
+
+	private void setupSaveState() {
+		saveStateLabel.visibleProperty().bind(session.projectProperty().isNotNull());
+		saveStateLabel.managedProperty().bind(saveStateLabel.visibleProperty());
+		session.saveErrorProperty().addListener((obs, oldValue, newValue) -> refreshSaveState(newValue));
+		refreshSaveState(session.saveErrorProperty().get());
+	}
+
+	private void refreshSaveState(String error) {
+		boolean failed = !error.isEmpty();
+		saveStateLabel.setText(failed ? "Project not saved - click to retry" : "Project saved");
+		saveStateLabel.getStyleClass().remove(SAVE_FAILED);
+		if (failed) {
+			saveStateLabel.getStyleClass().add(SAVE_FAILED);
+		}
+		saveStateLabel.setTooltip(new Tooltip(failed ? error : "Project changes are saved automatically"));
+	}
+
+	@FXML
+	private void onSaveStateClicked() {
+		if (!session.saveErrorProperty().get().isEmpty()) {
+			onSave();
+		}
 	}
 
 	@FXML

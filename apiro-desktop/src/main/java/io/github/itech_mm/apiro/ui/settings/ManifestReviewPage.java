@@ -111,7 +111,7 @@ public final class ManifestReviewPage {
 
     private void showEmpty() {
         summary.setText("");
-        rows.getChildren().setAll(detail("Load a manifest on the Source page first."));
+        rows.getChildren().setAll(detail("Load a manifest first."));
     }
 
     private void select(boolean on) {

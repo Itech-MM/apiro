@@ -134,6 +134,7 @@
     <bottom>
         <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="16">
             <Label fx:id="statusLabel" text="Ready" styleClass="muted" />
+            <Label fx:id="saveStateLabel" text="Project saved" styleClass="muted" onMouseClicked="#onSaveStateClicked" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="cursorLabel" text="1:1" styleClass="muted" />
             <Label fx:id="syntaxLabel" text="JSON" styleClass="muted" />

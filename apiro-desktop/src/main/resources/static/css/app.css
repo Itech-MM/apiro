@@ -1194,6 +1194,11 @@
     -fx-text-fill: -fx-text-color;
 }
 
+.status-bar .label.save-failed {
+    -fx-text-fill: -fx-danger;
+    -fx-cursor: hand;
+}
+
 /**workspace**/
 .page {
     -fx-background-color: -fx-surface;
@@ -1673,6 +1678,50 @@
 }
 
 .check-box:disabled {
+    -fx-opacity: 0.5;
+}
+
+.radio-button {
+    -fx-text-fill: -fx-text-color;
+    -fx-label-padding: 0 0 0 8;
+    -fx-cursor: hand;
+}
+
+.radio-button > .radio,
+.radio-button:focused > .radio,
+.radio-button:armed > .radio {
+    -fx-background-color: -app-check-border, -fx-surface;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 8;
+    -fx-padding: 0;
+    -fx-min-width: 16;
+    -fx-pref-width: 16;
+    -fx-max-width: 16;
+    -fx-min-height: 16;
+    -fx-pref-height: 16;
+    -fx-max-height: 16;
+}
+
+.radio-button > .radio > .dot {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.radio-button:hover > .radio,
+.radio-button:focused > .radio {
+    -fx-background-color: -fx-primary, -fx-surface;
+}
+
+.radio-button:selected > .radio,
+.radio-button:selected:hover > .radio,
+.radio-button:selected:focused > .radio,
+.radio-button:selected:armed > .radio {
+    -fx-background-color: -fx-primary, -fx-surface, -fx-primary;
+    -fx-background-insets: 0, 1.5, 4;
+    -fx-background-radius: 8, 8, 8;
+}
+
+.radio-button:disabled {
     -fx-opacity: 0.5;
 }
 

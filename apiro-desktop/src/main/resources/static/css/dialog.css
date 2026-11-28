@@ -13,19 +13,42 @@
     -fx-background-color: transparent;
 }
 
-.alert-danger-button {
+.button.alert-danger-button,
+.alert-container .button.alert-danger-button,
+.dialog-root .alert-container .button.alert-danger-button,
+.button.alert-danger-button:focused,
+.alert-container .button.alert-danger-button:focused,
+.dialog-root .alert-container .button.alert-danger-button:focused {
     -fx-background-color: -fx-danger;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
     -fx-text-fill: #FFFFFF;
     -fx-padding: 4px 12px;
     -fx-font-size: 12px;
-    -fx-background-radius: 4px;
     -fx-cursor: hand;
 }
 
-.alert-danger-button:hover {
-    -fx-background-color: -fx-danger-dark;
+.button.alert-danger-button:focused,
+.alert-container .button.alert-danger-button:focused,
+.dialog-root .alert-container .button.alert-danger-button:focused {
+    -fx-background-color: rgba(220, 38, 38, 0.30), -fx-danger;
+    -fx-background-insets: -2, 0;
+    -fx-background-radius: 6, 4;
 }
 
-.alert-danger-button:pressed {
+.button.alert-danger-button:hover,
+.alert-container .button.alert-danger-button:hover,
+.dialog-root .alert-container .button.alert-danger-button:hover {
+    -fx-background-color: -fx-danger-dark;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
+}
+
+.button.alert-danger-button:pressed,
+.alert-container .button.alert-danger-button:pressed,
+.dialog-root .alert-container .button.alert-danger-button:pressed {
     -fx-background-color: derive(-fx-danger-dark, -10%);
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
 }

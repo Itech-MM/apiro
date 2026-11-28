@@ -25,6 +25,8 @@ import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -36,6 +38,7 @@ public final class OpenProject {
     private final ReadOnlyObjectWrapper<Project> project = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyIntegerWrapper structure = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper saves = new ReadOnlyIntegerWrapper(0);
+    private final ReadOnlyStringWrapper saveError = new ReadOnlyStringWrapper("");
     private final StringProperty selectedRequestId = new SimpleStringProperty("");
     private final StringProperty environmentId = new SimpleStringProperty("");
     private LocalState state;
@@ -89,6 +92,10 @@ public final class OpenProject {
         return saves.getReadOnlyProperty();
     }
 
+    public ReadOnlyStringProperty saveErrorProperty() {
+        return saveError.getReadOnlyProperty();
+    }
+
     public StringProperty selectedRequestIdProperty() {
         return selectedRequestId;
     }
@@ -98,9 +105,23 @@ public final class OpenProject {
     }
 
     public void save() throws IOException {
-        state = ProjectStore.save(project.get(), state, file);
+        try {
+            state = ProjectStore.save(project.get(), state, file);
+        } catch (IOException | RuntimeException error) {
+            saveError.set(error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+            throw error;
+        }
+        saveError.set("");
         saves.set(saves.get() + 1);
         pruneRuns();
+    }
+
+    private void autoSave() {
+        try {
+            save();
+        } catch (IOException error) {
+            return;
+        }
     }
 
     private void pruneRuns() {
@@ -192,6 +213,7 @@ public final class OpenProject {
     private void changed(Project next) {
         project.set(next);
         structure.set(structure.get() + 1);
+        autoSave();
     }
 
     private String initialEnvironment(Project loaded) {

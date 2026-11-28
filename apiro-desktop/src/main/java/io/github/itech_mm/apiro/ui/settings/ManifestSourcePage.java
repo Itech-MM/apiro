@@ -180,6 +180,11 @@ public final class ManifestSourcePage {
         return baseUrlField.getText() == null ? "" : baseUrlField.getText().trim();
     }
 
+    public boolean hasInput() {
+        TextField field = fromApp.isSelected() ? addressField : fileField;
+        return field.getText() != null && !field.getText().isBlank();
+    }
+
     public void showError(String message) {
         error.setText(message);
         error.setVisible(true);

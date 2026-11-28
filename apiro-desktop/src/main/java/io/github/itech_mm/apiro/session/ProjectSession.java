@@ -23,6 +23,8 @@ import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -42,6 +44,7 @@ public class ProjectSession {
     private final ReadOnlyIntegerWrapper structure = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper saves = new ReadOnlyIntegerWrapper(0);
     private final ReadOnlyIntegerWrapper treeVersion = new ReadOnlyIntegerWrapper(0);
+    private final ReadOnlyStringWrapper saveError = new ReadOnlyStringWrapper("");
     private final StringProperty selectedRequestId = new SimpleStringProperty("");
     private final StringProperty environmentId = new SimpleStringProperty("");
     private final ChangeListener<Number> activeStructure = (obs, old, now) -> structure.set(structure.get() + 1);
@@ -91,6 +94,10 @@ public class ProjectSession {
 
     public ReadOnlyIntegerProperty treeVersionProperty() {
         return treeVersion.getReadOnlyProperty();
+    }
+
+    public ReadOnlyStringProperty saveErrorProperty() {
+        return saveError.getReadOnlyProperty();
     }
 
     public StringProperty selectedRequestIdProperty() {
@@ -423,6 +430,7 @@ public class ProjectSession {
             selectedRequestId.unbindBidirectional(previous.selectedRequestIdProperty());
             environmentId.unbindBidirectional(previous.environmentIdProperty());
             project.unbind();
+            saveError.unbind();
             previous.structureProperty().removeListener(activeStructure);
             previous.savesProperty().removeListener(activeSaves);
         }
@@ -431,6 +439,7 @@ public class ProjectSession {
             file.set(null);
             project.set(null);
             environmentId.set("");
+            saveError.set("");
             active.set(null);
             structure.set(structure.get() + 1);
             return;
@@ -438,6 +447,7 @@ public class ProjectSession {
         selectedRequestId.bindBidirectional(next.selectedRequestIdProperty());
         file.set(next.file());
         project.bind(next.projectProperty());
+        saveError.bind(next.saveErrorProperty());
         environmentId.bindBidirectional(next.environmentIdProperty());
         next.structureProperty().addListener(activeStructure);
         next.savesProperty().addListener(activeSaves);

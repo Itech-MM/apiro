@@ -76,7 +76,7 @@ public final class ImportManifestDialog {
                 .withBaseUrl(ManifestReimport.apply(project, diff, accepted), baseUrl));
         tabs.reload(updatedIds);
         closeCurrent();
-        done.accept("Imported " + added + " new and updated " + updatedIds.size() + " requests. Press Ctrl+S to save.");
+        done.accept("Imported " + added + " new and updated " + updatedIds.size() + " requests.");
     }
 
     private static void closeCurrent() {
