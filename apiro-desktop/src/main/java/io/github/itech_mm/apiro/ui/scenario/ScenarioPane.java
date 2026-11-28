@@ -1006,6 +1006,20 @@ public final class ScenarioPane extends BorderPane {
             }
 
             @Override
+            public void moveTo(String stepId, double x, double y) {
+                if (current != null) {
+                    commit(ScenarioEdit.withStepPosition(current, stepId, x, y), true);
+                }
+            }
+
+            @Override
+            public void autoArrange() {
+                if (current != null) {
+                    commit(ScenarioEdit.withoutStepPositions(current), true);
+                }
+            }
+
+            @Override
             public void remove(String stepId) {
                 if (current != null) {
                     String neighbour = null;

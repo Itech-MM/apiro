@@ -39,6 +39,10 @@ final class StepCell extends ListCell<Step> {
 
         void move(String stepId, int index);
 
+        void moveTo(String stepId, double x, double y);
+
+        void autoArrange();
+
         void remove(String stepId);
 
         List<Step> steps();

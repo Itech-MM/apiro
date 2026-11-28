@@ -41,4 +41,13 @@ public record Step(String id, String requestId, String name, List<Extractor> ext
     public static Step of(String requestId, String name) {
         return new Step(null, requestId, name, null, null, null, 0, null, 0, 0);
     }
+
+    public boolean hasManualPosition() {
+        return x != 0 || y != 0;
+    }
+
+    public Step withPosition(double newX, double newY) {
+        return new Step(id, requestId, name, extractors, assertions, headers, query, urlOverride, delayMillis,
+                onFailure, newX, newY, bodyOverride);
+    }
 }

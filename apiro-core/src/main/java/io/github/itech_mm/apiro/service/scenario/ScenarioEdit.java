@@ -63,6 +63,34 @@ public final class ScenarioEdit {
         return rebuilt(scenario, steps);
     }
 
+    public static ScenarioItem withStepPosition(ScenarioItem scenario, String stepId, double x, double y) {
+        List<Step> steps = scenario.steps();
+        int index = indexOf(steps, stepId);
+        if (index < 0) {
+            return scenario;
+        }
+        double safeY = x == 0 && y == 0 ? 0.01 : y;
+        return withStep(scenario, steps.get(index).withPosition(x, safeY));
+    }
+
+    public static ScenarioItem withoutStepPositions(ScenarioItem scenario) {
+        List<Step> steps = new ArrayList<>(scenario.steps().size());
+        boolean changed = false;
+        for (Step step : scenario.steps()) {
+            if (step.hasManualPosition()) {
+                steps.add(step.withPosition(0, 0));
+                changed = true;
+            } else {
+                steps.add(step);
+            }
+        }
+        if (!changed) {
+            return scenario;
+        }
+        return new ScenarioItem(scenario.id(), scenario.name(), scenario.variables(), steps, scenario.edges(),
+                scenario.onFailure());
+    }
+
     public static ScenarioItem withStep(ScenarioItem scenario, Step updated) {
         List<Step> steps = new ArrayList<>(scenario.steps());
         int index = indexOf(steps, updated.id());

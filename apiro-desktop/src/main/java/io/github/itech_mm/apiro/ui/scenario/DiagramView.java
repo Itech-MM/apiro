@@ -49,6 +49,10 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
+import javafx.scene.shape.CubicCurveTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.PathElement;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Affine;
@@ -117,6 +121,7 @@ final class DiagramView extends StackPane {
     private ScenarioItem scenario;
     private List<Step> steps = List.of();
     private boolean graphMode;
+    private final Button arrangeButton;
     private VariableUsage.Result usage = VariableUsage.Result.EMPTY;
     private String selectedId;
     private String selectedEdgeId;
@@ -175,7 +180,12 @@ final class DiagramView extends StackPane {
         zoomOut.setOnAction(event -> zoomAt(viewport.getWidth() / 2, viewport.getHeight() / 2, 1 / 1.2));
         zoomIn.setOnAction(event -> zoomAt(viewport.getWidth() / 2, viewport.getHeight() / 2, 1.2));
         fit.setOnAction(event -> fit(MIN_ZOOM));
-        zoomTools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit);
+        arrangeButton = tool("Auto layout");
+        arrangeButton.setTooltip(new Tooltip("Reset the cards to the automatic layout"));
+        arrangeButton.setOnAction(event -> support.autoArrange());
+        arrangeButton.setVisible(false);
+        arrangeButton.setManaged(false);
+        zoomTools = new HBox(4, zoomOut, zoomLabel, zoomIn, fit, arrangeButton);
         HBox tools = zoomTools;
         tools.setAlignment(Pos.CENTER);
         tools.getStyleClass().add("diagram-tools");
@@ -403,13 +413,16 @@ final class DiagramView extends StackPane {
     }
 
     private void relayout() {
+        boolean manual = graphMode && steps.stream().anyMatch(Step::hasManualPosition);
+        arrangeButton.setVisible(manual);
+        arrangeButton.setManaged(manual);
         if (graphMode && scenario != null) {
             DiagramLayout.GraphLayout layout = DiagramLayout.graphLayout(scenario, NODE_WIDTH, NODE_HEIGHT,
                     GRAPH_GAP, GRAPH_ROW_GAP);
             for (StepNode node : nodes.values()) {
                 DiagramLayout.Point point = layout.positions().get(node.step.id());
-                double x = point == null ? 0 : point.x();
-                double y = point == null ? 0 : point.y();
+                double x = node.step.hasManualPosition() ? node.step.x() : point == null ? 0 : point.x();
+                double y = node.step.hasManualPosition() ? node.step.y() : point == null ? 0 : point.y();
                 node.setLayoutX(x);
                 node.setLayoutY(y);
                 node.placeGraphPorts();
@@ -424,58 +437,41 @@ final class DiagramView extends StackPane {
             }
         }
         refreshData();
-        int skipDetour = 0;
-        int backDetour = 0;
+        int[] lanes = new int[DiagramRouter.LANES];
         for (Link link : links) {
-            if (graphMode) {
-                StepNode fn = nodes.get(link.fromId);
-                StepNode tn = nodes.get(link.toId);
-                if (fn != null && tn != null) {
-                    double fx = fn.getLayoutX();
-                    double tx = tn.getLayoutX();
-                    double fy = fn.getLayoutY();
-                    double ty = tn.getLayoutY();
-                    boolean sameColDown = Math.abs(fx - tx) < NODE_WIDTH * 0.5 && ty > fy + NODE_HEIGHT * 0.5;
-                    if (!sameColDown && tx < fx + NODE_WIDTH * 0.5) {
-                        link.place(backDetour++);
-                        continue;
-                    }
-                    if (!sameColDown && tx > fx + NODE_WIDTH + 20 && hasBlockingNode(fn, tn)) {
-                        link.place(skipDetour++);
-                        continue;
-                    }
-                }
-            }
-            link.place(0);
+            link.place(lanes);
         }
         resolveBadgeOverlaps();
         Platform.runLater(this::resolveBadgeOverlaps);
     }
 
-    private boolean hasBlockingNode(StepNode fn, StepNode tn) {
-        double fx = fn.getLayoutX();
-        double fy = fn.getLayoutY();
-        double tx = tn.getLayoutX();
-        double ty = tn.getLayoutY();
-        double x1 = fx + NODE_WIDTH;
-        double y1 = fy + NODE_HEIGHT / 2.0;
-        double x2 = tx;
-        double y2 = ty + NODE_HEIGHT / 2.0;
-        for (StepNode mid : nodes.values()) {
-            if (mid == fn || mid == tn) {
-                continue;
-            }
-            double mx = mid.getLayoutX();
-            double my = mid.getLayoutY();
-            if (mx + NODE_WIDTH > fx + NODE_WIDTH + 8 && mx < tx - 8) {
-                double t = (mx + NODE_WIDTH / 2.0 - x1) / Math.max(1.0, x2 - x1);
-                double chordY = y1 + (y2 - y1) * Math.max(0.0, Math.min(1.0, t));
-                if (chordY >= my - 26 && chordY <= my + NODE_HEIGHT + 26) {
-                    return true;
-                }
-            }
+    private static DiagramRouter.Rect rectOf(StepNode node) {
+        return new DiagramRouter.Rect(node.getLayoutX(), node.getLayoutY(), NODE_WIDTH, NODE_HEIGHT);
+    }
+
+    private static List<PathElement> pathElements(DiagramRouter.Route route) {
+        List<PathElement> elements = new ArrayList<>();
+        DiagramRouter.Segment first = route.segments().get(0);
+        elements.add(new MoveTo(first.x1(), first.y1()));
+        for (DiagramRouter.Segment segment : route.segments()) {
+            elements.add(new CubicCurveTo(segment.cx1(), segment.cy1(), segment.cx2(), segment.cy2(), segment.x2(),
+                    segment.y2()));
         }
-        return false;
+        return elements;
+    }
+
+    private Point2D worldOf(double sceneX, double sceneY) {
+        Point2D local = viewport.sceneToLocal(sceneX, sceneY);
+        return new Point2D((local.getX() - panX) / zoom, (local.getY() - panY) / zoom);
+    }
+
+    private void replaceLinks() {
+        int[] lanes = new int[DiagramRouter.LANES];
+        for (Link link : links) {
+            link.place(lanes);
+        }
+        refreshData();
+        resolveBadgeOverlaps();
     }
 
     private void resolveBadgeOverlaps() {
@@ -572,6 +568,7 @@ final class DiagramView extends StackPane {
     private void refreshData() {
         dataLayer.getChildren().clear();
         dataLabelBounds.clear();
+        int[] lanes = new int[DiagramRouter.LANES];
         boolean running = false;
         for (Step step : steps) {
             if (support.state(step.id()) == StepResult.State.RUNNING) {
@@ -584,7 +581,9 @@ final class DiagramView extends StackPane {
             boolean visible;
             if (running) {
                 inbound = true;
-                visible = support.state(link.toStepId()) == StepResult.State.RUNNING;
+                StepResult.State producer = support.state(link.fromStepId());
+                visible = support.state(link.toStepId()) == StepResult.State.RUNNING
+                        && (producer == StepResult.State.PASSED || producer == StepResult.State.FAILED);
             } else if (selectedId == null) {
                 inbound = false;
                 visible = false;
@@ -593,53 +592,38 @@ final class DiagramView extends StackPane {
                 visible = inbound || link.fromStepId().equals(selectedId);
             }
             if (visible) {
-                addDataLink(link, inbound);
+                addDataLink(link, inbound, lanes);
             }
         }
     }
 
-    private void addDataLink(VariableUsage.Link link, boolean inbound) {
+    private void addDataLink(VariableUsage.Link link, boolean inbound, int[] lanes) {
         StepNode fromNode = nodes.get(link.fromStepId());
         StepNode toNode = nodes.get(link.toStepId());
-        if (fromNode == null || toNode == null) {
+        if (fromNode == null || toNode == null || fromNode == toNode) {
             return;
         }
-        double fx = fromNode.getLayoutX();
-        double fy = fromNode.getLayoutY();
-        double tx = toNode.getLayoutX();
-        double ty = toNode.getLayoutY();
-        boolean sameRow = Math.abs(fy - ty) < 1.0;
-        double shift = sameRow ? 0 : 36;
-        boolean arcAbove = sameRow && graphMode;
-        double x1 = fx + NODE_WIDTH / 2 + shift;
-        double y1 = arcAbove ? fy : (sameRow || fy < ty ? fy + NODE_HEIGHT : fy);
-        double x2 = tx + NODE_WIDTH / 2 + shift;
-        double y2 = arcAbove ? ty : (sameRow ? ty + NODE_HEIGHT : (fy < ty ? ty : ty + NODE_HEIGHT));
-        double c1y;
-        double c2y;
-        double uy;
-        if (arcAbove) {
-            double lift = 46 + Math.min(60, Math.abs(x2 - x1) * 0.12);
-            c1y = y1 - lift;
-            c2y = y2 - lift;
-            uy = 1;
-        } else if (sameRow) {
-            double drop = 46 + Math.min(60, Math.abs(x2 - x1) * 0.12);
-            c1y = y1 + drop;
-            c2y = y2 + drop;
-            uy = -1;
-        } else {
-            double dy = y2 - y1;
-            double handle = Math.max(30, Math.abs(dy) / 2);
-            c1y = y1 + (dy >= 0 ? handle : -handle);
-            c2y = y2 - (dy >= 0 ? handle : -handle);
-            uy = dy >= 0 ? 1 : -1;
+        List<DiagramRouter.Rect> obstacles = new ArrayList<>();
+        for (StepNode other : nodes.values()) {
+            if (other != fromNode && other != toNode) {
+                obstacles.add(rectOf(other));
+            }
         }
-        CubicCurve curve = new CubicCurve(x1, y1, x1, c1y, x2, c2y, x2, y2);
+        DiagramRouter.Route route = DiagramRouter.route(rectOf(fromNode), rectOf(toNode), obstacles,
+                new DiagramRouter.Spec(0, 1, 0, 1, 2, 2, true), lanes);
+        Path curve = new Path();
+        curve.getElements().setAll(pathElements(route));
         curve.setFill(null);
         curve.getStrokeDashArray().setAll(2.0, 5.0);
         curve.getStyleClass().addAll("data-edge", inbound ? "inbound" : "outbound");
-        Polygon arrow = new Polygon(x2, y2, x2 - 5, y2 - uy * 10, x2 + 5, y2 - uy * 10);
+        DiagramRouter.Segment last = route.segments().get(route.segments().size() - 1);
+        double dx = route.dirX();
+        double dy = route.dirY();
+        double nx = -dy;
+        double ny = dx;
+        Polygon arrow = new Polygon(last.x2(), last.y2(),
+                last.x2() - dx * 11 + nx * 5, last.y2() - dy * 11 + ny * 5,
+                last.x2() - dx * 11 - nx * 5, last.y2() - dy * 11 - ny * 5);
         arrow.getStyleClass().addAll("data-arrow", inbound ? "inbound" : "outbound");
         String text = String.join(", ", link.names());
         if (text.length() > 32) {
@@ -652,10 +636,20 @@ final class DiagramView extends StackPane {
         label.setPrefWidth(width);
         label.setMaxWidth(width);
         label.setAlignment(Pos.CENTER);
-        double midX = (x1 + 3 * x1 + 3 * x2 + x2) / 8;
-        double midY = (y1 + 3 * c1y + 3 * c2y + y2) / 8;
-        double lx = midX - width / 2;
-        double ly = midY - 9;
+        List<double[]> occupied = new ArrayList<>(dataLabelBounds);
+        for (StepNode node : nodes.values()) {
+            occupied.add(new double[] {node.getLayoutX() - 6, node.getLayoutY() - 6, NODE_WIDTH + 12,
+                    NODE_HEIGHT + 12});
+        }
+        double lx = route.labelX() - width / 2;
+        double ly = route.labelY() - 9;
+        for (int attempt = 0; attempt < 10; attempt++) {
+            double delta = attempt == 0 ? 0 : ((attempt + 1) / 2) * 26.0 * (attempt % 2 == 1 ? 1 : -1);
+            if (!overlapsAny(lx, ly + delta, width, 18, occupied)) {
+                ly += delta;
+                break;
+            }
+        }
         label.setLayoutX(lx);
         label.setLayoutY(ly);
         dataLabelBounds.add(new double[] { lx - 4, ly - 4, width + 8, 26 });
@@ -689,11 +683,19 @@ final class DiagramView extends StackPane {
         double contentWidth;
         double contentHeight;
         if (graphMode && scenario != null) {
-            DiagramLayout.GraphLayout layout = DiagramLayout.graphLayout(scenario, NODE_WIDTH, NODE_HEIGHT,
-                    GRAPH_GAP, GRAPH_ROW_GAP);
-            double maxX = layout.width();
-            double maxY = layout.height();
+            minX = Double.POSITIVE_INFINITY;
+            minY = Double.POSITIVE_INFINITY;
+            double maxX = Double.NEGATIVE_INFINITY;
+            double maxY = Double.NEGATIVE_INFINITY;
+            for (StepNode node : nodes.values()) {
+                minX = Math.min(minX, node.getLayoutX());
+                minY = Math.min(minY, node.getLayoutY());
+                maxX = Math.max(maxX, node.getLayoutX() + NODE_WIDTH);
+                maxY = Math.max(maxY, node.getLayoutY() + NODE_HEIGHT);
+            }
             for (Link link : links) {
+                minX = Math.min(minX, link.curveMinX());
+                maxX = Math.max(maxX, link.curveMaxX());
                 minY = Math.min(minY, Math.min(link.labelY - 24, link.curveMinY()));
                 maxY = Math.max(maxY, Math.max(link.labelY + 24, link.curveMaxY()));
             }
@@ -759,8 +761,8 @@ final class DiagramView extends StackPane {
         final Edge edge;
         final String fromId;
         final String toId;
-        final CubicCurve hitCurve;
-        final CubicCurve curve;
+        final Path hitCurve;
+        final Path curve;
         final Polygon arrow;
         final Label badge;
         final Tooltip badgeTip = new Tooltip();
@@ -775,6 +777,10 @@ final class DiagramView extends StackPane {
         private final int pairTotal;
         private double labelX;
         private double labelY;
+        private double routeMinX;
+        private double routeMaxX;
+        private double routeMinY;
+        private double routeMaxY;
 
         Link(Edge edge, String fromId, String toId, int from, int priorityIndex, int outgoingCount,
              int incomingIndex, int incomingCount, int pairIndex, int pairTotal) {
@@ -789,11 +795,11 @@ final class DiagramView extends StackPane {
             this.pairIndex = pairIndex;
             this.pairTotal = pairTotal;
 
-            hitCurve = new CubicCurve();
+            hitCurve = new Path();
             hitCurve.setFill(null);
             hitCurve.getStyleClass().add("diagram-edge-hit");
 
-            curve = new CubicCurve();
+            curve = new Path();
             curve.setFill(null);
             curve.getStyleClass().add("diagram-edge");
             curve.setMouseTransparent(true);
@@ -867,7 +873,7 @@ final class DiagramView extends StackPane {
                 });
             }
 
-            place(0);
+            place(new int[DiagramRouter.LANES]);
             refresh();
         }
 
@@ -884,177 +890,88 @@ final class DiagramView extends StackPane {
             return h > 1 ? h : 22.0;
         }
 
+        double curveMinX() {
+            return routeMinX;
+        }
+
+        double curveMaxX() {
+            return routeMaxX;
+        }
+
         double curveMinY() {
-            return Math.min(Math.min(curve.getStartY(), curve.getEndY()),
-                    Math.min(curve.getControlY1(), curve.getControlY2()));
+            return routeMinY;
         }
 
         double curveMaxY() {
-            return Math.max(Math.max(curve.getStartY(), curve.getEndY()),
-                    Math.max(curve.getControlY1(), curve.getControlY2()));
+            return routeMaxY;
         }
 
-        void place(int detourIndex) {
-            double x1;
-            double y1;
-            double x2;
-            double y2;
-            double cx1;
-            double cy1;
-            double cx2;
-            double cy2;
-            double ux;
-            double uy;
+        void place(int[] lanes) {
+            DiagramRouter.Route route;
             if (graphMode) {
                 StepNode fn = nodes.get(fromId);
                 StepNode tn = nodes.get(toId);
-                double fx = fn == null ? 0 : fn.getLayoutX();
-                double fy = fn == null ? 0 : fn.getLayoutY();
-                double tx = tn == null ? 0 : tn.getLayoutX();
-                double ty = tn == null ? 0 : tn.getLayoutY();
-                double outOffset = Math.max(-28, Math.min(28, (priorityIndex - (outgoingCount - 1) / 2.0) * 14.0));
-                double inOffset = Math.max(-28, Math.min(28, (incomingIndex - (incomingCount - 1) / 2.0) * 14.0));
-                double spread = (pairIndex - (pairTotal - 1) / 2.0) * 34.0;
-                boolean sameColDown = Math.abs(fx - tx) < NODE_WIDTH * 0.5 && ty > fy + NODE_HEIGHT * 0.5;
-                if (sameColDown) {
-                    x1 = fx + NODE_WIDTH / 2.0 + outOffset;
-                    y1 = fy + NODE_HEIGHT;
-                    x2 = tx + NODE_WIDTH / 2.0 + inOffset;
-                    y2 = ty;
-                    double handle = Math.max(30, (y2 - y1) * 0.45);
-                    cx1 = x1 + spread;
-                    cy1 = y1 + handle;
-                    cx2 = x2 + spread;
-                    cy2 = y2 - handle;
-                    ux = 0;
-                    uy = 1;
-                } else if (tx >= fx + NODE_WIDTH * 0.5) {
-                    x1 = fx + NODE_WIDTH;
-                    y1 = fy + NODE_HEIGHT / 2.0 + outOffset;
-                    x2 = tx;
-                    y2 = ty + NODE_HEIGHT / 2.0 + inOffset;
-                    double minBlockY = Double.POSITIVE_INFINITY;
-                    double maxBlockBottom = Double.NEGATIVE_INFINITY;
-                    boolean blocked = false;
-                    for (StepNode mid : nodes.values()) {
-                        if (mid == fn || mid == tn) {
-                            continue;
-                        }
-                        double mx = mid.getLayoutX();
-                        double my = mid.getLayoutY();
-                        if (mx + NODE_WIDTH > fx + NODE_WIDTH + 8 && mx < tx - 8) {
-                            double t = (mx + NODE_WIDTH / 2.0 - x1) / Math.max(1.0, x2 - x1);
-                            double chordY = y1 + (y2 - y1) * Math.max(0.0, Math.min(1.0, t));
-                            if (chordY >= my - 26 && chordY <= my + NODE_HEIGHT + 26) {
-                                blocked = true;
-                                minBlockY = Math.min(minBlockY, my);
-                                maxBlockBottom = Math.max(maxBlockBottom, my + NODE_HEIGHT);
-                            }
-                        }
-                    }
-                    if (blocked) {
-                        double midChordY = (y1 + y2) / 2.0;
-                        double belowY = maxBlockBottom + 46 + detourIndex * 34;
-                        double aboveY = minBlockY - 46 - detourIndex * 34;
-                        boolean preferBelow = (edge != null && (edge.condition().isElse() || priorityIndex > 0))
-                                || Math.abs(belowY - midChordY) <= Math.abs(aboveY - midChordY) + 12;
-                        double targetMidY = preferBelow ? belowY : aboveY;
-                        double cy = (targetMidY - 0.25 * midChordY) / 0.75 + spread * 0.5;
-                        cx1 = x1 + (x2 - x1) * 0.28;
-                        cx2 = x2 - (x2 - x1) * 0.28;
-                        cy1 = cy;
-                        cy2 = cy;
-                    } else {
-                        double handle = Math.max(55, (x2 - x1) * 0.44);
-                        cx1 = x1 + handle;
-                        cy1 = y1 + spread;
-                        cx2 = x2 - handle;
-                        cy2 = y2 + spread;
-                    }
-                    ux = 1;
-                    uy = 0;
-                } else {
-                    x1 = fx + NODE_WIDTH / 2.0 + outOffset * 0.5;
-                    y1 = fy;
-                    x2 = tx + NODE_WIDTH / 2.0 + inOffset * 0.5;
-                    y2 = ty;
-                    double minX = Math.min(fx, tx) - 20;
-                    double maxX = Math.max(fx, tx) + NODE_WIDTH + 20;
-                    double minTop = Math.min(fy, ty);
-                    for (StepNode node : nodes.values()) {
-                        double nx = node.getLayoutX();
-                        if (nx + NODE_WIDTH > minX && nx < maxX) {
-                            minTop = Math.min(minTop, node.getLayoutY());
-                        }
-                    }
-                    double targetMidY = minTop - (56 + detourIndex * 34 + Math.abs(spread) * 0.5);
-                    double cy = (targetMidY - 0.25 * ((y1 + y2) / 2.0)) / 0.75;
-                    cx1 = x1;
-                    cy1 = cy;
-                    cx2 = x2;
-                    cy2 = cy;
-                    ux = 0;
-                    uy = 1;
+                if (fn == null || tn == null) {
+                    return;
                 }
+                List<DiagramRouter.Rect> obstacles = new ArrayList<>();
+                for (StepNode other : nodes.values()) {
+                    if (other != fn && other != tn) {
+                        obstacles.add(rectOf(other));
+                    }
+                }
+                boolean after = edge != null && (edge.condition().isElse() || priorityIndex > 0);
+                route = DiagramRouter.route(rectOf(fn), rectOf(tn), obstacles,
+                        new DiagramRouter.Spec(priorityIndex, outgoingCount, incomingIndex, incomingCount,
+                                pairIndex, pairTotal, after), lanes);
             } else {
-                int to = from + 1;
-                double fx = DiagramLayout.nodeX(from, cols, NODE_WIDTH, GAP);
-                double fy = DiagramLayout.nodeY(from, cols, NODE_HEIGHT, ROW_GAP);
-                double tx = DiagramLayout.nodeX(to, cols, NODE_WIDTH, GAP);
-                double ty = DiagramLayout.nodeY(to, cols, NODE_HEIGHT, ROW_GAP);
-                if (DiagramLayout.turns(from, cols)) {
-                    x1 = fx + NODE_WIDTH / 2;
-                    y1 = fy + NODE_HEIGHT;
-                    x2 = tx + NODE_WIDTH / 2;
-                    y2 = ty;
-                    double handle = (y2 - y1) / 2;
-                    cx1 = x1;
-                    cy1 = y1 + handle;
-                    cx2 = x2;
-                    cy2 = y2 - handle;
-                    ux = 0;
-                    uy = 1;
-                } else {
-                    int direction = DiagramLayout.direction(from, cols);
-                    x1 = direction > 0 ? fx + NODE_WIDTH : fx;
-                    x2 = direction > 0 ? tx : tx + NODE_WIDTH;
-                    y1 = fy + NODE_HEIGHT / 2;
-                    y2 = y1;
-                    double handle = (x2 - x1) / 2;
-                    cx1 = x1 + handle;
-                    cy1 = y1;
-                    cx2 = x2 - handle;
-                    cy2 = y2;
-                    ux = direction;
-                    uy = 0;
-                }
+                route = linearRoute();
             }
-            curve.setStartX(x1);
-            curve.setStartY(y1);
-            curve.setControlX1(cx1);
-            curve.setControlY1(cy1);
-            curve.setControlX2(cx2);
-            curve.setControlY2(cy2);
-            curve.setEndX(x2);
-            curve.setEndY(y2);
+            apply(route);
+        }
 
-            hitCurve.setStartX(x1);
-            hitCurve.setStartY(y1);
-            hitCurve.setControlX1(cx1);
-            hitCurve.setControlY1(cy1);
-            hitCurve.setControlX2(cx2);
-            hitCurve.setControlY2(cy2);
-            hitCurve.setEndX(x2);
-            hitCurve.setEndY(y2);
+        private DiagramRouter.Route linearRoute() {
+            int to = from + 1;
+            double fx = DiagramLayout.nodeX(from, cols, NODE_WIDTH, GAP);
+            double fy = DiagramLayout.nodeY(from, cols, NODE_HEIGHT, ROW_GAP);
+            double tx = DiagramLayout.nodeX(to, cols, NODE_WIDTH, GAP);
+            double ty = DiagramLayout.nodeY(to, cols, NODE_HEIGHT, ROW_GAP);
+            if (DiagramLayout.turns(from, cols)) {
+                double x1 = fx + NODE_WIDTH / 2;
+                double y1 = fy + NODE_HEIGHT;
+                double x2 = tx + NODE_WIDTH / 2;
+                double y2 = ty;
+                double handle = (y2 - y1) / 2;
+                return DiagramRouter.Route.single(x1, y1, x1, y1 + handle, x2, y2 - handle, x2, y2, 0, 1);
+            }
+            int direction = DiagramLayout.direction(from, cols);
+            double x1 = direction > 0 ? fx + NODE_WIDTH : fx;
+            double x2 = direction > 0 ? tx : tx + NODE_WIDTH;
+            double y1 = fy + NODE_HEIGHT / 2;
+            double handle = (x2 - x1) / 2;
+            return DiagramRouter.Route.single(x1, y1, x1 + handle, y1, x2 - handle, y1, x2, y1, direction, 0);
+        }
 
-            double baseX = x2 - ux * 10;
-            double baseY = y2 - uy * 10;
-            double px = -uy * 5.5;
-            double py = ux * 5.5;
-            arrow.getPoints().setAll(x2, y2, baseX + px, baseY + py, baseX - px, baseY - py);
-
-            labelX = 0.125 * x1 + 0.375 * cx1 + 0.375 * cx2 + 0.125 * x2;
-            labelY = 0.125 * y1 + 0.375 * cy1 + 0.375 * cy2 + 0.125 * y2;
+        private void apply(DiagramRouter.Route route) {
+            curve.getElements().setAll(pathElements(route));
+            hitCurve.getElements().setAll(pathElements(route));
+            DiagramRouter.Segment last = route.segments().get(route.segments().size() - 1);
+            double dx = route.dirX();
+            double dy = route.dirY();
+            double nx = -dy;
+            double ny = dx;
+            double tipX = last.x2();
+            double tipY = last.y2();
+            arrow.getPoints().setAll(tipX, tipY,
+                    tipX - dx * 13 + nx * 6, tipY - dy * 13 + ny * 6,
+                    tipX - dx * 9, tipY - dy * 9,
+                    tipX - dx * 13 - nx * 6, tipY - dy * 13 - ny * 6);
+            labelX = route.labelX();
+            labelY = route.labelY();
+            routeMinX = route.minX();
+            routeMaxX = route.maxX();
+            routeMinY = route.minY();
+            routeMaxY = route.maxY();
             badge.setLayoutX(labelX - badgeWidth() / 2.0);
             badge.setLayoutY(labelY - badgeHeight() / 2.0);
         }
@@ -1068,7 +985,10 @@ final class DiagramView extends StackPane {
             if (cycleEdge) {
                 kind = "failed";
             } else if (target == StepResult.State.RUNNING) {
-                kind = "active";
+                boolean reached = source == StepResult.State.PASSED || source == StepResult.State.FAILED;
+                boolean taken = edge == null || edge.id().isBlank() || takenEdge.isBlank()
+                        || edge.id().equals(takenEdge);
+                kind = reached && taken ? "active" : "dim";
             } else if (edge != null && !edge.id().isBlank() && !takenEdge.isBlank()) {
                 if (edge.id().equals(takenEdge)) {
                     kind = target == StepResult.State.FAILED ? "failed" : "done";
@@ -1159,6 +1079,9 @@ final class DiagramView extends StackPane {
         private boolean tipInstalled;
         private StepNode hoveredDropTarget;
         private boolean hoveredDropValid;
+        private double dragOffsetX;
+        private double dragOffsetY;
+        private boolean dragged;
 
         StepNode(Step step, int index) {
             this.step = step;
@@ -1262,10 +1185,37 @@ final class DiagramView extends StackPane {
                     nodes.values().forEach(StepNode::syncSelected);
                     links.forEach(Link::refresh);
                     onSelect.accept(step.id());
+                    Point2D world = worldOf(event.getSceneX(), event.getSceneY());
+                    dragOffsetX = world.getX() - getLayoutX();
+                    dragOffsetY = world.getY() - getLayoutY();
+                    dragged = false;
+                    if (graphMode) {
+                        toFront();
+                    }
                 }
                 event.consume();
             });
-            setOnMouseDragged(event -> event.consume());
+            setOnMouseDragged(event -> {
+                if (graphMode && event.getButton() == MouseButton.PRIMARY) {
+                    Point2D world = worldOf(event.getSceneX(), event.getSceneY());
+                    double nextX = Math.round((world.getX() - dragOffsetX) / 10.0) * 10.0;
+                    double nextY = Math.round((world.getY() - dragOffsetY) / 10.0) * 10.0;
+                    if (dragged || Math.hypot(nextX - getLayoutX(), nextY - getLayoutY()) >= 6) {
+                        dragged = true;
+                        setLayoutX(nextX);
+                        setLayoutY(nextY);
+                        replaceLinks();
+                    }
+                }
+                event.consume();
+            });
+            setOnMouseReleased(event -> {
+                if (dragged) {
+                    dragged = false;
+                    support.moveTo(step.id(), getLayoutX(), getLayoutY());
+                }
+                event.consume();
+            });
             setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
                     actions.focusInspector();
